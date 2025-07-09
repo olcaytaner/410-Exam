@@ -1,0 +1,18 @@
+states:q0 q1 q_accept q_reject
+input_alphabet: a b
+REJECT: q_reject
+accept: q_accept
+start: q0
+tape_alphabet: a b _
+
+
+transitions:
+q0 a -> q1 a R
+q0 b -> q0 b R
+q0 _ -> q_accept _ R
+q1 a -> q0 a R
+q1 b -> q1 b R
+
+
+
+
