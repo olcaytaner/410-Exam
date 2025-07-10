@@ -3,18 +3,10 @@ import java.io.IOException;
 import PushDownAutomaton.Exceptions.*;
 
 
-public class Main {
+public class Test {
     public static void main(String[] args) {
         String[] testFiles = {
-                "/Users/huseyinborabaran/Desktop/automata_pda/examples/correct.txt",
-                "/Users/huseyinborabaran/Desktop/automata_pda/examples/bad_stack_push.txt",
-                "/Users/huseyinborabaran/Desktop/automata_pda/examples/duplicate_keyword.txt",
-                "/Users/huseyinborabaran/Desktop/automata_pda/examples/empty_block.txt",
-                "/Users/huseyinborabaran/Desktop/automata_pda/examples/missing_keyword.txt",
-                "/Users/huseyinborabaran/Desktop/automata_pda/examples/undefined_state.txt",
-                "/Users/huseyinborabaran/Desktop/automata_pda/examples/undefined_symbol.txt",
-                "/Users/huseyinborabaran/Desktop/automata_pda/examples/wrong_transition.txt",
-                "/Users/huseyinborabaran/Desktop/automata_pda/examples/multiple_warnings.txt"
+                "src/main/java/PushDownAutomaton/example.txt"
         };
 
         for (String filePath : testFiles) {
