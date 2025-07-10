@@ -1,9 +1,12 @@
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.*;
-import java.util.regex.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class TMFileValidator {
-    public enum Level { ERROR, WARNING }
+    public enum Level {ERROR, WARNING}
 
     public static class Issue {
         public final int line;

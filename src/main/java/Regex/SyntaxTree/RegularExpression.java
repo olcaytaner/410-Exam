@@ -7,11 +7,12 @@ import java.util.HashSet;
 import java.util.Set;
 
 public class RegularExpression {
-    public SyntaxTree st;
+    public SyntaxTree.SyntaxTree st;
     String regex;
+
     public RegularExpression(String regex, char[] alphabet) {
         this.regex = regex;
-        st = new SyntaxTree(regex, alphabet);
+        st = new SyntaxTree.SyntaxTree(regex, alphabet);
     }
 
     public boolean match(String s) {

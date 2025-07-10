@@ -2,7 +2,9 @@ package Checker;
 
 import SyntaxTree.RegularExpression;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
 
 public class Check {
     public static void check(String regexPath, String casesPath) {

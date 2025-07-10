@@ -2,7 +2,7 @@ package SyntaxTree;
 
 import java.util.*;
 
-public class StarNode extends UnaryNode {
+public class StarNode extends SyntaxTree.UnaryNode {
 
     public StarNode(SyntaxTreeNode child) {
         super(child);

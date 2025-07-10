@@ -19,12 +19,14 @@ public class RegexSynthesizer {
         try {
             RegularExpression re = new RegularExpression(new String(regex), alphabet);
             boolean matchesAll = true;
-            for (String case_ : cases) if (!re.match(case_)) {
-                matchesAll = false;
-                break;
-            }
+            for (String case_ : cases)
+                if (!re.match(case_)) {
+                    matchesAll = false;
+                    break;
+                }
             if (matchesAll) System.out.println(regex);
-        } catch (Exception _) {}
+        } catch (Exception _) {
+        }
         for (char c : chars) {
             permute(idx + 1, regex.append(c));
             regex.deleteCharAt(regex.length() - 1);

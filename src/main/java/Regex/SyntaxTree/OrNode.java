@@ -4,7 +4,7 @@ import java.util.HashSet;
 import java.util.Random;
 import java.util.Set;
 
-public class OrNode extends BinaryNode {
+public class OrNode extends SyntaxTree.BinaryNode {
 
     public OrNode(SyntaxTreeNode l, SyntaxTreeNode r) {
         super(l, r, '+');

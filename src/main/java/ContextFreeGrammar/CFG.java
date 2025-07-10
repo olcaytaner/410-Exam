@@ -1,12 +1,8 @@
 package ContextFreeGrammar;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.ArrayList;
+import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import  java.util.Map;
 
 
 public class CFG {
@@ -82,12 +78,12 @@ public class CFG {
             for (Symbol symbol : p.getRight()) {
                 if (symbol instanceof NonTerminal && !variables.contains(symbol)) {
                     System.err.println("Error: Production uses undefined variable: " +
-                            ((NonTerminal)symbol).getName());
+                            ((NonTerminal) symbol).getName());
                     return false;
                 } else if (symbol instanceof Terminal &&
                         !terminals.contains(symbol) && !symbol.getName().equals("eps")) {
                     System.err.println("Error: Production uses undefined terminal: " +
-                            ((Terminal)symbol).getName());
+                            ((Terminal) symbol).getName());
                     return false;
                 }
             }

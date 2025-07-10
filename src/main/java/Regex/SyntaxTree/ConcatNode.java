@@ -3,7 +3,7 @@ package SyntaxTree;
 import java.util.HashSet;
 import java.util.Set;
 
-public class ConcatNode extends BinaryNode {
+public class ConcatNode extends SyntaxTree.BinaryNode {
 
     public ConcatNode(SyntaxTreeNode l, SyntaxTreeNode r) {
         super(l, r, '.');
