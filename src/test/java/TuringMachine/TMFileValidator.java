@@ -6,6 +6,8 @@ import java.io.IOException;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.AbstractMap;
+
 
 public class TMFileValidator {
     public enum Level {ERROR, WARNING}
@@ -75,10 +77,11 @@ public class TMFileValidator {
                 }
 
                 if (inTransitions) {
-                    transitionLines.add(Map.entry(ln, trimmed));
+                    transitionLines.add(new AbstractMap.SimpleEntry<>(ln, trimmed));
                 } else {
                     issues.add(new Issue(ln, Level.ERROR, "INVALID_LINE", "Unrecognized or misplaced line: " + trimmed));
                 }
+
             }
         } catch (IOException e) {
             issues.add(new Issue(0, Level.ERROR, "IO_EXCEPTION", e.getMessage()));
@@ -248,7 +251,7 @@ public class TMFileValidator {
     }
 
     public static void main(String[] args) {
-        String file = "src/main/java/tm_sample.txt";
+        String file = "src/test/java/TuringMachine/tm_sample.txt";
         List<Issue> issues = validate(file);
         issues.forEach(System.out::println);
     }
