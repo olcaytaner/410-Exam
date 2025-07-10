@@ -1,0 +1,20 @@
+Start: q0
+Finals: q5 q7
+Alphabet: a b c
+
+Transitions:
+q0 -> q0 (c)
+q0 -> q1 (a b)
+q1 -> q2 (a)
+q1 -> q3 (b)
+q1 -> q1 (c)
+q2 -> q2 (a c)
+q5 -> q5 (a b c)
+q2 -> q4 (b)
+q4 -> q5 (a)
+q3 -> q4 (a)
+q6 -> q7 (a)
+q3 -> q3 (b c)
+q4 -> q6 (b c)
+q6 -> q0 (b c)
+q7 -> q7 (a b c)
