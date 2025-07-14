@@ -3,10 +3,12 @@ package RegularExpression.SyntaxTree;
 import java.util.HashSet;
 import java.util.Set;
 
+import static RegularExpression.SyntaxTree.RegexOperator.*;
+
 public class ConcatNode extends BinaryNode {
 
     public ConcatNode(SyntaxTreeNode l, SyntaxTreeNode r) {
-        super(l, r, '.');
+        super(l, r, CONCAT);
     }
 
     public Set<Integer> match(String s, int pos) {

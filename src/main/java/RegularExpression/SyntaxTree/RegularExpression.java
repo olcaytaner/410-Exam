@@ -3,7 +3,6 @@ package RegularExpression.SyntaxTree;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -21,9 +20,9 @@ public class RegularExpression {
     }
 
 
-                        /* ********************************************** */
-                        /*  ↓↓↓↓↓↓↓↓↓↓ FOR CASE GENERATION ↓↓↓↓↓↓↓↓↓↓     */
-                        /* ********************************************** */
+                        /* ******************************************* */
+                        /*  ↓↓↓↓↓↓↓↓↓↓ FOR CASE GENERATION ↓↓↓↓↓↓↓↓↓↓  */
+                        /* ******************************************* */
 
     String generateOneCase() {
         return st.root.generateOneCase();
@@ -59,8 +58,9 @@ public class RegularExpression {
                 bw.write(case_);
                 bw.newLine();
             }
-        } catch (IOException ignored) {
-            System.out.println("Write unsuccessful");
+        } catch (IOException e) {
+            System.err.println("Write unsuccessful");
+            e.printStackTrace();
         }
     }
 
@@ -74,8 +74,8 @@ public class RegularExpression {
                 bw.newLine();
             }
         } catch (IOException e) {
-            System.out.println("Write unsuccessful");
-            System.out.println(Arrays.toString(e.getStackTrace()));
+            System.err.println("Write unsuccessful");
+            e.printStackTrace();
         }
     }
 

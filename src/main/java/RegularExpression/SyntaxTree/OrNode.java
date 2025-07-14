@@ -4,10 +4,12 @@ import java.util.HashSet;
 import java.util.Random;
 import java.util.Set;
 
+import static RegularExpression.SyntaxTree.RegexOperator.*;
+
 public class OrNode extends BinaryNode {
 
     public OrNode(SyntaxTreeNode l, SyntaxTreeNode r) {
-        super(l, r, '+');
+        super(l, r, OR);
     }
 
     public Set<Integer> match(String s, int pos) {

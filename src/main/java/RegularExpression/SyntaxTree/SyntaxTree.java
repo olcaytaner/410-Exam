@@ -4,7 +4,6 @@ import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.Map;
 
-import static RegularExpression.SyntaxTree.RegexOperator.OR;
 import static RegularExpression.SyntaxTree.RegexOperator.*;
 
 public class SyntaxTree {
@@ -21,6 +20,8 @@ public class SyntaxTree {
         compile(postfix);
     }
 
+
+    // check for malformations
     private String sanitize(String regex) {
         // TODO check for other malformations like ** or * at the start
         StringBuilder sanitized = new StringBuilder();
@@ -28,8 +29,8 @@ public class SyntaxTree {
         for (char c : regex.toCharArray()) {
             if ((c == '(' || alphabetHas(c)) && !sanitized.isEmpty()) {
                 char prev = sanitized.charAt(sanitized.length() - 1);
-                if (prev == ')' || Character.isLetterOrDigit(prev) || prev == '*')
-                    sanitized.append('.');
+                if (prev == ')' || alphabetHas(prev) || prev == STAR)
+                    sanitized.append(CONCAT);
             }
             sanitized.append(c);
 
@@ -46,6 +47,34 @@ public class SyntaxTree {
         if (parenthesisCount != 0)
             throw new IllegalArgumentException("Unbalanced parenthesis");
         return new String(sanitized);
+    }
+
+    // shunting yard algorithm to convert to postfix
+    private String parse(String regex) {
+        StringBuilder postfix = new StringBuilder();
+        Deque<Character> stk = new ArrayDeque<>();
+        for (char c : regex.toCharArray()) {
+            if (alphabetHas(c)) {
+                postfix.append(c);
+                continue;
+            }
+            if (c == '(') {
+                stk.push(c);
+                continue;
+            }
+            if (c == ')') {
+                while (stk.peek() != '(')
+                    postfix.append(stk.pop());
+                stk.pop();
+                continue;
+            }
+            while (!stk.isEmpty() && stk.peek() != '(' && precedence.get(stk.peek()) >= precedence.get(c))
+                postfix.append(stk.pop());
+            stk.push(c);
+        }
+        while (!stk.isEmpty())
+            postfix.append(stk.pop());
+        return new String(postfix);
     }
 
     // build AST
@@ -73,33 +102,7 @@ public class SyntaxTree {
         root = stk.pop();
     }
 
-    // shunting yard to convert to postfix
-    private String parse(String regex) {
-        StringBuilder postfix = new StringBuilder();
-        Deque<Character> stk = new ArrayDeque<>();
-        for (char c : regex.toCharArray()) {
-            if (Character.isLetterOrDigit(c)) {
-                postfix.append(c);
-                continue;
-            }
-            if (c == '(') {
-                stk.push(c);
-                continue;
-            }
-            if (c == ')') {
-                while (stk.peek() != '(')
-                    postfix.append(stk.pop());
-                stk.pop();
-                continue;
-            }
-            while (!stk.isEmpty() && stk.peek() != '(' && precedence.get(stk.peek()) >= precedence.get(c))
-                postfix.append(stk.pop());
-            stk.push(c);
-        }
-        while (!stk.isEmpty())
-            postfix.append(stk.pop());
-        return new String(postfix);
-    }
+
 
     public boolean alphabetHas(char c) {
         for (char ch : alphabet)
