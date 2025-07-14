@@ -1,7 +1,6 @@
-package RegEx;
+package RegularExpression;
 
-import Graphviz.GraphVizExport;
-import SyntaxTree.RegularExpression;
+import RegularExpression.SyntaxTree.RegularExpression;
 
 import java.io.IOException;
 
@@ -12,7 +11,7 @@ public class Main {
         //String regex = "(1+0)*01";
         RegularExpression re = new RegularExpression(regex, new char[]{'0', '1'});
 
-        GraphVizExport.export(re.st.root);
+        //GraphVizExport.export(re.st.root);
 
         System.out.println(re.match("3"));
 

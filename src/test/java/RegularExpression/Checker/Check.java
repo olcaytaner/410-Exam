@@ -1,6 +1,6 @@
-package RegEx.Checker;
+package RegularExpression.Checker;
 
-import SyntaxTree.RegularExpression;
+import RegularExpression.SyntaxTree.RegularExpression;
 
 import java.io.BufferedReader;
 import java.io.FileReader;

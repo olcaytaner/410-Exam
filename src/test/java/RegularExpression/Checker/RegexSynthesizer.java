@@ -1,6 +1,6 @@
-package RegEx.Checker;
+package RegularExpression.Checker;
 
-import SyntaxTree.RegularExpression;
+import RegularExpression.SyntaxTree.RegularExpression;
 
 import java.util.Arrays;
 import java.util.List;
@@ -25,8 +25,7 @@ public class RegexSynthesizer {
                     break;
                 }
             if (matchesAll) System.out.println(regex);
-        } catch (Exception _) {
-        }
+        } catch (Exception ignored) {}
         for (char c : chars) {
             permute(idx + 1, regex.append(c));
             regex.deleteCharAt(regex.length() - 1);
