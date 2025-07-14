@@ -1,0 +1,8 @@
+digraph ExampleGraph {
+    rankdir=LR;
+    node [shape=circle];
+    A -> B [label="0"];
+    B -> C [label="1"];
+    C -> A [label="0,1"];
+    C [shape=doublecircle];
+}
