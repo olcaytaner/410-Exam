@@ -163,7 +163,7 @@ public class CFG {
                 .collect(Collectors.groupingBy(Production::getLeft));
 
         for (NonTerminal variable : variables) {
-            List<Production> prods = productionMap.getOrDefault(variable, List.of());
+            List<Production> prods = productionMap.getOrDefault(variable, new ArrayList<>());
             if (!prods.isEmpty()) {
                 StringBuilder sb = new StringBuilder();
                 sb.append(variable.getName()).append(" -> ");

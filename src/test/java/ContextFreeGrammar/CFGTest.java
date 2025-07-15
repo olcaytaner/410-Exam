@@ -6,7 +6,7 @@ public class CFGTest {
     public static void main(String[] args) {
 
 
-        String filePath = "src/main/java/ContextFreeGrammar/test.txt";
+        String filePath = "src/test/java/ContextFreeGrammar/test.txt";
 
         try {
             // Parse the grammar file
@@ -26,7 +26,7 @@ public class CFGTest {
 
         } catch (IOException e) {
             System.err.println("Error reading file: " + e.getMessage());
-        } catch (CFGParser.GrammarParseException e) {
+        } catch (GrammarParseException e) {
             System.err.println("Error parsing grammar: " + e.getMessage());
         } catch (Exception e) {
             System.err.println("Unexpected error: " + e.getMessage());

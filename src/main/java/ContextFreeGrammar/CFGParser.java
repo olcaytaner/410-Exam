@@ -201,10 +201,5 @@ public class CFGParser {
         return null;
     }
 
-    // Custom exception for grammar parsing errors
-    public static class GrammarParseException extends RuntimeException {
-        public GrammarParseException(String message) {
-            super(message);
-        }
-    }
+
 }
