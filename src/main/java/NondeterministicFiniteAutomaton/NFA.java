@@ -2,7 +2,7 @@ package NondeterministicFiniteAutomaton;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
-import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -20,7 +20,7 @@ public class NFA extends AbstractAutomaton {
         super(new HashMap<>(), new HashSet<>(), null, new HashSet<>());
 
         try {
-            BufferedReader reader = new BufferedReader(new FileReader(Path.of(path).toFile()));
+            BufferedReader reader = new BufferedReader(new FileReader(Paths.get(path).toFile()));
             String line;
             while ((line = reader.readLine()) != null){
 
@@ -111,7 +111,7 @@ public class NFA extends AbstractAutomaton {
         List<Warning> warnings = new ArrayList<>();
 
         try {
-            BufferedReader reader = new BufferedReader(new FileReader(Path.of(path).toFile()));
+            BufferedReader reader = new BufferedReader(new FileReader(Paths.get(path).toFile()));
             String line;
             int lineNo = 0;
             while ((line = reader.readLine()) != null){
@@ -251,7 +251,7 @@ public class NFA extends AbstractAutomaton {
 
                     Pattern pattern = Pattern.compile("(?:(q\\d+)|.) ?-> ?(?:(q\\d+)|\\S*)? (?:(\\((?:[a-zA-Z]|eps)(?:\\s(?:[a-zA-Z]|eps))*\\s?\\))|.+)?");
                     Matcher matcher = pattern.matcher(line);
-                    System.out.println("group count: " + matcher.groupCount());
+                    //System.out.println("group count: " + matcher.groupCount());
                     String wrongPart = line;
                     String message = "";
                     State firstState = null;
@@ -259,8 +259,8 @@ public class NFA extends AbstractAutomaton {
                     if (matcher.find()) {
                         wrongPart = wrongPart.replace("->", "");
                         if (matcher.group(1) != null && matcher.group(1).matches("q\\d+")) {
-                            System.out.println("first state correct");
-                            System.out.println(matcher.group(1));
+                            //System.out.println("first state correct");
+                            //System.out.println(matcher.group(1));
                             firstState = new State(matcher.group(1));
                             wrongPart = wrongPart.replace(matcher.group(1),"");
                         }else {
@@ -268,8 +268,8 @@ public class NFA extends AbstractAutomaton {
                         }
 
                         if (matcher.group(2) != null && matcher.group(2).matches("q\\d+")) {
-                            System.out.println("second state correct");
-                            System.out.println(matcher.group(2));
+                            //System.out.println("second state correct");
+                            //System.out.println(matcher.group(2));
                             secondState = new State(matcher.group(2));
                             wrongPart = wrongPart.replace(matcher.group(2),"");
                         }else {
@@ -277,8 +277,8 @@ public class NFA extends AbstractAutomaton {
                         }
 
                         if (matcher.group(3) != null && matcher.group(3).matches("\\((?:[a-zA-Z]|eps)(?:\\s(?:[a-zA-Z]|eps))*\\s?\\)")) {
-                            System.out.println("transition letters correct");
-                            System.out.println(matcher.group(3));
+                            //System.out.println("transition letters correct");
+                            //System.out.println(matcher.group(3));
                             wrongPart = wrongPart.replace(matcher.group(3),"");
                         }else {
                             message += "Transition letters incorrect \n";
@@ -306,7 +306,7 @@ public class NFA extends AbstractAutomaton {
 
                         if (alreadyExists) {
                             warnings.add(new Warning("There is already this transition: " + line,  Warning.WARN, lineNo, Warning.TRANS_LINE));
-                            System.out.println("Transition already exists");
+                            //System.out.println("Transition already exists");
                         }
 
                         if (!alreadyExists && firstState != null && secondState != null) {
