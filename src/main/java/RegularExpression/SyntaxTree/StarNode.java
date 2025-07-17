@@ -31,13 +31,23 @@ public class StarNode extends UnaryNode {
     public String generateOneCase() {
         Random rand = new Random();
         int repeat = rand.nextInt(4);
-        return child.generateOneCase().repeat(repeat);
+        String base = child.generateOneCase();
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < repeat; i++) {
+            sb.append(base);
+        }
+        return sb.toString();
     }
 
     public String generateOneCase(int maxStarRepeat) {
         Random rand = new Random();
         int repeat = rand.nextInt(maxStarRepeat + 1);
-        return child.generateOneCase(maxStarRepeat).repeat(repeat);
+        String base = child.generateOneCase(maxStarRepeat);
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < repeat; i++) {
+            sb.append(base);
+        }
+        return sb.toString();
     }
 
     public Set<String> generateCasesExhaustive(int maxLen) {

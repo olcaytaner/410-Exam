@@ -10,7 +10,7 @@ public class RegexSynthesizer {
     static final char[] alphabet = new char[]{'1', '2', '3'};
     static final int maxLen = 8;
 
-    static final List<String> cases = List.of("121212123", "212123", "11221212121122112211221212121212121212122211121212112213");
+    static final List<String> cases = Arrays.asList("121212123", "212123", "11221212121122112211221212121212121212122211121212112213");
     //TODO add don't match cases
 
     // TODO prune the search space

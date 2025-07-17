@@ -91,7 +91,7 @@ public class RegularExpression {
             curCase.append(c);
             rec(maxLen, curCase, cases);
         }
-        if (!curCase.isEmpty())
+        if (curCase.length() > 0)
             curCase.deleteCharAt(curCase.length() - 1);
     }
 }

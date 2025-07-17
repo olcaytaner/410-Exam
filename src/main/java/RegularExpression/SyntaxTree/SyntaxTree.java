@@ -2,12 +2,20 @@ package RegularExpression.SyntaxTree;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
+import java.util.HashMap;
 import java.util.Map;
 
 import static RegularExpression.SyntaxTree.RegexOperator.*;
 
 public class SyntaxTree {
-    private final Map<Character, Integer> precedence = Map.of(STAR, 3, CONCAT, 2, OR, 1);
+    private final Map<Character, Integer> precedence;
+    
+    {
+        precedence = new HashMap<>();
+        precedence.put(STAR, 3);
+        precedence.put(CONCAT, 2);
+        precedence.put(OR, 1);
+    }
     public char[] alphabet;
     public SyntaxTreeNode root;
 
@@ -27,7 +35,7 @@ public class SyntaxTree {
         StringBuilder sanitized = new StringBuilder();
         int parenthesisCount = 0;
         for (char c : regex.toCharArray()) {
-            if ((c == '(' || alphabetHas(c)) && !sanitized.isEmpty()) {
+            if ((c == '(' || alphabetHas(c)) && sanitized.length() > 0) {
                 char prev = sanitized.charAt(sanitized.length() - 1);
                 if (prev == ')' || alphabetHas(prev) || prev == STAR)
                     sanitized.append(CONCAT);
@@ -101,7 +109,6 @@ public class SyntaxTree {
                         break;
                     default:
                         throw new IllegalStateException("Unexpected value: " + c);
-                        break;
                 }
             }
         }

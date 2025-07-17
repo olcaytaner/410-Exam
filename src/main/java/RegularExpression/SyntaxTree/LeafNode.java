@@ -1,5 +1,6 @@
 package RegularExpression.SyntaxTree;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -12,7 +13,11 @@ public class LeafNode extends SyntaxTreeNode {
     }
 
     public Set<Integer> match(String s, int pos) {
-        return (pos < s.length() && s.charAt(pos) == sym) ? Set.of(pos + 1) : new HashSet<>();
+        if (pos < s.length() && s.charAt(pos) == sym) {
+            return Collections.singleton(pos + 1);
+        } else {
+            return new HashSet<>();
+        }
     }
 
     public String generateOneCase() {
@@ -24,6 +29,10 @@ public class LeafNode extends SyntaxTreeNode {
     }
 
     public Set<String> generateCasesExhaustive(int maxLen) {
-        return maxLen > 1 ? Set.of(String.valueOf(sym)) : Set.of();
+        if (maxLen > 1) {
+            return Collections.singleton(String.valueOf(sym));
+        } else {
+            return Collections.emptySet();
+        }
     }
 }
