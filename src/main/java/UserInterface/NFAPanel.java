@@ -4,9 +4,10 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.image.Raster;
 import java.io.File;
 import java.io.*;
+import guru.nidi.graphviz.engine.Format;
+import guru.nidi.graphviz.engine.Graphviz;
 
 public class NFAPanel extends JPanel {
 
@@ -164,14 +165,13 @@ public class NFAPanel extends JPanel {
             }
 
             try {
-                Process process = Runtime.getRuntime().exec("dot -Tpng graph.dot -o graph.png");
-                process.waitFor();
+                Graphviz.fromString(dotCode).render(Format.PNG).toFile(new File("graph.png"));
 
                 // Add debug prints
                 System.out.println("DOT file exists: " + new File("graph.dot").exists());
                 System.out.println("PNG file exists: " + new File("graph.png").exists());
                 System.out.println("Working directory: " + System.getProperty("user.dir"));
-            } catch (IOException | InterruptedException y) {
+            } catch (IOException y) {
                 y.printStackTrace();
             }
 
