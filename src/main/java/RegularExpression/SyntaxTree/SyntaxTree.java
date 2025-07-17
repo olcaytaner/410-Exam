@@ -80,21 +80,28 @@ public class SyntaxTree {
     // build AST
     private void compile(String postfix) {
         Deque<SyntaxTreeNode> stk = new ArrayDeque<>();
+        SyntaxTreeNode r, l;
         for (char c : postfix.toCharArray()) {
             if (alphabetHas(c)) {
                 stk.push(new LeafNode(c));
             } else {
                 switch (c) {
-                    case STAR -> stk.push(new StarNode(stk.pop()));
-                    case CONCAT -> {
-                        SyntaxTreeNode r = stk.pop(), l = stk.pop();
+                    case STAR:
+                        stk.push(new StarNode(stk.pop()));
+                        break;
+                    case CONCAT:
+                        r = stk.pop();
+                        l = stk.pop();
                         stk.push(new ConcatNode(l, r));
-                    }
-                    case OR -> {
-                        SyntaxTreeNode r = stk.pop(), l = stk.pop();
+                        break;
+                    case OR:
+                        r = stk.pop();
+                        l = stk.pop();
                         stk.push(new OrNode(l, r));
-                    }
-                    default -> throw new IllegalStateException("Unexpected value: " + c);
+                        break;
+                    default:
+                        throw new IllegalStateException("Unexpected value: " + c);
+                        break;
                 }
             }
         }
