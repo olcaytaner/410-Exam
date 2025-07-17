@@ -6,7 +6,7 @@ import PushDownAutomaton.Exceptions.*;
 public class Test {
     public static void main(String[] args) {
         String[] testFiles = {
-                "src/main/java/PushDownAutomaton/example.txt"
+                "src/test/java/PushDownAutomaton/example.txt"
         };
 
         for (String filePath : testFiles) {
