@@ -2,7 +2,7 @@ package NondeterministicFiniteAutomaton;
 
 import java.util.List;
 
-public class Main {
+public class NFATest {
 
     public static void main(String[] args) {
         List<Warning> warnings = NFA.validate("src/test/java/NondeterministicFiniteAutomaton/NFAtest.txt");
