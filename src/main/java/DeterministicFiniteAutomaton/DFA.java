@@ -12,6 +12,10 @@ public class DFA extends AbstractAutomaton {
   }
 
   public boolean validate(String input) {
+    if (input == null) {
+      throw new IllegalArgumentException("Input string cannot be null");
+    }
+    
     State currentState = startState;
 
     for (char ch : input.toCharArray()) {

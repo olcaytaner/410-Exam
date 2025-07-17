@@ -112,6 +112,13 @@ public class DFATest {
     @DisplayName("Edge Case Tests")
     class EdgeCaseTests {
         @Test
+        @DisplayName("Null input should be handled gracefully")
+        void testNullInput() {
+            // After fix: should throw IllegalArgumentException instead of NullPointerException
+            assertThrows(IllegalArgumentException.class, () -> dfa.validate(null));
+        }
+
+        @Test
         @DisplayName("Empty string should be rejected (start state not final)")
         void testEmptyString() {
             assertFalse(dfa.validate(""));
