@@ -1,0 +1,11 @@
+Start: q1 q2
+Finals: q2 qasd
+Alphabet: a b c eps ?
+transitions:
+q1 -> q2 (a eps)
+q? -> q1 (a)
+q2 -> qwe (a c)
+q2 -> q3 (b)
+q2 -> q3 (c)
+q4 -> q5 (abc)
+q5 -> q6 (d)
