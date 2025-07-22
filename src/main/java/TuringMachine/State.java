@@ -1,9 +1,9 @@
 package TuringMachine;
 
 public class State {
-    private final String name;
-    private final boolean isAccept;
-    private final boolean isReject;
+    private String name;
+    private boolean isAccept;
+    private boolean isReject;
 
     public State(String name, boolean isAccept, boolean isReject) {
         this.name = name;
@@ -21,6 +21,14 @@ public class State {
 
     public boolean isReject() {
         return isReject;
+    }
+
+    public void setAccept(boolean accept) {
+        isAccept = accept;
+    }
+
+    public void setReject(boolean reject) {
+        isReject = reject;
     }
 
     @Override

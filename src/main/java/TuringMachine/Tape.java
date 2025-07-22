@@ -66,4 +66,12 @@ public class Tape {
         }
         System.out.println();
     }
+
+    public String getTapeContents() {
+        StringBuilder sb = new StringBuilder();
+        for (char ch : tape) {
+            sb.append(ch);
+        }
+        return sb.toString();
+    }
 }
