@@ -295,4 +295,268 @@ public class RegularExpressionTest {
             re.match("11");
         }
     }
+
+    @Nested
+    @DisplayName("Simple Character Tests")
+    class SimpleCharacterTests {
+        
+        @Test
+        @DisplayName("Single character regex - matches exact character")
+        void testSingleCharacter() {
+            RegularExpression singleChar = new RegularExpression("a", new char[]{'a', 'b'});
+            assertTrue(singleChar.match("a"), "Should match 'a'");
+            assertFalse(singleChar.match("b"), "Should not match 'b'");
+            assertFalse(singleChar.match(""), "Should not match empty string");
+            assertFalse(singleChar.match("aa"), "Should not match 'aa'");
+        }
+        
+        @Test
+        @DisplayName("Two character concatenation")
+        void testTwoCharacterConcat() {
+            RegularExpression concat = new RegularExpression("ab", new char[]{'a', 'b'});
+            assertTrue(concat.match("ab"), "Should match 'ab'");
+            assertFalse(concat.match("a"), "Should not match 'a'");
+            assertFalse(concat.match("b"), "Should not match 'b'");
+            assertFalse(concat.match("ba"), "Should not match 'ba'");
+            assertFalse(concat.match(""), "Should not match empty string");
+        }
+    }
+    
+    @Nested
+    @DisplayName("Kleene Star Tests")
+    class KleeneStarTests {
+        
+        @Test
+        @DisplayName("Single character with star - a*")
+        void testSingleCharacterStar() {
+            RegularExpression aStar = new RegularExpression("a*", new char[]{'a', 'b'});
+            assertTrue(aStar.match(""), "Should match empty string");
+            assertTrue(aStar.match("a"), "Should match 'a'");
+            assertTrue(aStar.match("aa"), "Should match 'aa'");
+            assertTrue(aStar.match("aaa"), "Should match 'aaa'");
+            assertFalse(aStar.match("b"), "Should not match 'b'");
+            assertFalse(aStar.match("ab"), "Should not match 'ab'");
+        }
+        
+        @Test
+        @DisplayName("Concatenation with star - a*b")
+        void testConcatWithStar() {
+            RegularExpression aStarB = new RegularExpression("a*b", new char[]{'a', 'b'});
+            assertTrue(aStarB.match("b"), "Should match 'b'");
+            assertTrue(aStarB.match("ab"), "Should match 'ab'");
+            assertTrue(aStarB.match("aab"), "Should match 'aab'");
+            assertTrue(aStarB.match("aaab"), "Should match 'aaab'");
+            assertFalse(aStarB.match(""), "Should not match empty string");
+            assertFalse(aStarB.match("a"), "Should not match 'a'");
+            assertFalse(aStarB.match("ba"), "Should not match 'ba'");
+        }
+        
+        @Test
+        @DisplayName("Grouped expression with star - (ab)*")
+        void testGroupedStar() {
+            RegularExpression groupStar = new RegularExpression("(ab)*", new char[]{'a', 'b'});
+            assertTrue(groupStar.match(""), "Should match empty string");
+            assertTrue(groupStar.match("ab"), "Should match 'ab'");
+            assertTrue(groupStar.match("abab"), "Should match 'abab'");
+            assertTrue(groupStar.match("ababab"), "Should match 'ababab'");
+            assertFalse(groupStar.match("a"), "Should not match 'a'");
+            assertFalse(groupStar.match("b"), "Should not match 'b'");
+            assertFalse(groupStar.match("aba"), "Should not match 'aba'");
+        }
+    }
+    
+    @Nested
+    @DisplayName("Union/OR Tests")
+    class UnionTests {
+        
+        @Test
+        @DisplayName("Simple union - aub")
+        void testSimpleUnion() {
+            RegularExpression union = new RegularExpression("aub", new char[]{'a', 'b'});
+            assertTrue(union.match("a"), "Should match 'a'");
+            assertTrue(union.match("b"), "Should match 'b'");
+            assertFalse(union.match(""), "Should not match empty string");
+            assertFalse(union.match("ab"), "Should not match 'ab'");
+            assertFalse(union.match("c"), "Should not match 'c'");
+        }
+        
+        @Test
+        @DisplayName("Union with concatenation - (aub)c")
+        void testUnionWithConcat() {
+            RegularExpression unionConcat = new RegularExpression("(aub)c", new char[]{'a', 'b', 'c'});
+            assertTrue(unionConcat.match("ac"), "Should match 'ac'");
+            assertTrue(unionConcat.match("bc"), "Should match 'bc'");
+            assertFalse(unionConcat.match("a"), "Should not match 'a'");
+            assertFalse(unionConcat.match("b"), "Should not match 'b'");
+            assertFalse(unionConcat.match("c"), "Should not match 'c'");
+            assertFalse(unionConcat.match("abc"), "Should not match 'abc'");
+        }
+        
+        @Test
+        @DisplayName("Union with star - (aub)*")
+        void testUnionWithStar() {
+            RegularExpression unionStar = new RegularExpression("(aub)*", new char[]{'a', 'b'});
+            assertTrue(unionStar.match(""), "Should match empty string");
+            assertTrue(unionStar.match("a"), "Should match 'a'");
+            assertTrue(unionStar.match("b"), "Should match 'b'");
+            assertTrue(unionStar.match("ab"), "Should match 'ab'");
+            assertTrue(unionStar.match("ba"), "Should match 'ba'");
+            assertTrue(unionStar.match("aaa"), "Should match 'aaa'");
+            assertTrue(unionStar.match("bbb"), "Should match 'bbb'");
+            assertTrue(unionStar.match("abab"), "Should match 'abab'");
+            assertTrue(unionStar.match("baba"), "Should match 'baba'");
+        }
+    }
+    
+    @Nested
+    @DisplayName("Complex Pattern Tests")
+    class ComplexPatternTests {
+        
+        @Test
+        @DisplayName("Complex pattern - (a*b*)*")
+        void testComplexStarPattern() {
+            RegularExpression complex = new RegularExpression("(a*b*)*", new char[]{'a', 'b'});
+            assertTrue(complex.match(""), "Should match empty string");
+            assertTrue(complex.match("a"), "Should match 'a'");
+            assertTrue(complex.match("b"), "Should match 'b'");
+            assertTrue(complex.match("ab"), "Should match 'ab'");
+            assertTrue(complex.match("aabb"), "Should match 'aabb'");
+            assertTrue(complex.match("aaabbb"), "Should match 'aaabbb'");
+            assertTrue(complex.match("aabbaa"), "Should match 'aabbaa'");
+            assertTrue(complex.match("abab"), "Should match 'abab'");
+        }
+        
+        @Test
+        @DisplayName("Nested grouping - ((au(bc))*d)")
+        void testNestedGrouping() {
+            RegularExpression nested = new RegularExpression("(au(bc))*d", new char[]{'a', 'b', 'c', 'd'});
+            assertTrue(nested.match("d"), "Should match 'd'");
+            assertTrue(nested.match("ad"), "Should match 'ad'");
+            assertTrue(nested.match("bcd"), "Should match 'bcd'");
+            assertTrue(nested.match("abcd"), "Should match 'abcd'");
+            assertTrue(nested.match("bcbcd"), "Should match 'bcbcd'");
+            assertFalse(nested.match(""), "Should not match empty string");
+            assertFalse(nested.match("a"), "Should not match 'a'");
+            assertFalse(nested.match("bc"), "Should not match 'bc'");
+        }
+        
+        @Test
+        @DisplayName("Multiple unions - au(bu(cu(du)))")
+        void testMultipleUnions() {
+            RegularExpression multiUnion = new RegularExpression("au(bu(cud))", new char[]{'a', 'b', 'c', 'd'});
+            assertTrue(multiUnion.match("a"), "Should match 'a'");
+            assertTrue(multiUnion.match("b"), "Should match 'b'");
+            assertTrue(multiUnion.match("c"), "Should match 'c'");
+            assertTrue(multiUnion.match("d"), "Should match 'd'");
+            assertFalse(multiUnion.match(""), "Should not match empty string");
+            assertFalse(multiUnion.match("ab"), "Should not match 'ab'");
+        }
+    }
+    
+    @Nested
+    @DisplayName("Different Alphabet Tests")
+    class DifferentAlphabetTests {
+        
+        @Test
+        @DisplayName("Single character alphabet")
+        void testSingleCharAlphabet() {
+            RegularExpression single = new RegularExpression("x*", new char[]{'x'});
+            assertTrue(single.match(""), "Should match empty string");
+            assertTrue(single.match("x"), "Should match 'x'");
+            assertTrue(single.match("xx"), "Should match 'xx'");
+            assertTrue(single.match("xxx"), "Should match 'xxx'");
+        }
+        
+        @Test
+        @DisplayName("Large alphabet")
+        void testLargeAlphabet() {
+            char[] alphabet = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j'};
+            RegularExpression large = new RegularExpression("(aubucudueufuguhuiuj)*", alphabet);
+            assertTrue(large.match(""), "Should match empty string");
+            assertTrue(large.match("a"), "Should match 'a'");
+            assertTrue(large.match("j"), "Should match 'j'");
+            assertTrue(large.match("abcde"), "Should match 'abcde'");
+            assertTrue(large.match("jihgfedcba"), "Should match 'jihgfedcba'");
+        }
+        
+        @Test
+        @DisplayName("Numeric alphabet")
+        void testNumericAlphabet() {
+            RegularExpression numeric = new RegularExpression("(0u1u2)*3", new char[]{'0', '1', '2', '3'});
+            assertTrue(numeric.match("3"), "Should match '3'");
+            assertTrue(numeric.match("03"), "Should match '03'");
+            assertTrue(numeric.match("123"), "Should match '123'");
+            assertTrue(numeric.match("0120213"), "Should match '0120213'");
+            assertFalse(numeric.match(""), "Should not match empty string");
+            assertFalse(numeric.match("012"), "Should not match '012'");
+        }
+    }
+    
+    @Nested
+    @DisplayName("Edge Case and Error Tests")
+    class EdgeCaseErrorTests {
+        
+        @Test
+        @DisplayName("Empty regex should throw exception")
+        void testEmptyRegex() {
+            assertThrows(Exception.class, () -> {
+                new RegularExpression("", new char[]{'a'});
+            }, "Empty regex should throw exception");
+        }
+        
+        @Test
+        @DisplayName("Invalid characters should throw exception")
+        void testInvalidCharacters() {
+            assertThrows(Exception.class, () -> {
+                // Using character not in alphabet
+                RegularExpression invalid = new RegularExpression("c", new char[]{'a', 'b'});
+                invalid.match("c");
+            }, "Using character not in alphabet should throw exception");
+        }
+        
+        @Test
+        @DisplayName("Unbalanced parentheses should throw exception")
+        void testUnbalancedParentheses() {
+            assertThrows(IllegalArgumentException.class, () -> {
+                new RegularExpression("(a*", new char[]{'a'});
+            }, "Unbalanced parentheses should throw exception");
+            
+            assertThrows(IllegalArgumentException.class, () -> {
+                new RegularExpression("a*)", new char[]{'a'});
+            }, "Unbalanced parentheses should throw exception");
+        }
+        
+        @Test
+        @DisplayName("Test with special characters in alphabet")
+        void testSpecialCharsInAlphabet() {
+            RegularExpression special = new RegularExpression("@u#", new char[]{'@', '#', '*'});
+            assertTrue(special.match("@"), "Should match '@'");
+            assertTrue(special.match("#"), "Should match '#'");
+            assertFalse(special.match("*"), "Should not match '*'");
+        }
+    }
+    
+    @Nested
+    @DisplayName("Explicit Concatenation Tests")
+    class ExplicitConcatenationTests {
+        
+        @Test
+        @DisplayName("Explicit concatenation operator")
+        void testExplicitConcat() {
+            RegularExpression explicit = new RegularExpression("a.b", new char[]{'a', 'b'});
+            assertTrue(explicit.match("ab"), "Should match 'ab'");
+            assertFalse(explicit.match("a"), "Should not match 'a'");
+            assertFalse(explicit.match("b"), "Should not match 'b'");
+            assertFalse(explicit.match("ba"), "Should not match 'ba'");
+        }
+        
+        @Test
+        @DisplayName("Mixed implicit and explicit concatenation")
+        void testMixedConcat() {
+            RegularExpression mixed = new RegularExpression("a.bc", new char[]{'a', 'b', 'c'});
+            assertTrue(mixed.match("abc"), "Should match 'abc'");
+            assertFalse(mixed.match("ab"), "Should not match 'ab'");
+            assertFalse(mixed.match("bc"), "Should not match 'bc'");
+        }
+    }
 } 
