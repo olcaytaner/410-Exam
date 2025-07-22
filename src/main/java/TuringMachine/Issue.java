@@ -13,6 +13,22 @@ public class Issue {
         this.message = message;
     }
 
+    public int getLine() {
+        return line;
+    }
+
+    public Level getLevel() {
+        return level;
+    }
+
+    public String getCode() {
+        return code;
+    }
+
+    public String getMessage() {
+        return message;
+    }
+
     @Override
     public String toString() {
         return String.format("Line %d | %-7s | %-25s | %s",

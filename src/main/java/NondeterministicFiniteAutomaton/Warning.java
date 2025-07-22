@@ -69,7 +69,7 @@ public class Warning {
             name += "Alphabet Line";
         }
         if (lineName == TRANS_LINE) {
-            name += "Translation Line";
+            name += "Transition Line";
         }
         if (lineName == OTHER) {
             name += "Unknown Line";

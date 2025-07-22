@@ -1,5 +1,7 @@
 package NondeterministicFiniteAutomaton;
 
+import java.util.Objects;
+
 public class State {
 
   private String name;
@@ -16,6 +18,18 @@ public class State {
       this(name,false,false);
   }
 
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        State state = (State) o;
+        return startState == state.startState && finalState == state.finalState && Objects.equals(name, state.name);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(name, startState, finalState);
+    }
 
     public String getName() {
         return name;
@@ -44,5 +58,18 @@ public class State {
                 ", startState=" + startState +
                 ", finalState=" + finalState +
                 "}\n";
+    }
+
+    public String prettyPrint() {
+      StringBuilder sb = new StringBuilder();
+      sb.append("State: ").append(name).append(" ");
+      if (startState) {
+          sb.append("Start state");
+      }
+      if (finalState) {
+          sb.append("Final state");
+      }
+      sb.append("\n");
+      return sb.toString();
     }
 }

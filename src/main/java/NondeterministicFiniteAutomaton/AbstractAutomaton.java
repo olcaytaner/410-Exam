@@ -1,6 +1,5 @@
 package NondeterministicFiniteAutomaton;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -13,12 +12,12 @@ public abstract class AbstractAutomaton {
     protected Set<State> finalStates;
     protected Map<State, List<Transition>> transitions;
 
-    public AbstractAutomaton(Map<String, State> states, Set<Symbol> alphabet, State startState, Set<State> finalStates) {
+    public AbstractAutomaton(Map<String, State> states, Set<Symbol> alphabet, State startState, Set<State> finalStates, Map<State, List<Transition>> transitions) {
         this.states = states;
         this.alphabet = alphabet;
         this.startState = startState;
         this.finalStates = finalStates;
-        this.transitions = new HashMap<>();
+        this.transitions = transitions;
     }
 
     public abstract boolean accepts(String s);
