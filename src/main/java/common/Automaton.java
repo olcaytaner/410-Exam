@@ -1,3 +1,5 @@
+package common;
+
 import java.util.List;
 
 public abstract class Automaton {
