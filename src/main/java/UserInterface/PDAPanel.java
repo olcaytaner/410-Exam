@@ -71,8 +71,7 @@ public class PDAPanel extends JPanel {
         buttonPanel.add(Box.createVerticalStrut(5));
         buttonPanel.add(saveButton);
         buttonPanel.add(Box.createVerticalStrut(5));
-        buttonPanel.add(warningButton);
-        buttonPanel.add(Box.createVerticalStrut(5));
+    
 
         buttonPanel.add(warningField);
         JScrollPane scrollPane1 = new JScrollPane(warningField);
@@ -95,7 +94,15 @@ public class PDAPanel extends JPanel {
         compileButton.addActionListener(new ActionListener() { // WARNİNGLERİ GÖSTER
             @Override
             public void actionPerformed(ActionEvent e) {
-
+                String inputText = textArea.getText();
+                    List<common.Automaton.ValidationMessage> messages = automaton.validate();
+                if (messages.isEmpty()) {
+                    JOptionPane.showMessageDialog(compileButton, "No warnings or errors found!");
+                } else {
+                    for (common.Automaton.ValidationMessage message : messages) {
+                        warningField.setText(warningField.getText() + message.toString() + "\n");
+                    }
+                }
             }
         });
 
@@ -121,16 +128,6 @@ public class PDAPanel extends JPanel {
                         }
                     });
                 }
-            }
-        });
-
-
-        warningButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                String text =  getWarningText();
-                warningField.setText(text);
-
             }
         });
 
