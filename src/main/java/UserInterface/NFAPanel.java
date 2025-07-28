@@ -1,11 +1,13 @@
 package UserInterface;
 
+import common.Automaton;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.*;
+import java.util.List;
 import guru.nidi.graphviz.engine.Format;
 import guru.nidi.graphviz.engine.Graphviz;
 
@@ -17,10 +19,12 @@ public class NFAPanel extends JPanel {
     JScrollPane scrollPane;
     JTextField warningField;
     private File file;
-    private  MainPanel mainPanel;
+    private MainPanel mainPanel;
+    private Automaton automaton;
 
-    public NFAPanel( JTabbedPane tabbedPane, MainPanel mainPanel) {
+    public NFAPanel(JTabbedPane tabbedPane, MainPanel mainPanel, Automaton automaton) {
         this.mainPanel = mainPanel;
+        this.automaton = automaton;
         this.setLayout(new BorderLayout());
         this.setSize(600, 400);
 
@@ -79,7 +83,12 @@ public class NFAPanel extends JPanel {
         runButton.addActionListener(new ActionListener() { // WARNİNGLERİ GÖSTER + RENDERLA
             @Override
             public void actionPerformed(ActionEvent e) {
-                renderGraph();
+                String inputText = textArea.getText();
+                JLabel imageLabel = automaton.toGraphviz(inputText);
+                graphPanel.removeAll();
+                graphPanel.add(imageLabel);
+                graphPanel.revalidate();
+                graphPanel.repaint();
             }
         });
 
@@ -105,7 +114,7 @@ public class NFAPanel extends JPanel {
                     button.addActionListener(new ActionListener() {
                         @Override
                         public void actionPerformed(ActionEvent e) {
-                            NFAPanel panel = new NFAPanel(tabbedPane, mainPanel);
+                            NFAPanel panel = new NFAPanel(tabbedPane, mainPanel, automaton);
                             panel.loadFile(file);
                             tabbedPane.addTab(file.getName(), panel);
                             tabbedPane.setSelectedComponent(panel);
@@ -135,65 +144,21 @@ public class NFAPanel extends JPanel {
     }
 
     private String getWarningText() {
-        String text = "Error: Syntax Error in line: 7";
-        return text;
-    }
-
-    private void renderGraph() { //get the DOT code from NFA machine and render it using graphviz
-        {
-            String dotCode = "digraph ExampleGraph {\n" +
-                    "    rankdir=LR;\n" +
-                    "    node [shape=circle];\n" +
-                    "    A -> B [label=\"0\"];\n" +
-                    "    B -> C [label=\"1\"];\n" +
-                    "    C -> A [label=\"0,1\"];\n" +
-                    "    C [shape=doublecircle];\n" +
-                    "}\n";
-            FileWriter writer = null;
-
-            try {
-                writer = new FileWriter("graph.dot");
-                writer.write(dotCode);
-            } catch (IOException r) {
-                r.printStackTrace();
-            }
-
-            try {
-                writer.close();
-            } catch (IOException t) {
-                t.printStackTrace();
-            }
-
-            try {
-                Graphviz.fromString(dotCode).render(Format.PNG).toFile(new File("graph.png"));
-
-                // Add debug prints
-                System.out.println("DOT file exists: " + new File("graph.dot").exists());
-                System.out.println("PNG file exists: " + new File("graph.png").exists());
-                System.out.println("Working directory: " + System.getProperty("user.dir"));
-            } catch (IOException y) {
-                y.printStackTrace();
-            }
-
-            File imageFile = new File("graph.png");
-            if (imageFile.exists()) {
-                ImageIcon imageIcon = new ImageIcon(imageFile.getAbsolutePath());
-                imageIcon.getImage().flush(); // Force reload
-                JLabel imageLabel = new JLabel(imageIcon);
-                graphPanel.removeAll();
-                graphPanel.add(imageLabel);
-                graphPanel.revalidate();
-                graphPanel.repaint();
-            } else {
-                System.out.println("graph.png not found!");
-            }
+        String inputText = textArea.getText();
+        automaton.setInputText(inputText);
+        
+        List<Automaton.ValidationMessage> messages = automaton.validate();
+        if (messages.isEmpty()) {
+            return "No warnings or errors found!";
         }
+        
+        StringBuilder result = new StringBuilder();
+        for (Automaton.ValidationMessage msg : messages) {
+            result.append(msg.toString()).append("\n");
+        }
+        return result.toString();
     }
 
-    private String getDotCode() {
-        String dotCode= "";
-        return dotCode;
-    }
 
     private void saveFile(File file) {
         if (file == null) {
