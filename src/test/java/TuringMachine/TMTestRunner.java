@@ -1,66 +1,71 @@
 package TuringMachine;
 
+import common.Automaton.ParseResult;
+import common.Automaton.ValidationMessage;
+import common.Automaton.ExecutionResult;
+
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Arrays;
 
 public class TMTestRunner {
 
-    public static void runTests(String tmDefinitionFilePath, List<String> testInputs) {
+    public static void runTests(String tmDefinitionFilePath, String testInputsFilePath) {
         System.out.println("\n--- Running TM Tests ---");
 
-        // Step 1: Validate the TM definition file
-        List<Issue> validationIssues;
+        String tmContent;
         try {
-            validationIssues = TMFileValidator.validate(tmDefinitionFilePath); // Adjusted to use the current TMFileValidator
+            tmContent = new String(Files.readAllBytes(Paths.get(tmDefinitionFilePath)));
         } catch (IOException e) {
             System.err.println("Error reading TM definition file: " + e.getMessage());
             return;
         }
 
-        if (!validationIssues.isEmpty()) {
+        TuringMachine tm = new TuringMachine(null, null, null, null, null, null, null);
+        ParseResult parseResult = tm.parse(tmContent);
+
+        if (!parseResult.isSuccess()) {
             System.err.println("TM Definition is INVALID. Cannot run tests. Issues found:");
-            for (Issue issue : validationIssues) {
-                System.err.println(issue);
+            for (ValidationMessage message : parseResult.getValidationMessages()) {
+                System.err.println(message);
             }
             return;
         }
 
-        System.out.println("TM Definition is VALID. Proceeding to parse and run tests.");
+        TuringMachine parsedTM = (TuringMachine) parseResult.getAutomaton();
+        System.out.println("TM Definition is VALID. Proceeding to run tests.");
 
-        // Step 2: Parse the TM definition to create a TuringMachine object
-        TuringMachine tm;
+        List<String> testInputs;
         try {
-            String tmContent = new String(java.nio.file.Files.readAllBytes(java.nio.file.Paths.get(tmDefinitionFilePath)));
-            tm = TMParser.parse(tmContent);
+            List<String> allLines = Files.readAllLines(Paths.get(testInputsFilePath));
+            testInputs = new ArrayList<>();
+            for (String line : allLines) {
+                if (!line.trim().startsWith("#") && !line.trim().isEmpty()) {
+                    testInputs.add(line.trim());
+                }
+            }
         } catch (IOException e) {
-            System.err.println("Error reading TM definition file for parsing: " + e.getMessage());
-            return;
-        } catch (Exception e) {
-            // Catch any unexpected parsing errors, though ideally validation should prevent them
-            System.err.println("Error during TM parsing: " + e.getMessage());
+            System.err.println("Error reading test inputs file: " + e.getMessage());
             return;
         }
 
-        System.out.println("Turing Machine parsed successfully.");
-
-        // Step 3: Run tests with provided inputs
         for (int i = 0; i < testInputs.size(); i++) {
             String input = testInputs.get(i);
             System.out.println("\nTest " + (i + 1) + ": Input = \"" + input + "\"");
-            boolean accepted = tm.simulate(input);
-            System.out.println("Result: " + (accepted ? "ACCEPTED" : "REJECTED"));
-            System.out.println("Final tape: " + tm.getTape().getTapeContents());
+            ExecutionResult executionResult = parsedTM.execute(input);
+            System.out.println("Result: " + (executionResult.isAccepted() ? "ACCEPTED" : "REJECTED"));
+            System.out.println("Final tape: " + parsedTM.getTape().getTapeContents());
         }
 
         System.out.println("--- TM Tests Finished ---");
     }
 
     public static void main(String[] args) {
-        // Example usage (you would replace these with actual test data)
         String sampleTmFilePath = "src/test/java/TuringMachine/tm_sample.txt";
-        List<String> sampleInputs = Arrays.asList("0011", "0101", "111", "000");
+        String testInputsFilePath = "src/test/java/TuringMachine/tm_test_inputs.txt";
 
-        runTests(sampleTmFilePath, sampleInputs);
+        runTests(sampleTmFilePath, testInputsFilePath);
     }
 }
