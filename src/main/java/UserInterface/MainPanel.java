@@ -1,6 +1,8 @@
 package UserInterface;
 
 import javax.swing.filechooser.FileNameExtensionFilter;
+
+import NondeterministicFiniteAutomaton.NFA;
 import common.Automaton;
 import PushDownAutomaton.PDA;
 import java.awt.*;
@@ -134,8 +136,8 @@ public class MainPanel extends JPanel {
         nfaButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-               
-               Automaton nfaMachine = new NFAMachine();
+
+                Automaton nfaMachine = new NFA();
                 NFAPanel nfaPanel = new NFAPanel(tabbedPane, MainPanel.this, nfaMachine);
                 objectPanel.removeAll();
                 objectPanel.add(nfaPanel);
@@ -224,7 +226,7 @@ public class MainPanel extends JPanel {
                         
                         switch(extension) {
                             case ".nfa":
-                                automaton = new NFAMachine();
+                                automaton = new NFA();
                                 automaton.setInputText(content);
                                 panel = new NFAPanel(tabbedPane, MainPanel.this, automaton);
                                 break;
