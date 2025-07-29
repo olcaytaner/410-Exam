@@ -10,8 +10,16 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * A test runner for the Turing Machine.
+ */
 public class TMTestRunner {
 
+    /**
+     * Runs tests on a Turing Machine definition.
+     * @param tmDefinitionFilePath The path to the Turing Machine definition file.
+     * @param testInputsFilePath The path to the file containing the test inputs.
+     */
     public static void runTests(String tmDefinitionFilePath, String testInputsFilePath) {
         System.out.println("\n--- Running TM Tests ---");
 
@@ -62,6 +70,10 @@ public class TMTestRunner {
         System.out.println("--- TM Tests Finished ---");
     }
 
+    /**
+     * The main method.
+     * @param args The command line arguments.
+     */
     public static void main(String[] args) {
         String sampleTmFilePath = "src/test/java/TuringMachine/tm_sample.txt";
         String testInputsFilePath = "src/test/java/TuringMachine/tm_test_inputs.txt";

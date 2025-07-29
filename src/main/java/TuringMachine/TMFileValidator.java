@@ -10,16 +10,30 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * Validates a Turing Machine definition file.
+ */
 public class TMFileValidator {
 
     private static final Pattern STATE_NAME = Pattern.compile("q\\d+|q_accept|q_reject", Pattern.CASE_INSENSITIVE);
     private static final Pattern TRANSITION_LINE = Pattern.compile("(\\S+)\\s+(\\S+)\\s*->\\s*(\\S+)\\s+(\\S+)\\s+([LR])");
 
+    /**
+     * Validates a Turing Machine definition file.
+     * @param filepath The path to the file to validate.
+     * @return A list of validation messages.
+     * @throws IOException If an I/O error occurs reading from the file.
+     */
     public static List<ValidationMessage> validate(String filepath) throws IOException {
         String content = new String(Files.readAllBytes(Paths.get(filepath)));
         return validateFromString(content);
     }
 
+    /**
+     * Validates a Turing Machine definition from a string.
+     * @param content The string content to validate.
+     * @return A list of validation messages.
+     */
     public static List<ValidationMessage> validateFromString(String content) {
         ValidationContext context = new ValidationContext();
         parseContent(content, context);
@@ -244,6 +258,10 @@ public class TMFileValidator {
         }
     }
 
+    /**
+     * Main method for testing the validator.
+     * @param args Command line arguments.
+     */
     public static void main(String[] args) {
         String file = "src/test/java/TuringMachine/tm_sample.txt";
         try {
