@@ -1,6 +1,7 @@
 Start: q0
 Finals: q5 q7
 Alphabet: a b c
+States: q0 q1 q2 q3 q4 q5 q6 q7
 
 Transitions:
 q0 -> q0 (c)
