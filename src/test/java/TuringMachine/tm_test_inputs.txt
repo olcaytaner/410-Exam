@@ -3,7 +3,9 @@
 # Lines starting with '#' are comments and will be ignored.
 # Empty lines will also be ignored.
 
-a
-b
-aab
-bba
+0
+1
+00
+11
+010
+101

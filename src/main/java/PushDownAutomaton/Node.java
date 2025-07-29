@@ -1,9 +1,17 @@
 package PushDownAutomaton;
 
+/**
+ * A node for a singly linked list, used by the custom {@link Stack} class.
+ * It holds a character data payload.
+ */
 public class Node {
     protected char data;
     protected Node next;
 
+    /**
+     * Constructs a node with the given character data.
+     * @param data The character to be stored in the node.
+     */
     public Node(char data) {
         this.data = data;
         this.next = null;
@@ -17,7 +25,7 @@ public class Node {
         return next;
     }
 
-    public int getData() {
+    public char getData() {
         return data;
     }
 

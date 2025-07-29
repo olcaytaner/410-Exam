@@ -1,39 +1,51 @@
 package PushDownAutomaton;
-import java.io.IOException;
-import PushDownAutomaton.Exceptions.*;
 
+import common.Automaton;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 public class Test {
+
     public static void main(String[] args) {
-        String[] testFiles = {
-                "src/test/java/PushDownAutomaton/example.txt"
-        };
+        String filePath = "src/test/java/PushDownAutomaton/example.txt";
 
-        for (String filePath : testFiles) {
-            System.out.println("\n>>> Testing file: " + filePath);
-            testParserFromFile(filePath);
-        }
+        System.out.println("\n>>> Testing PDA parsing from file: " + filePath);
 
-        System.out.println("\n--- All Tests Completed ---");
-    }
-
-    public static void testParserFromFile(String filePath) {
         try {
-            PDAParser parser = new PDAParser();
-            ParseResult result = parser.parseFromFile(filePath);
+            String pdaDescription = new String(Files.readAllBytes(Paths.get(filePath)));
 
-            System.out.println("PDA object created successfully.");
+            PDA pda = new PDA();
 
-            if (result.hasWarnings()) {
-                for (ParserWarning warning : result.getWarnings()) {
-                    System.out.println("      " + warning);
-                }
+            Automaton.ParseResult result = pda.parse(pdaDescription);
+
+            if (result.isSuccess()) {
+                System.out.println("    SUCCESS: PDA parsed successfully.");
+
+                System.out.println("\n--- Generated .dot code ---\n");
+                System.out.println(pda.toDotCode(null));
+                System.out.println("\n---------------------------\n");
+
+            } else {
+                System.out.println("    FAILED: PDA could not be parsed.");
             }
 
-        } catch (ParserException e) {
-            System.out.println("    Parser FAILED: " + e.getMessage());
+            if (result.getValidationMessages() != null && !result.getValidationMessages().isEmpty()) {
+                System.out.println("\n--- Validation Messages ---");
+                for (Automaton.ValidationMessage message : result.getValidationMessages()) {
+                    System.out.println("    " + message);
+                }
+                System.out.println("---------------------------");
+            }
+
         } catch (IOException e) {
-            System.out.println("    FILE ERROR: Could not find or read the file. Please check the path: " + filePath);
+            System.err.println("    FILE ERROR: Could not read the file at path: " + filePath);
+            e.printStackTrace();
+        } catch (Exception e) {
+            System.err.println("    UNEXPECTED ERROR during parsing: " + e.getMessage());
+            e.printStackTrace();
         }
+
+        System.out.println("\n--- Test Completed ---");
     }
 }

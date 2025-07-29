@@ -74,4 +74,12 @@ public class Tape {
         }
         return sb.toString();
     }
+
+    public void appendTapeTo(StringBuilder sb) {
+        for (int i = 0; i < tape.size(); i++) {
+            if (i == headPosition) sb.append("[");
+            sb.append(tape.get(i));
+            if (i == headPosition) sb.append("]");
+        }
+    }
 }

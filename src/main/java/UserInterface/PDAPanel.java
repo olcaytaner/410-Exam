@@ -11,7 +11,7 @@ import java.util.List;
 import guru.nidi.graphviz.engine.Format;
 import guru.nidi.graphviz.engine.Graphviz;
 
-public class NFAPanel extends JPanel {
+public class PDAPanel extends JPanel {
 
     JButton saveButton, warningButton, compileButton, runButton, closeButton;
     JPanel textEditorPanel, graphPanel, buttonPanel, warningPanel;
@@ -22,7 +22,7 @@ public class NFAPanel extends JPanel {
     private MainPanel mainPanel;
     private Automaton automaton;
 
-    public NFAPanel(JTabbedPane tabbedPane, MainPanel mainPanel, Automaton automaton) {
+    public PDAPanel(JTabbedPane tabbedPane, MainPanel mainPanel, Automaton automaton) {
         this.mainPanel = mainPanel;
         this.automaton = automaton;
         this.setLayout(new BorderLayout());
@@ -71,8 +71,7 @@ public class NFAPanel extends JPanel {
         buttonPanel.add(Box.createVerticalStrut(5));
         buttonPanel.add(saveButton);
         buttonPanel.add(Box.createVerticalStrut(5));
-        buttonPanel.add(warningButton);
-        buttonPanel.add(Box.createVerticalStrut(5));
+    
 
         buttonPanel.add(warningField);
         JScrollPane scrollPane1 = new JScrollPane(warningField);
@@ -95,7 +94,15 @@ public class NFAPanel extends JPanel {
         compileButton.addActionListener(new ActionListener() { // WARNİNGLERİ GÖSTER
             @Override
             public void actionPerformed(ActionEvent e) {
-
+                String inputText = textArea.getText();
+                    List<common.Automaton.ValidationMessage> messages = automaton.validate();
+                if (messages.isEmpty()) {
+                    JOptionPane.showMessageDialog(compileButton, "No warnings or errors found!");
+                } else {
+                    for (common.Automaton.ValidationMessage message : messages) {
+                        warningField.setText(warningField.getText() + message.toString() + "\n");
+                    }
+                }
             }
         });
 
@@ -114,23 +121,13 @@ public class NFAPanel extends JPanel {
                     button.addActionListener(new ActionListener() {
                         @Override
                         public void actionPerformed(ActionEvent e) {
-                            NFAPanel panel = new NFAPanel(tabbedPane, mainPanel, automaton);
+                            PDAPanel panel = new PDAPanel(tabbedPane, mainPanel, automaton);
                             panel.loadFile(file);
                             tabbedPane.addTab(file.getName(), panel);
                             tabbedPane.setSelectedComponent(panel);
                         }
                     });
                 }
-            }
-        });
-
-
-        warningButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                String text =  getWarningText();
-                warningField.setText(text);
-
             }
         });
 
@@ -159,13 +156,16 @@ public class NFAPanel extends JPanel {
         return result.toString();
     }
 
-
     private void saveFile(File file) {
         if (file == null) {
             JFileChooser fileChooser = new JFileChooser();
+            fileChooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter("PDA Files (*.pda)", "pda")); 
             int option = fileChooser.showSaveDialog(this);
             if (option == JFileChooser.APPROVE_OPTION) {
                 this.file = fileChooser.getSelectedFile();
+                if (!this.file.getName().toLowerCase().endsWith(".pda")) {
+                    this.file = new File(this.file.toString() + ".pda");
+                }
             } else {
                 return;
             }
@@ -179,11 +179,11 @@ public class NFAPanel extends JPanel {
         }
     }
 
-    private void loadFile(File file) {
+    public void loadFile(File file) {
         try (FileReader reader = new FileReader(file)) {
             textArea.read(reader, null);
         } catch (IOException e) {
             JOptionPane.showMessageDialog(this, "Error loading file: " + e.getMessage());
         }
     }
-}
+} 
