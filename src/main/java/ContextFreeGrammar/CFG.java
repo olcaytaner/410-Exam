@@ -1,19 +1,47 @@
 package ContextFreeGrammar;
 
-import java.util.*;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.ArrayList;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.Map;
 
-
+/**
+ * Represents a Context-Free Grammar (CFG) with variables, terminals, productions, and a start symbol.
+ * This class provides functionality to validate the grammar, manipulate productions, and format output.
+ *
+ * @author yenennn
+ * @version 1.0
+ */
 public class CFG {
+    /** Pattern for validating variable names (must start with uppercase letter) */
     private static final Pattern VARIABLE_PATTERN = Pattern.compile("^[A-Z][A-Za-z0-9]*$");
+
+    /** Pattern for validating terminal names (must be lowercase alphanumeric) */
     private static final Pattern TERMINAL_PATTERN = Pattern.compile("^[a-z0-9]+$");
 
+    /** Set of non-terminal symbols (variables) in the grammar */
     private Set<NonTerminal> variables;
+
+    /** Set of terminal symbols in the grammar */
     private Set<Terminal> terminals;
+
+    /** List of production rules in the grammar */
     private List<Production> productions;
+
+    /** The start symbol of the grammar */
     private NonTerminal startSymbol;
 
+    /**
+     * Constructs a new Context-Free Grammar with the specified components.
+     *
+     * @param variables the set of non-terminal symbols
+     * @param terminals the set of terminal symbols
+     * @param productions the list of production rules
+     * @param startSymbol the start symbol of the grammar
+     */
     public CFG(Set<NonTerminal> variables,
                Set<Terminal> terminals,
                List<Production> productions,
@@ -24,6 +52,12 @@ public class CFG {
         this.startSymbol = startSymbol;
     }
 
+    /**
+     * Adds a new production rule to the grammar.
+     *
+     * @param p the production rule to add
+     * @throws IllegalArgumentException if the left-hand side of the production is not in the variables set
+     */
     public void addProduction(Production p) {
         if (!variables.contains(p.getLeft())) {
             throw new IllegalArgumentException("Left-hand side not in variables: " + p.getLeft().getName());
@@ -31,17 +65,39 @@ public class CFG {
         productions.add(p);
     }
 
+    /**
+     * Removes a production rule from the grammar.
+     *
+     * @param p the production rule to remove
+     */
     public void removeProduction(Production p) {
         productions.remove(p);
     }
 
+    /**
+     * Retrieves all production rules that have the specified variable as their left-hand side.
+     *
+     * @param v the non-terminal variable to find productions for
+     * @return a list of productions with the specified variable on the left-hand side
+     */
     public List<Production> getProductionsFor(NonTerminal v) {
         return productions.stream()
                 .filter(p -> p.getLeft().equals(v))
                 .collect(Collectors.toList());
     }
 
-
+    /**
+     * Validates the grammar by checking various structural requirements.
+     * This includes verifying that:
+     * <ul>
+     * <li>Variables, terminals, and start symbol are defined</li>
+     * <li>Start symbol is in the variables set</li>
+     * <li>All symbols in productions are properly defined</li>
+     * <li>Variables have productions and are reachable from start symbol</li>
+     * </ul>
+     *
+     * @return true if the grammar is valid, false otherwise
+     */
     public boolean validateGrammar() {
         // Check if the required components exist
         if (variables.isEmpty()) {
@@ -78,12 +134,12 @@ public class CFG {
             for (Symbol symbol : p.getRight()) {
                 if (symbol instanceof NonTerminal && !variables.contains(symbol)) {
                     System.err.println("Error: Production uses undefined variable: " +
-                            ((NonTerminal) symbol).getName());
+                            ((NonTerminal)symbol).getName());
                     return false;
                 } else if (symbol instanceof Terminal &&
                         !terminals.contains(symbol) && !symbol.getName().equals("eps")) {
                     System.err.println("Error: Production uses undefined terminal: " +
-                            ((Terminal) symbol).getName());
+                            ((Terminal)symbol).getName());
                     return false;
                 }
             }
@@ -138,11 +194,24 @@ public class CFG {
         return true;
     }
 
+    /**
+     * Converts the grammar to Chomsky Normal Form (CNF).
+     * This method eliminates epsilon productions, unit productions, and ensures
+     * all productions are in the form A -> BC or A -> a.
+     *
+     * @return a new CFG in Chomsky Normal Form
+     * @throws UnsupportedOperationException as this method is not yet implemented
+     */
     public CFG toChomskyNormalForm() {
         // TODO: Implement CNF conversion (elimınate epsilon, unit productions, etc.)
         throw new UnsupportedOperationException("toChomskyNormalForm not implemented yet");
     }
 
+    /**
+     * Prints a formatted representation of the grammar to standard output.
+     * The output includes variables, terminals, start symbol, and productions
+     * grouped by their left-hand side with alternatives separated by '|'.
+     */
     public void prettyPrint() {
         // Print variables
         System.out.println("Variables = " + variables.stream()
@@ -189,6 +258,13 @@ public class CFG {
         }
     }
 
+    /**
+     * Returns a string representation of the grammar.
+     * The format includes variables, terminals, start symbol, and all productions
+     * listed separately (not grouped by alternatives).
+     *
+     * @return a formatted string representation of the grammar
+     */
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
@@ -226,4 +302,3 @@ public class CFG {
         return sb.toString();
     }
 }
-
