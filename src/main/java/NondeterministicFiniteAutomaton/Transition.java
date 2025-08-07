@@ -70,6 +70,10 @@ public class Transition {
      * @return formatted transition string
      */
     public String prettyPrint() {
-        return from.getName() + " -> " + to.getName() + " (" + symbol.getC() + ")" + "\n";
+        String s = String.valueOf(symbol.getC());
+        if (symbol.isEpsilon()){
+            s = "ε";
+        }
+        return from.getName() + " -> " + to.getName() + " (" + s + ")" + "\n";
     }
 }

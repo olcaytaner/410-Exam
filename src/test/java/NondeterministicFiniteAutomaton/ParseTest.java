@@ -4,9 +4,9 @@ import common.Automaton;
 import common.Automaton.ParseResult;
 import common.Automaton.ValidationMessage;
 import common.Automaton.ValidationMessage.ValidationMessageType;
-import java.util.List;
+import java.util.*;
 
-public class Main {
+public class ParseTest {
 
     public static void main(String[] args) {
 
@@ -39,7 +39,7 @@ public class Main {
 
         NFA nfa = new NFA();
 
-        ParseResult parseResult = nfa.parse(incorrectText);
+        ParseResult parseResult = nfa.parse(correctText);
 
         int errorCount = 0;
         int warningCount = 0;
