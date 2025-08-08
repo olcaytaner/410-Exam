@@ -4,7 +4,7 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 
 import NondeterministicFiniteAutomaton.NFA;
 import DeterministicFiniteAutomaton.DFA;
-import TuringMachine.TuringMachine;
+import TuringMachine.TM;
 import PushDownAutomaton.PDA;
 import common.Automaton;
 
@@ -24,7 +24,7 @@ public class MainPanel extends JPanel {
             if (automaton instanceof NFA) return ".nfa";
             if (automaton instanceof DFA) return ".dfa"; 
             if (automaton instanceof PDA) return ".pda";
-            if (automaton instanceof TuringMachine) return ".tm";
+            if (automaton instanceof TM) return ".tm";
                 // TODO: Add CFG and REX;
             return ".txt";
         }
@@ -366,7 +366,7 @@ public class MainPanel extends JPanel {
                 panel = new PDAPanel(this, automaton);
                 break;
             case "TM":
-                automaton = new NFA(); // TODO: Replace with TuringMachine when constructor is available
+                automaton = new TM(); // TODO: Replace with TuringMachine when constructor is available
                 panel = new PDAPanel(this, automaton);
                 break;
             case "CFG":

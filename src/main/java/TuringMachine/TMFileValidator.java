@@ -125,7 +125,7 @@ public class TMFileValidator {
             } else {
                 Set<String> seen = new HashSet<>();
                 for (String s : raw.split("\\s+")) {
-                    if (!Alphabet.isValidSymbol(s)) {
+                    if (!isValidSymbol(s)) {
                         context.addMessage(line, ValidationMessageType.ERROR, "INVALID_INPUT_SYMBOL", "Invalid input symbol: '" + s + "'");
                     } else if (!seen.add(s)) {
                         context.addMessage(line, ValidationMessageType.ERROR, "DUPLICATE_INPUT_SYMBOL", "Duplicate input symbol: " + s);
@@ -144,7 +144,7 @@ public class TMFileValidator {
             } else {
                 Set<String> seen = new HashSet<>();
                 for (String s : raw.split("\\s+")) {
-                    if (!Alphabet.isValidSymbol(s)) {
+                    if (!isValidSymbol(s)) {
                         context.addMessage(line, ValidationMessageType.ERROR, "INVALID_TAPE_SYMBOL", "Invalid tape symbol: '" + s + "'");
                     } else if (!seen.add(s)) {
                         context.addMessage(line, ValidationMessageType.ERROR, "DUPLICATE_TAPE_SYMBOL", "Duplicate tape symbol: " + s);
@@ -206,9 +206,9 @@ public class TMFileValidator {
             String to = m.group(3), write = m.group(4);
             String key = from + "," + read;
 
-            if (!Alphabet.isValidSymbol(read))
+            if (!isValidSymbol(read))
                 context.addMessage(lineNumber, ValidationMessageType.ERROR, "INVALID_READ_SYMBOL", "Symbol '" + read + "' is not a valid alphabet symbol");
-            if (!Alphabet.isValidSymbol(write))
+            if (!isValidSymbol(write))
                 context.addMessage(lineNumber, ValidationMessageType.ERROR, "INVALID_WRITE_SYMBOL", "Symbol '" + write + "' is not a valid alphabet symbol");
 
             if (!context.states.contains(from))
@@ -238,6 +238,13 @@ public class TMFileValidator {
                 context.addMessage(line, ValidationMessageType.WARNING, "UNUSED_STATE", "State '" + s + "' is defined but never used");
             }
         }
+    }
+
+    private static boolean isValidSymbol(String symbol) {
+        if (symbol.equals("_")) return true;
+        if (symbol.length() == 1) return true;
+        if (symbol.matches("\\d")) return true;
+        return false;
     }
 
     private static class ValidationContext {

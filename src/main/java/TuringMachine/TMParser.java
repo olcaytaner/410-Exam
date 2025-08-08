@@ -14,9 +14,9 @@ public class TMParser {
     /**
      * Parses a Turing Machine definition from a string.
      * @param content The string content to parse.
-     * @return A new TuringMachine object.
+     * @return A new TM object.
      */
-    public static TuringMachine parse(String content) {
+    public static TM parse(String content) {
         ParseContext context = new ParseContext();
         parseContent(content, context);
 
@@ -24,7 +24,7 @@ public class TMParser {
         createAlphabets(context);
         createTransitions(context);
 
-        return new TuringMachine(
+        return new TM(
                 context.states,
                 context.inputAlphabet,
                 context.tapeAlphabet,

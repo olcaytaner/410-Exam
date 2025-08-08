@@ -31,7 +31,7 @@ public class TMTestRunner {
             return;
         }
 
-        TuringMachine tm = new TuringMachine(null, null, null, null, null, null, null);
+        TM tm = new TM(null, null, null, null, null, null, null);
         ParseResult parseResult = tm.parse(tmContent);
 
         if (!parseResult.isSuccess()) {
@@ -42,7 +42,7 @@ public class TMTestRunner {
             return;
         }
 
-        TuringMachine parsedTM = (TuringMachine) parseResult.getAutomaton();
+        TM parsedTM = (TM) parseResult.getAutomaton();
         System.out.println("TM Definition is VALID. Proceeding to run tests.");
 
         List<String> testInputs;

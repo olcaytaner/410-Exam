@@ -1,5 +1,6 @@
 package TuringMachine;
 
+import common.Symbol;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -7,7 +8,7 @@ import java.util.Set;
  * Represents an alphabet, a set of symbols, for a Turing Machine.
  */
 public class Alphabet {
-    private Set<Character> symbols;
+    private Set<Symbol> symbols;
 
     /**
      * Constructs a new empty alphabet.
@@ -20,8 +21,16 @@ public class Alphabet {
      * Adds a symbol to the alphabet.
      * @param symbol The symbol to add.
      */
-    public void addSymbol(char symbol) {
+    public void addSymbol(Symbol symbol) {
         symbols.add(symbol);
+    }
+
+    /**
+     * Adds a symbol to the alphabet from a character.
+     * @param symbolChar The character to create a symbol from.
+     */
+    public void addSymbol(char symbolChar) {
+        symbols.add(new Symbol(symbolChar));
     }
 
     /**
@@ -29,15 +38,24 @@ public class Alphabet {
      * @param symbol The symbol to check.
      * @return True if the symbol is in the alphabet, false otherwise.
      */
-    public boolean contains(char symbol) {
+    public boolean contains(Symbol symbol) {
         return symbols.contains(symbol);
+    }
+
+    /**
+     * Checks if the alphabet contains a specific symbol from a character.
+     * @param symbolChar The character to check.
+     * @return True if the symbol is in the alphabet, false otherwise.
+     */
+    public boolean contains(char symbolChar) {
+        return symbols.contains(new Symbol(symbolChar));
     }
 
     /**
      * Returns the set of symbols in the alphabet.
      * @return The set of symbols.
      */
-    public Set<Character> getSymbols() {
+    public Set<Symbol> getSymbols() {
         return symbols;
     }
 
@@ -45,24 +63,7 @@ public class Alphabet {
      * Adds all symbols from another set to this alphabet.
      * @param other The set of symbols to add.
      */
-    public void addAll(Set<Character> other) {
+    public void addAll(Set<Symbol> other) {
         symbols.addAll(other);
-    }
-
-    /**
-     * Checks if a given string is a valid symbol.
-     * A symbol is valid if it is a single character, a digit, or the blank symbol '_'.
-     * @param symbol The string to validate.
-     * @return True if the string is a valid symbol, false otherwise.
-     */
-    public static boolean isValidSymbol(String symbol) {
-
-        if (symbol.equals("_")) return true;
-
-        if (symbol.length() == 1) return true;
-
-        if (symbol.matches("\\d")) return true;
-
-        return false;
     }
 }

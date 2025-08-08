@@ -1,26 +1,37 @@
 package TuringMachine;
 
 import common.Automaton;
+import common.Symbol;
 import common.Automaton.ValidationMessage.ValidationMessageType;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Represents a Turing Machine.
  */
-public class TuringMachine extends Automaton {
-    private final Set<State> states;
-    private final Alphabet inputAlphabet;
-    private final Alphabet tapeAlphabet;
-    private final Map<ConfigurationKey, Transition> transitionFunction;
-    private final State startState;
-    private final State acceptState;
-    private final State rejectState;
+public class TM extends Automaton {
+    private Set<State> states;
+    private Alphabet inputAlphabet;
+    private Alphabet tapeAlphabet;
+    private Map<ConfigurationKey, Transition> transitionFunction;
+    private State startState;
+    private State acceptState;
+    private State rejectState;
     private State currentState;
     private final Tape tape;
+
+    public TM() {
+        super(MachineType.TM);
+        this.states = new HashSet<>();
+        this.inputAlphabet = new Alphabet();
+        this.tapeAlphabet = new Alphabet();
+        this.transitionFunction = new HashMap<>();
+        this.startState = null;
+        this.acceptState = null;
+        this.rejectState = null;
+        this.tape = new Tape();
+        this.currentState = null;
+    }
 
     /**
      * Constructs a new TuringMachine.
@@ -32,7 +43,7 @@ public class TuringMachine extends Automaton {
      * @param acceptState The accept state.
      * @param rejectState The reject state.
      */
-    public TuringMachine(Set<State> states,
+    public TM(Set<State> states,
                          Alphabet inputAlphabet,
                          Alphabet tapeAlphabet,
                          Map<ConfigurationKey, Transition> transitionFunction,
@@ -62,8 +73,7 @@ public class TuringMachine extends Automaton {
             if (state.isAccept()) {
                 dot.append("  \"").append(state.getName()).append("\" [shape = doublecircle];\n");
             /*} else if (state.isReject()) {
-                dot.append("  \"").append(state.getName()).append("\" [shape = square];\n");*/
-            } else {
+                dot.append("  \"").append(state.getName()).append("\" [shape = square];\n");*///            } else {
                 dot.append("  \"").append(state.getName()).append("\";\n");
             }
         }
@@ -84,8 +94,8 @@ public class TuringMachine extends Automaton {
      * Performs a single step of the Turing Machine's computation.
      */
     public void step() {
-        char currentSymbol = tape.read();
-        Transition transition = transitionFunction.get(new ConfigurationKey(currentState, currentSymbol));
+        Symbol currentSymbol = new Symbol(tape.read());
+        Transition transition = transitionFunction.get(new ConfigurationKey(currentState, currentSymbol.getValue()));
 
         if (transition == null) {
             currentState = rejectState;
@@ -156,7 +166,7 @@ public class TuringMachine extends Automaton {
             return new ParseResult(false, validationMessages, null);
         }
 
-        TuringMachine machine = TMParser.parse(inputText);
+        TM machine = TMParser.parse(inputText);
         return new ParseResult(true, validationMessages, machine);
     }
 
