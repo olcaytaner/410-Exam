@@ -6,6 +6,24 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
+/**
+ * Represents a regular expression.
+ * <p>
+ * Internally, this class builds a syntax tree from the given regex and alphabet,
+ * which is used for matching.
+ * </p>
+ *
+ * <p><strong>Example usage:</strong></p>
+ * <pre>{@code
+ * // Regex matches strings like "0(01)*1" — multiples of 3 in this case
+ * String regex = "0(01)*1";
+ * char[] alphabet = {'0', '1'};
+ * RegularExpression re = new RegularExpression(regex, alphabet);
+ *
+ * // Test matching
+ * boolean matches = re.match("00101");
+ * }</pre>
+ */
 public class RegularExpression {
     public SyntaxTree st;
     String regex;

@@ -4,6 +4,15 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
+/**
+ * Represents a leaf node in a regular expression syntax tree.
+ * <p>
+ *     A {@code LeafNode} corresponds to a single symbol from the
+ *     regular expression's alphabet (for example, <code>'a'</code>
+ *     or <code>'1'</code>). It has no children and matches exactly
+ *     one occurrence of its symbol in the input string.
+ * </p>
+ */
 public class LeafNode extends SyntaxTreeNode {
     public char sym;
 
