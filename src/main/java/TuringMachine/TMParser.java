@@ -4,10 +4,18 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * Parses a Turing Machine definition from a string.
+ */
 public class TMParser {
 
     private static final Pattern TRANSITION_LINE = Pattern.compile("(\\S+)\\s+(\\S+)\\s*->\\s*(\\S+)\\s+(\\S+)\\s+([LR])");
 
+    /**
+     * Parses a Turing Machine definition from a string.
+     * @param content The string content to parse.
+     * @return A new TuringMachine object.
+     */
     public static TuringMachine parse(String content) {
         ParseContext context = new ParseContext();
         parseContent(content, context);
@@ -81,16 +89,16 @@ public class TMParser {
             Matcher m = TRANSITION_LINE.matcher(line);
             if (m.matches()) {
                 String fromStateName = m.group(1);
-                char readSymbol = m.group(2).charAt(0);
+                char symbolToRead = m.group(2).charAt(0);
                 String toStateName = m.group(3);
-                char writeSymbol = m.group(4).charAt(0);
+                char symbolToWrite = m.group(4).charAt(0);
                 Direction direction = m.group(5).equalsIgnoreCase("R") ? Direction.RIGHT : Direction.LEFT;
 
                 State fromState = context.stateMap.get(fromStateName);
                 State toState = context.stateMap.get(toStateName);
 
-                ConfigurationKey key = new ConfigurationKey(fromState, readSymbol);
-                Transition transition = new Transition(toState, writeSymbol, direction);
+                ConfigurationKey key = new ConfigurationKey(fromState, symbolToRead);
+                Transition transition = new Transition(toState, symbolToWrite, direction);
 
                 context.transitionFunction.put(key, transition);
             }

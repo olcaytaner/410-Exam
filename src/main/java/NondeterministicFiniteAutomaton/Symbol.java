@@ -1,13 +1,26 @@
 package NondeterministicFiniteAutomaton;
 
+import common.Automaton.ValidationMessage;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+/**
+ * Represents a symbol in a nondeterministic finite automaton (NFA).
+ * <p>
+ * A symbol can either be a regular alphabet character or a special epsilon symbol ('_')
+ * that denotes a transition without consuming input.
+ * </p>
+ */
 public class Symbol {
 
-    private char c;
+    private final char c;
 
+    /**
+     * Constructs a Symbol with the specified character.
+     *
+     * @param c the character representing the symbol
+     */
     public Symbol(char c) {
         this.c = c;
     }
@@ -16,19 +29,36 @@ public class Symbol {
         return c;
     }
 
-    public List<Warning> validate(){
-        List<Warning> warnings = new ArrayList<>();
+    /**
+     * Validates this symbol.
+     * Ensures that the symbol is either a letter or the epsilon character ('_').
+     *
+     * @return list of validation messages; empty if the symbol is valid
+     */
+    public List<ValidationMessage> validate(){
+        List<ValidationMessage> warnings = new ArrayList<>();
 
         if (!(isEpsilon() || Character.isLetter(getC()))){
-            warnings.add(new Warning("Symbol is not valid: " + getC(),  Warning.ERROR, -1, -1));
+            warnings.add(new ValidationMessage("Symbol is not valid: " + getC(), -1, ValidationMessage.ValidationMessageType.ERROR));
         }
         return warnings;
     }
 
+    /**
+     * Checks if the symbol represents an epsilon transition.
+     *
+     * @return true if the symbol is '_', false otherwise
+     */
     public boolean isEpsilon() {
         return c == '_';
     }
 
+    /**
+     * Checks equality based on the character value.
+     *
+     * @param o the object to compare
+     * @return true if the symbols are equal, false otherwise
+     */
     @Override
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) return false;
@@ -48,6 +78,11 @@ public class Symbol {
                 "}\n";
     }
 
+    /**
+     * Returns a human-readable description of this symbol.
+     *
+     * @return descriptive string
+     */
     public String prettyPrint() {
         StringBuilder sb = new StringBuilder();
         String s;

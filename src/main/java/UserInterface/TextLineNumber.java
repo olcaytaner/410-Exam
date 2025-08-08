@@ -76,7 +76,7 @@ public class TextLineNumber extends JPanel
         setFont( component.getFont() );
 
         setBorderGap( 5 );
-        setCurrentLineForeground( Color.green );
+        setCurrentLineForeground( Color.blue );
         setDigitAlignment( RIGHT );
         setMinimumDisplayDigits( minimumDisplayDigits );
 
@@ -463,4 +463,6 @@ public class TextLineNumber extends JPanel
             }
         }
     }
+
+    
 }

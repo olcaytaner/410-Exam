@@ -8,6 +8,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * Represents a Turing Machine.
+ */
 public class TuringMachine extends Automaton {
     private final Set<State> states;
     private final Alphabet inputAlphabet;
@@ -19,6 +22,16 @@ public class TuringMachine extends Automaton {
     private State currentState;
     private final Tape tape;
 
+    /**
+     * Constructs a new TuringMachine.
+     * @param states The set of states.
+     * @param inputAlphabet The input alphabet.
+     * @param tapeAlphabet The tape alphabet.
+     * @param transitionFunction The transition function.
+     * @param startState The start state.
+     * @param acceptState The accept state.
+     * @param rejectState The reject state.
+     */
     public TuringMachine(Set<State> states,
                          Alphabet inputAlphabet,
                          Alphabet tapeAlphabet,
@@ -60,13 +73,16 @@ public class TuringMachine extends Automaton {
 
         transitionFunction.forEach((key, value) -> {
             dot.append("  \"").append(key.getState().getName()).append("\" -> \"").append(value.getNextState().getName()).append("\" [label = \"")
-               .append(key.getReadSymbol()).append(" -> ").append(value.getWriteSymbol()).append(", ").append(value.getMoveDirection()).append("\"];\n");
+               .append(key.getSymbolToRead()).append(" -> ").append(value.getSymbolToWrite()).append(", ").append(value.getMoveDirection()).append("\"];\n");
         });
 
         dot.append("}\n");
         return dot.toString();
     }
 
+    /**
+     * Performs a single step of the Turing Machine's computation.
+     */
     public void step() {
         char currentSymbol = tape.read();
         Transition transition = transitionFunction.get(new ConfigurationKey(currentState, currentSymbol));
@@ -76,11 +92,14 @@ public class TuringMachine extends Automaton {
             return;
         }
 
-        tape.write(transition.getWriteSymbol());
+        tape.write(transition.getSymbolToWrite());
         tape.move(transition.getMoveDirection());
         currentState = transition.getNextState();
     }
 
+    /**
+     * Resets the Turing Machine to its initial state.
+     */
     public void reset() {
         tape.clear();
         currentState = startState;
@@ -88,22 +107,42 @@ public class TuringMachine extends Automaton {
 
     
 
+    /**
+     * Returns the set of states in the Turing Machine.
+     * @return The set of states.
+     */
     public Set<State> getStates() {
         return states;
     }
 
+    /**
+     * Returns the input alphabet of the Turing Machine.
+     * @return The input alphabet.
+     */
     public Alphabet getInputAlphabet() {
         return inputAlphabet;
     }
 
+    /**
+     * Returns the start state of the Turing Machine.
+     * @return The start state.
+     */
     public State getStartState() {
         return startState;
     }
 
+    /**
+     * Returns the current state of the Turing Machine.
+     * @return The current state.
+     */
     public State getCurrentState() {
         return currentState;
     }
 
+    /**
+     * Returns the tape of the Turing Machine.
+     * @return The tape.
+     */
     public Tape getTape() {
         return tape;
     }

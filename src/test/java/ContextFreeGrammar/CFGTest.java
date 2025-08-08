@@ -2,11 +2,25 @@ package ContextFreeGrammar;
 
 import java.io.IOException;
 
+/**
+ * Main class for the Context-Free Grammar parser application.
+ * This class demonstrates the usage of the CFG parser by reading a grammar file,
+ * validating it, and displaying the results.
+ *
+ * @author yenennn
+ * @version 1.0
+ */
 public class CFGTest {
+
+    /**
+     * Main method that runs the CFG parser demonstration.
+     * Reads a grammar file, parses it, validates the grammar, and displays
+     * the results in a readable format.
+     *
+     * @param args command-line arguments (not used)
+     */
     public static void main(String[] args) {
-
-
-        String filePath = "src/test/java/ContextFreeGrammar/test.txt";
+        String filePath = "src/format.txt";
 
         try {
             // Parse the grammar file
@@ -32,7 +46,5 @@ public class CFGTest {
             System.err.println("Unexpected error: " + e.getMessage());
             e.printStackTrace();
         }
-
-
     }
 }

@@ -3,15 +3,35 @@ package ContextFreeGrammar;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
+/**
+ * Parser for Context-Free Grammar files.
+ * This class provides static methods to parse CFG definition files and convert them
+ * into CFG objects. The parser expects files in a specific format with sections for
+ * variables, terminals, start symbol, and production rules.
+ *
+ * @author yenennn
+ * @version 1.0
+ */
 public class CFGParser {
 
+    /** Maximum number of lines allowed in a grammar file to prevent infinite loops */
     private static final int MAX_LINES = 200;
 
+    /**
+     * Parses a Context-Free Grammar from a file.
+     * The file format should contain:
+     * - Variables = [list of uppercase variables]
+     * - Terminals = [list of lowercase terminals]
+     * - Start = [start symbol]
+     * - Production rules in the format: A -> B C | D
+     *
+     * @param filePath the path to the grammar file to parse
+     * @return a CFG object representing the parsed grammar
+     * @throws IOException if there's an error reading the file
+     * @throws GrammarParseException if the grammar file has invalid syntax or structure
+     */
     public static CFG parse(String filePath) throws IOException {
         Set<NonTerminal> variables = new HashSet<>();
         Set<Terminal> terminals = new HashSet<>();
@@ -127,7 +147,16 @@ public class CFGParser {
         return new CFG(variables, terminals, productions, startSymbol);
     }
 
-
+    /**
+     * Parses a single production rule line and adds the resulting productions to the list.
+     * Handles multiple alternatives separated by the '|' symbol.
+     *
+     * @param line the production rule line to parse
+     * @param variables the set of defined variables
+     * @param terminals the set of defined terminals
+     * @param productions the list to add parsed productions to
+     * @throws GrammarParseException if the production format is invalid
+     */
     private static void parseProduction(String line, Set<NonTerminal> variables,
                                         Set<Terminal> terminals, List<Production> productions) {
         String[] parts = line.split("->");
@@ -170,6 +199,13 @@ public class CFGParser {
         }
     }
 
+    /**
+     * Finds a non-terminal with the specified name in the variables set.
+     *
+     * @param name the name of the non-terminal to find
+     * @param variables the set of variables to search in
+     * @return the NonTerminal object if found, null otherwise
+     */
     private static NonTerminal findNonTerminal(String name, Set<NonTerminal> variables) {
         for (NonTerminal var : variables) {
             if (var.getName().equals(name)) {
@@ -179,6 +215,15 @@ public class CFGParser {
         return null;
     }
 
+    /**
+     * Finds a symbol (terminal or non-terminal) with the specified name.
+     * Also handles the special case of epsilon ("eps").
+     *
+     * @param name the name of the symbol to find
+     * @param variables the set of variables to search in
+     * @param terminals the set of terminals to search in
+     * @return the Symbol object if found, null otherwise
+     */
     private static Symbol findSymbol(String name, Set<NonTerminal> variables, Set<Terminal> terminals) {
         // Check if it's a variable
         NonTerminal var = findNonTerminal(name, variables);
@@ -200,6 +245,4 @@ public class CFGParser {
 
         return null;
     }
-
-
 }

@@ -2,21 +2,38 @@ package TuringMachine;
 
 import java.util.Objects;
 
+/**
+ * Represents a key for the transition function of a Turing Machine.
+ * It is a combination of a state and a symbol read from the tape.
+ */
 public class ConfigurationKey {
     private final State state;
-    private final char readSymbol;
+    private final char symbolToRead;
 
-    public ConfigurationKey(State state, char readSymbol) {
+    /**
+     * Constructs a new ConfigurationKey.
+     * @param state The current state.
+     * @param symbolToRead The symbol read from the tape.
+     */
+    public ConfigurationKey(State state, char symbolToRead) {
         this.state = state;
-        this.readSymbol = readSymbol;
+        this.symbolToRead = symbolToRead;
     }
 
+    /**
+     * Returns the state of this configuration key.
+     * @return The state.
+     */
     public State getState() {
         return state;
     }
 
-    public char getReadSymbol() {
-        return readSymbol;
+    /**
+     * Returns the symbol read from the tape.
+     * @return The symbol.
+     */
+    public char getSymbolToRead() {
+        return symbolToRead;
     }
 
     @Override
@@ -24,16 +41,16 @@ public class ConfigurationKey {
         if (this == o) return true;
         if (!(o instanceof ConfigurationKey)) return false;
         ConfigurationKey that = (ConfigurationKey) o;
-        return readSymbol == that.readSymbol && state.equals(that.state);
+        return symbolToRead == that.symbolToRead && state.equals(that.state);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(state, readSymbol);
+        return Objects.hash(state, symbolToRead);
     }
 
     @Override
     public String toString() {
-        return "(" + state + ", '" + readSymbol + "')";
+        return "(" + state + ", '" + symbolToRead + "')";
     }
 }
