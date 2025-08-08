@@ -1,5 +1,7 @@
 package NondeterministicFiniteAutomaton;
 
+import common.State;
+import common.Symbol;
 import java.util.Objects;
 
 /**
@@ -70,7 +72,7 @@ public class Transition {
      * @return formatted transition string
      */
     public String prettyPrint() {
-        String s = String.valueOf(symbol.getC());
+        String s = String.valueOf(symbol.getValue());
         if (symbol.isEpsilon()){
             s = "ε";
         }

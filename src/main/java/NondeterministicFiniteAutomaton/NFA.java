@@ -2,6 +2,8 @@ package NondeterministicFiniteAutomaton;
 
 import common.Automaton;
 import common.Automaton.ValidationMessage.ValidationMessageType;
+import common.State;
+import common.Symbol;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
@@ -178,7 +180,7 @@ public class NFA extends Automaton {
         currentStates.addAll(getEpsilonClosure(currentStates));
 
         for (State state : currentStates) {
-            if (state.isFinalState()) {
+            if (state.isAccept()) {
                 return new ExecutionResult(true, runtimeMessages, trace.toString());
             }
         }
@@ -384,7 +386,7 @@ public class NFA extends Automaton {
                 System.out.println("Start line is correct: " + line);
 
                 if (this.states.containsKey(stateName)){
-                    this.states.get(stateName).setStartState(true);
+                    this.states.get(stateName).setStart(true);
                 }else {
                     this.states.put(stateName, new State(stateName, true, false));
                 }
@@ -433,7 +435,7 @@ public class NFA extends Automaton {
                 for (int i = 1; i < arr.length; i++) {
 
                     if (this.states.containsKey(arr[i])){
-                        this.states.get(arr[i]).setFinalState(true);
+                        this.states.get(arr[i]).setAccept(true);
                         this.finalStates.add(this.states.get(arr[i]));
                     }else {
                         State finalState = new State(arr[i], false, true);
@@ -609,7 +611,7 @@ public class NFA extends Automaton {
                     Transition transition = new Transition(fromState,toState,symbolTemp);
                     if (!alreadyExists){
                         if (transitionList.contains(transition)) {
-                            warnings.add(new ValidationMessage("Duplicate transition symbol: " + symbolTemp.getC(), lineNo, ValidationMessageType.ERROR));
+                            warnings.add(new ValidationMessage("Duplicate transition symbol: " + symbolTemp.getValue(), lineNo, ValidationMessageType.ERROR));
                         }else {
                             //unique transition and unique symbol
                             transitionList.add(transition);
@@ -657,7 +659,7 @@ public class NFA extends Automaton {
                 }
             }
             if (!found) {
-                warnings.add(new ValidationMessage("Symbol not used: " + symbol.getC(), lineNumbers.get("alphaLineNo"), ValidationMessageType.WARNING));
+                warnings.add(new ValidationMessage("Symbol not used: " + symbol.getValue(), lineNumbers.get("alphaLineNo"), ValidationMessageType.WARNING));
             }
         }
 
@@ -720,7 +722,7 @@ public class NFA extends Automaton {
         if (startState == null){
             validationWarnings.add(new ValidationMessage("No start state in NFA object", -1, ValidationMessageType.ERROR));
         }else{
-            if (!startState.isStartState()){
+            if (!startState.isStart()){
                 validationWarnings.add(new ValidationMessage("Start state is not a start state", -1, ValidationMessageType.ERROR));
             }
             if (!startState.getName().matches(NFA.statePattern)){
@@ -752,7 +754,7 @@ public class NFA extends Automaton {
             validationWarnings.add(new ValidationMessage("No final state in NFA object", -1, ValidationMessageType.ERROR));
         }else {
             for (State finalState : finalStates){
-                if (!finalState.isFinalState()){
+                if (!finalState.isAccept()){
                     validationWarnings.add(new ValidationMessage("Final state: " + finalState.getName() + " is not a final state", -1, ValidationMessageType.ERROR));
                 }
                 if (!finalState.getName().matches(NFA.statePattern)){
@@ -785,7 +787,7 @@ public class NFA extends Automaton {
             validationWarnings.add(new ValidationMessage("Alphabet is empty", -1, ValidationMessageType.ERROR));
         }else {
             for (Symbol symbol : alphabet){
-                validationWarnings.addAll(symbol.validate());
+                validationWarnings.addAll(validateSymbol(symbol));
             }
         }
 
@@ -812,11 +814,11 @@ public class NFA extends Automaton {
 
             if (transitions.get(fromState) != null) {
                 for (Transition t : transitions.get(fromState)){
-                    List<ValidationMessage> transitionSymbolWarnings = t.getSymbol().validate();
+                    List<ValidationMessage> transitionSymbolWarnings = validateSymbol(t.getSymbol());
                     validationWarnings.addAll(transitionSymbolWarnings);
 
                     if (alphabet != null && !t.getSymbol().isEpsilon() && !alphabet.contains(t.getSymbol())){
-                        validationWarnings.add(new ValidationMessage("Alphabet does not contain transition symbol: " + t.getSymbol().getC(), -1, ValidationMessageType.ERROR));
+                        validationWarnings.add(new ValidationMessage("Alphabet does not contain transition symbol: " + t.getSymbol().getValue(), -1, ValidationMessageType.ERROR));
                     }
 
                     State toState = t.getTo();
@@ -847,10 +849,10 @@ public class NFA extends Automaton {
             if (!state.getName().matches(NFA.statePattern)){
                 validationWarnings.add(new ValidationMessage("State name: " + state.getName() + " does not match valid state name", -1, ValidationMessageType.ERROR));
             }
-            if (state.isStartState()){
+            if (state.isStart()){
                 startCount++;
             }
-            if (state.isFinalState()){
+            if (state.isAccept()){
                 finalCount++;
             }
         }
@@ -866,6 +868,23 @@ public class NFA extends Automaton {
         }
 
         return validationWarnings;
+    }
+
+
+    /**
+     * Validates a given symbol to ensure it is either a letter or an epsilon symbol.
+     * Symbols must be alphabetic characters or represent an epsilon transition.
+     *
+     * @param symbol the symbol to validate
+     * @return a list of ValidationMessages indicating any validation errors
+     */
+    private List<ValidationMessage> validateSymbol(Symbol symbol){
+        List<ValidationMessage> warnings = new ArrayList<>();
+
+        if (!(symbol.isEpsilon() || Character.isLetter(symbol.getValue()))) {
+            warnings.add(new ValidationMessage("Symbol is not valid: " + symbol.getValue(), -1, ValidationMessage.ValidationMessageType.ERROR));
+        }
+        return warnings;
     }
 
     /**
@@ -911,7 +930,7 @@ public class NFA extends Automaton {
                             if (sameTransition.getSymbol().isEpsilon()){
                                 epsilonExists = true;
                             }else {
-                                symbols.add(String.valueOf(sameTransition.getSymbol().getC()));
+                                symbols.add(String.valueOf(sameTransition.getSymbol().getValue()));
                             }
                     }
 

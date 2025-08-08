@@ -1,7 +1,8 @@
 package NondeterministicFiniteAutomaton;
 
 import common.Automaton;
-
+import common.State;
+import common.Symbol;
 import java.util.*;
 
 public class ExecuteTest {
@@ -11,13 +12,13 @@ public class ExecuteTest {
         Map<State, List<Transition>> transitions = new HashMap<>();
 
         State startState = new State("q1");
-        startState.setStartState(true);
+        startState.setStart(true);
 
         Map<String, State> states = new HashMap<>();
 
         State state2 = new State("q2");
         State state3 = new State("q3");
-        state3.setFinalState(true);
+        state3.setAccept(true);
 
         Set<State> finalstates = new HashSet<>();
         finalstates.add(state3);
