@@ -2,6 +2,7 @@ package RegularExpression.Checker;
 
 import RegularExpression.SyntaxTree.RegularExpression;
 
+
 public class GenerateCases {
     public static void main(String[] args) {
         String regex = "10(1u0)*0";
