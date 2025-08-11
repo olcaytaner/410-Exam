@@ -908,7 +908,7 @@ public class NFA extends Automaton {
         }
 
         if (startState != null) {
-            dot.append("  \"start\" [shape=diamond];\n");
+            dot.append("  \"start\" [shape=point];\n");
             dot.append(String.format("  \"start\" -> \"%s\";\n", startState.getName()));
         }
 
