@@ -1,27 +1,30 @@
 package PushDownAutomaton;
 
+import common.State;
+import common.Symbol;
+
 /**
  * Represents a single transition rule specific to a Push-down Automaton.
- * It includes the source and destination states, input symbol,
- * and stack operations (pop and push).
+ * It uses {@link Symbol} for single-character inputs (input, pop) and
+ * {@link String} for the multi-character stack push operation.
  */
 public class PDATransition {
 
     private final State fromState;
     private final State toState;
-    private final String inputSymbol;
-    private final String stackPop;
+    private final Symbol inputSymbol;
+    private final Symbol stackPop;
     private final String stackPush;
 
     /**
      * Constructs a new PDA transition.
      * @param fromState The state where the transition originates.
-     * @param inputSymbol The input symbol that triggers the transition (can be "eps").
-     * @param stackPop The symbol to be popped from the stack (can be "eps").
+     * @param inputSymbol The input {@link Symbol} that triggers the transition.
+     * @param stackPop The {@link Symbol} to be popped from the stack.
      * @param toState The destination state of the transition.
-     * @param stackPush The string to be pushed onto the stack (can be "eps").
+     * @param stackPush The {@link String} to be pushed onto the stack.
      */
-    public PDATransition(State fromState, String inputSymbol, String stackPop, State toState, String stackPush) {
+    public PDATransition(State fromState, Symbol inputSymbol, Symbol stackPop, State toState, String stackPush) {
         this.fromState = fromState;
         this.inputSymbol = inputSymbol;
         this.toState = toState;
@@ -37,11 +40,11 @@ public class PDATransition {
         return toState;
     }
 
-    public String getInputSymbol() {
+    public Symbol getInputSymbol() {
         return inputSymbol;
     }
 
-    public String getStackPop() {
+    public Symbol getStackPop() {
         return stackPop;
     }
 

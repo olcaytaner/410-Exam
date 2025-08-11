@@ -1,40 +1,32 @@
 package PushDownAutomaton;
 
 import common.Automaton;
+import common.State;
+import common.Symbol;
 import static common.Automaton.ValidationMessage.ValidationMessageType;
 import java.util.*;
 
 /**
  * Represents a Push-down Automaton (PDA).
- * This class is responsible for parsing a textual description to create a PDA,
- * validating its structure, and providing methods for execution and visualization.
+ * This class uses a hybrid approach, employing {@link common.Symbol} for single-character
+ * alphabets and transitions, and {@link String} for multi-character stack operations.
  */
 public class PDA extends Automaton {
 
     private Set<State> states;
-    private Set<String> inputAlphabet;
-    private Set<String> stackAlphabet;
+    private Set<Symbol> inputAlphabet;
+    private Set<Symbol> stackAlphabet;
     private State startState;
     private Set<State> finalStates;
-    private String stackStartSymbol;
+    private Symbol stackStartSymbol;
     private Map<State, List<PDATransition>> transitionMap;
     private Stack stack;
 
-    /**
-     * Constructs a new, empty PDA and initializes its type.
-     */
     public PDA() {
         super(MachineType.PDA);
         this.stack = new Stack();
     }
 
-    /**
-     * Parses a string containing the complete textual definition of the PDA.
-     * It populates the automaton's fields (states, transitions, etc.) based on the input.
-     *
-     * @param inputText The string defining the PDA.
-     * @return A {@link ParseResult} object containing the outcome, validation messages, and the automaton itself.
-     */
     @Override
     public ParseResult parse(String inputText) {
         List<ValidationMessage> messages = new ArrayList<>();
@@ -58,12 +50,8 @@ public class PDA extends Automaton {
         }
 
         processStates(sections.get("states"), sectionLineNumbers.get("states"), this.states, stateMap, messages);
-        if (sections.get("alphabet") != null && !sections.get("alphabet").isEmpty()) {
-            this.inputAlphabet.addAll(Arrays.asList(sections.get("alphabet").get(0).split("\\s+")));
-        }
-        if (sections.get("stack_alphabet") != null && !sections.get("stack_alphabet").isEmpty()) {
-            this.stackAlphabet.addAll(Arrays.asList(sections.get("stack_alphabet").get(0).split("\\s+")));
-        }
+        processAlphabet(sections.get("alphabet"), sectionLineNumbers.get("alphabet"), this.inputAlphabet, messages);
+        processAlphabet(sections.get("stack_alphabet"), sectionLineNumbers.get("stack_alphabet"), this.stackAlphabet, messages);
 
         this.startState = processStartState(sections.get("start"), sectionLineNumbers.get("start"), stateMap, messages);
         this.stackStartSymbol = processStackStartSymbol(sections.get("stack_start"), sectionLineNumbers.get("stack_start"), this.stackAlphabet, messages);
@@ -83,6 +71,8 @@ public class PDA extends Automaton {
 
     /**
      * Generates a string in .dot format for visualizing the PDA using Graphviz.
+     * This implementation handles parallel edges and self-loops to ensure readability
+     * by drawing them as distinct visual paths using Graphviz ports.
      *
      * @param inputText This parameter is currently unused but required by the abstract parent method.
      * @return A string in .dot format representing the state diagram.
@@ -106,12 +96,40 @@ public class PDA extends Automaton {
             dot.append(String.format("  \"\" -> \"%s\";\n", startState.getName()));
         }
 
+        Map<String, List<PDATransition>> groupedTransitions = new HashMap<>();
         for (List<PDATransition> transitions : transitionMap.values()) {
             for (PDATransition t : transitions) {
-                String label = String.format("%s, %s / %s",
-                        t.getInputSymbol(), t.getStackPop(), t.getStackPush());
-                dot.append(String.format("  \"%s\" -> \"%s\" [label=\"%s\"];\n",
-                        t.getFromState().getName(), t.getToState().getName(), label));
+                String key = t.getFromState().getName() + " -> " + t.getToState().getName();
+                groupedTransitions.computeIfAbsent(key, k -> new ArrayList<>()).add(t);
+            }
+        }
+
+        String[] selfLoopPorts = {"n", "w", "s", "e", "nw", "ne", "sw", "se"};
+
+        for (Map.Entry<String, List<PDATransition>> entry : groupedTransitions.entrySet()) {
+            List<PDATransition> group = entry.getValue();
+            State fromState = group.get(0).getFromState();
+            State toState = group.get(0).getToState();
+
+            boolean isSelfLoop = fromState.equals(toState);
+
+            for (int i = 0; i < group.size(); i++) {
+                PDATransition t = group.get(i);
+                String input = t.getInputSymbol().isEpsilon() ? "eps" : t.getInputSymbol().toString();
+                String pop = t.getStackPop().isEpsilon() ? "eps" : t.getStackPop().toString();
+                String label = String.format("%s, %s / %s", input, pop, t.getStackPush());
+
+                if (isSelfLoop) {
+                    // Self-loop'lar için farklı portlar kullanarak ayrı oklar çiz.
+                    String port1 = selfLoopPorts[i * 2 % selfLoopPorts.length];
+                    String port2 = selfLoopPorts[(i * 2 + 1) % selfLoopPorts.length];
+                    dot.append(String.format("  \"%s\":%s -> \"%s\":%s [label=\"%s\"];\n",
+                            fromState.getName(), port1, toState.getName(), port2, label));
+                } else {
+                    // Farklı state'ler arasındaki geçişler için normal oklar çiz.
+                    dot.append(String.format("  \"%s\" -> \"%s\" [label=\"%s\"];\n",
+                            fromState.getName(), toState.getName(), label));
+                }
             }
         }
 
@@ -119,22 +137,11 @@ public class PDA extends Automaton {
         return dot.toString();
     }
 
-    /**
-     * Simulates the PDA on a given input string.
-     *
-     * @param inputText The input string to be processed by the PDA.
-     * @return An {@link ExecutionResult} object containing the result of the simulation.
-     */
     @Override
     public ExecutionResult execute(String inputText) {
         return new ExecutionResult(false, null, "Execution for PDA is not implemented yet.");
     }
 
-    /**
-     * Performs additional validation checks on the automaton after it has been parsed.
-     *
-     * @return A list of validation messages.
-     */
     @Override
     public List<ValidationMessage> validate() {
         return new ArrayList<>();
@@ -145,12 +152,10 @@ public class PDA extends Automaton {
         for (int i = 0; i < lines.length; i++) {
             String line = lines[i].trim();
             if (line.isEmpty() || line.startsWith("#")) continue;
-
             int colonIndex = line.indexOf(":");
             if (colonIndex != -1) {
                 currentSection = line.substring(0, colonIndex).trim().toLowerCase();
                 String data = line.substring(colonIndex + 1).trim();
-
                 if (sections.containsKey(currentSection)) {
                     messages.add(new ValidationMessage("Duplicate keyword '" + currentSection + "'. Only the first definition will be used.", i + 1, ValidationMessageType.WARNING));
                     currentSection = null;
@@ -194,6 +199,20 @@ public class PDA extends Automaton {
         }
     }
 
+    private void processAlphabet(List<String> lines, int lineNum, Set<Symbol> alphabet, List<ValidationMessage> messages) {
+        if (lines == null || lines.isEmpty()) {
+            messages.add(new ValidationMessage("Alphabet definition cannot be empty.", lineNum, ValidationMessageType.ERROR));
+            return;
+        }
+        for (String s : lines.get(0).split("\\s+")) {
+            if (s.length() != 1) {
+                messages.add(new ValidationMessage("Alphabet symbol '" + s + "' must be a single character.", lineNum, ValidationMessageType.ERROR));
+                continue;
+            }
+            alphabet.add(new Symbol(s.charAt(0)));
+        }
+    }
+
     private State processStartState(List<String> lines, int lineNum, Map<String, State> stateMap, List<ValidationMessage> messages) {
         if (lines == null || lines.isEmpty()) {
             messages.add(new ValidationMessage("Start state definition is missing.", lineNum, ValidationMessageType.ERROR));
@@ -205,18 +224,23 @@ public class PDA extends Automaton {
             messages.add(new ValidationMessage("Start state '" + startStateName + "' is not defined in 'states'.", lineNum, ValidationMessageType.ERROR));
             return null;
         }
-        startState.setAsStart(true);
+        startState.setStart(true);
         return startState;
     }
 
-    private String processStackStartSymbol(List<String> lines, int lineNum, Set<String> stackAlphabet, List<ValidationMessage> messages) {
+    private Symbol processStackStartSymbol(List<String> lines, int lineNum, Set<Symbol> stackAlphabet, List<ValidationMessage> messages) {
         if (lines == null || lines.isEmpty()) {
             messages.add(new ValidationMessage("Stack start symbol definition is missing.", lineNum, ValidationMessageType.ERROR));
             return null;
         }
-        String stackStartSymbol = lines.get(0).trim();
+        String stackStartStr = lines.get(0).trim();
+        if (stackStartStr.length() != 1) {
+            messages.add(new ValidationMessage("Stack start symbol must be a single character.", lineNum, ValidationMessageType.ERROR));
+            return null;
+        }
+        Symbol stackStartSymbol = new Symbol(stackStartStr.charAt(0));
         if (!stackAlphabet.contains(stackStartSymbol)) {
-            messages.add(new ValidationMessage("Stack start symbol '" + stackStartSymbol + "' is not defined in 'stack_alphabet'.", lineNum, ValidationMessageType.ERROR));
+            messages.add(new ValidationMessage("Stack start symbol '" + stackStartStr + "' is not defined in 'stack_alphabet'.", lineNum, ValidationMessageType.ERROR));
         }
         return stackStartSymbol;
     }
@@ -234,29 +258,25 @@ public class PDA extends Automaton {
                 messages.add(new ValidationMessage("Final state '" + name + "' is not defined in 'states'.", lineNum, ValidationMessageType.ERROR));
                 continue;
             }
-            finalState.setAsAccept(true);
+            finalState.setAccept(true);
             finalStates.add(finalState);
         }
         return finalStates;
     }
 
-    private Map<State, List<PDATransition>> processTransitions(List<String> lines, int startLine, Map<String, State> stateMap, Set<String> inputAlphabet, Set<String> stackAlphabet, List<ValidationMessage> messages) {
+    private Map<State, List<PDATransition>> processTransitions(List<String> lines, int startLine, Map<String, State> stateMap, Set<Symbol> inputAlphabet, Set<Symbol> stackAlphabet, List<ValidationMessage> messages) {
         Map<State, List<PDATransition>> transitionMap = new HashMap<>();
         if (lines == null) return transitionMap;
-
         for (int i = 0; i < lines.size(); i++) {
             int currentLine = startLine + i + 1;
             String line = lines.get(i);
-
             String[] parts = line.split("->");
             if (parts.length != 2) {
                 messages.add(new ValidationMessage("Invalid transition format. Rule must contain '->' separator.", currentLine, ValidationMessageType.ERROR));
                 continue;
             }
-
             String[] left = parts[0].trim().split("\\s+");
             String[] right = parts[1].trim().split("\\s+");
-
             if (left.length != 3) {
                 messages.add(new ValidationMessage("Left side of transition must have 3 components: state, input, stack_pop.", currentLine, ValidationMessageType.ERROR));
                 continue;
@@ -267,19 +287,19 @@ public class PDA extends Automaton {
             }
 
             State fromState = validateState(left[0], stateMap, currentLine, messages);
-            String input = validateInputSymbol(left[1], inputAlphabet, currentLine, messages);
-            String pop = validateStackSymbol(left[2], stackAlphabet, currentLine, messages);
+            Symbol input = validateInputSymbol(left[1], inputAlphabet, currentLine, messages);
+            Symbol pop = validateStackSymbol(left[2], stackAlphabet, currentLine, messages);
             State toState = validateState(right[0], stateMap, currentLine, messages);
+            String push = right[1];
 
-            if(!validatePushString(right[1], stackAlphabet, currentLine, messages)){
+            if (!validatePushString(push, stackAlphabet, currentLine, messages)) {
                 continue;
             }
-
             if (fromState == null || input == null || pop == null || toState == null) {
                 continue;
             }
 
-            PDATransition transition = new PDATransition(fromState, input, pop, toState, right[1]);
+            PDATransition transition = new PDATransition(fromState, input, pop, toState, push);
             transitionMap.computeIfAbsent(fromState, k -> new ArrayList<>()).add(transition);
         }
         return transitionMap;
@@ -293,26 +313,38 @@ public class PDA extends Automaton {
         return state;
     }
 
-    private String validateInputSymbol(String symbol, Set<String> alphabet, int line, List<ValidationMessage> messages) {
-        if (!symbol.equals("eps") && !alphabet.contains(symbol)) {
-            messages.add(new ValidationMessage("Input symbol '" + symbol + "' is not defined in 'alphabet'.", line, ValidationMessageType.ERROR));
+    private Symbol validateInputSymbol(String s, Set<Symbol> alphabet, int line, List<ValidationMessage> messages) {
+        if (s.equals("eps")) return new Symbol('_');
+        if (s.length() != 1) {
+            messages.add(new ValidationMessage("Input symbol '" + s + "' must be a single character or 'eps'.", line, ValidationMessageType.ERROR));
+            return null;
+        }
+        Symbol symbol = new Symbol(s.charAt(0));
+        if (!alphabet.contains(symbol)) {
+            messages.add(new ValidationMessage("Input symbol '" + s + "' is not defined in 'alphabet'.", line, ValidationMessageType.ERROR));
             return null;
         }
         return symbol;
     }
 
-    private String validateStackSymbol(String symbol, Set<String> alphabet, int line, List<ValidationMessage> messages) {
-        if (!symbol.equals("eps") && !alphabet.contains(symbol)) {
-            messages.add(new ValidationMessage("Stack symbol '" + symbol + "' is not defined in 'stack_alphabet'.", line, ValidationMessageType.ERROR));
+    private Symbol validateStackSymbol(String s, Set<Symbol> alphabet, int line, List<ValidationMessage> messages) {
+        if (s.equals("eps")) return new Symbol('_');
+        if (s.length() != 1) {
+            messages.add(new ValidationMessage("Stack symbol '" + s + "' must be a single character or 'eps'.", line, ValidationMessageType.ERROR));
+            return null;
+        }
+        Symbol symbol = new Symbol(s.charAt(0));
+        if (!alphabet.contains(symbol)) {
+            messages.add(new ValidationMessage("Stack symbol '" + s + "' is not defined in 'stack_alphabet'.", line, ValidationMessageType.ERROR));
             return null;
         }
         return symbol;
     }
 
-    private boolean validatePushString(String pushString, Set<String> alphabet, int line, List<ValidationMessage> messages) {
+    private boolean validatePushString(String pushString, Set<Symbol> alphabet, int line, List<ValidationMessage> messages) {
         if (!pushString.equals("eps")) {
             for (char c : pushString.toCharArray()) {
-                if (!alphabet.contains(String.valueOf(c))) {
+                if (!alphabet.contains(new Symbol(c))) {
                     messages.add(new ValidationMessage("Stack symbol '" + c + "' (in push string '" + pushString + "') is not defined in 'stack_alphabet'.", line, ValidationMessageType.ERROR));
                     return false;
                 }
@@ -323,13 +355,10 @@ public class PDA extends Automaton {
 
     private void checkForUnreachableStates(Set<State> allStates, State startState, Map<State, List<PDATransition>> transitions, List<ValidationMessage> messages) {
         if (startState == null || allStates.isEmpty()) return;
-
         Set<State> reachableStates = new HashSet<>();
         Queue<State> queue = new LinkedList<>();
-
         reachableStates.add(startState);
         queue.add(startState);
-
         while (!queue.isEmpty()) {
             State currentState = queue.poll();
             if (transitions.containsKey(currentState)) {
@@ -340,7 +369,6 @@ public class PDA extends Automaton {
                 }
             }
         }
-
         for (State state : allStates) {
             if (!reachableStates.contains(state)) {
                 messages.add(new ValidationMessage("State '" + state.getName() + "' is unreachable from the start state.", 0, ValidationMessageType.WARNING));
