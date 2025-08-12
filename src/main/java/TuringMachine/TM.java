@@ -83,7 +83,7 @@ public class TM extends Automaton {
 
         transitionFunction.forEach((key, value) -> {
             dot.append("  \"").append(key.getState().getName()).append("\" -> \"").append(value.getNextState().getName()).append("\" [label = \"")
-               .append(key.getSymbolToRead()).append(" -> ").append(value.getSymbolToWrite()).append(", ").append(value.getMoveDirection()).append("\"];\n");
+               .append(key.getSymbolToRead()).append(" -> ").append(value.getSymbolToWrite()).append(", ").append(value.getMoveDirection() == Direction.LEFT ? "L" : "R").append("\"];\n");
         });
 
         dot.append("}\n");
@@ -193,7 +193,7 @@ public class TM extends Automaton {
 
     @Override
     public List<ValidationMessage> validate() {
-        return new ArrayList<>();
+        return TMFileValidator.validateFromString(inputText);
     }
 
     public List<ValidationMessage> validate(String inputText) {
