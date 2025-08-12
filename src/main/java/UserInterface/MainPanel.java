@@ -1,20 +1,33 @@
 package UserInterface;
 
-import javax.swing.filechooser.FileNameExtensionFilter;
-
-import NondeterministicFiniteAutomaton.NFA;
-import DeterministicFiniteAutomaton.DFA;
-import TuringMachine.TM;
-import PushDownAutomaton.PDA;
-import common.Automaton;
-
-import java.awt.*;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Font;
+import java.awt.Insets;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.LinkedList;
-import javax.swing.*;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
+
+import javax.swing.BorderFactory;
+import javax.swing.Box;
+import javax.swing.BoxLayout;
+import javax.swing.JButton;
+import javax.swing.JFileChooser;
+import javax.swing.JLabel;
+import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JPopupMenu;
+import javax.swing.filechooser.FileNameExtensionFilter;
+
+import DeterministicFiniteAutomaton.DFA;
+import NondeterministicFiniteAutomaton.NFA;
+import PushDownAutomaton.PDA;
+import TuringMachine.TM;
+import common.Automaton;
 
 public class MainPanel extends JPanel {
     public LinkedList<File> savedPageList;
@@ -28,8 +41,11 @@ public class MainPanel extends JPanel {
     private int activeTabIndex;
     private JPanel tabPanel;
     private JPanel tabButtonsPanel; 
+    
+    // Static field to remember the last used directory across all FileManager instances
+    private static File lastUsedDirectory = null; 
 
-    public class FileManager {
+    public class FileManager {        
         public String getExtensionForAutomaton(Automaton automaton) {
             if (automaton instanceof NFA) return ".nfa";
             if (automaton instanceof DFA) return ".dfa"; 
@@ -82,13 +98,28 @@ public class MainPanel extends JPanel {
                     panel = new DFAPanel(MainPanel.this, automaton);
                     ((DFAPanel)panel).loadFile(file);
                     break;
-                case ".tm":    
+                case ".tm":
                     automaton = new TM();
                     automaton.setInputText(content);
                     panel = new TMPanel(MainPanel.this, automaton);
                     ((TMPanel)panel).loadFile(file);
                     break;
-                // TODO: Add other machine types
+                case ".cfg":
+                    // TODO: Uncomment when CFGAutomaton is implemented
+                    // automaton = new CFGAutomaton();
+                    // automaton.setInputText(content);
+                    // panel = new CFGPanel(MainPanel.this, automaton);
+                    // ((CFGPanel)panel).loadFile(file);
+                    throw new IllegalArgumentException("CFG support not yet implemented");
+                    // break;
+                case ".rex":
+                    // TODO: Uncomment when RegularExpressionAutomaton is implemented
+                    // automaton = new RegularExpressionAutomaton();
+                    // automaton.setInputText(content);
+                    // panel = new REXPanel(MainPanel.this, automaton);
+                    // ((REXPanel)panel).loadFile(file);
+                    throw new IllegalArgumentException("REX support not yet implemented");
+                    // break;
                 default:
                     throw new IllegalArgumentException("Unsupported file type: " + extension);
             }
@@ -136,12 +167,20 @@ public class MainPanel extends JPanel {
          */
         public void showOpenDialog() {
             JFileChooser fileChooser = new JFileChooser();
+            
+            // Set the current directory to the last used directory if available
+            if (MainPanel.lastUsedDirectory != null && MainPanel.lastUsedDirectory.exists()) {
+                fileChooser.setCurrentDirectory(MainPanel.lastUsedDirectory);
+            }
+            
             FileNameExtensionFilter filter = new FileNameExtensionFilter("Automaton Files", "nfa", "pda", "tm", "dfa", "rex", "cfg", "txt");
             fileChooser.setFileFilter(filter);
             
             int option = fileChooser.showOpenDialog(MainPanel.this);
             if (option == JFileChooser.APPROVE_OPTION) {
                 File file = fileChooser.getSelectedFile();
+                // Remember the directory for next time
+                MainPanel.lastUsedDirectory = file.getParentFile();
                 openFile(file);
             }
         }
@@ -151,6 +190,11 @@ public class MainPanel extends JPanel {
          */
         public File showSaveDialog(Automaton automaton, String currentFileName) {
             JFileChooser fileChooser = new JFileChooser();
+            
+            // Set the current directory to the last used directory if available
+            if (MainPanel.lastUsedDirectory != null && MainPanel.lastUsedDirectory.exists()) {
+                fileChooser.setCurrentDirectory(MainPanel.lastUsedDirectory);
+            }
             String extension = getExtensionForAutomaton(automaton);
             String filterName = extension.substring(1).toUpperCase() + " Files (*" + extension + ")";
             fileChooser.setFileFilter(new FileNameExtensionFilter(filterName, extension.substring(1)));
@@ -165,6 +209,8 @@ public class MainPanel extends JPanel {
                 if (!file.getName().toLowerCase().endsWith(extension)) {
                     file = new File(file.toString() + extension);
                 }
+                // Remember the directory for next time
+                MainPanel.lastUsedDirectory = file.getParentFile();
                 return file;
             }
             return null;
@@ -591,13 +637,19 @@ public class MainPanel extends JPanel {
                 panel = new TMPanel(this, automaton);
                 break;
             case "CFG":
-                automaton = new PDA(); // TODO: Replace with CFG when extends with Automaton
-                panel = new NFAPanel(this, automaton); // TODO: Replace with CFG when extends with Automaton
-                break;
+                // TODO: Uncomment when CFGAutomaton is implemented
+                // automaton = new CFGAutomaton();
+                // panel = new CFGPanel(this, automaton);
+                JOptionPane.showMessageDialog(this, "CFG support not yet implemented", "Not Implemented", JOptionPane.INFORMATION_MESSAGE);
+                return;
+                // break;
             case "REX":
-                automaton = new PDA(); // TODO: Replace with REX when extends with Automaton
-                panel = new NFAPanel(this, automaton); // TODO: Replace with REX when extends with Automaton
-                break;
+                // TODO: Uncomment when RegularExpressionAutomaton is implemented  
+                // automaton = new RegularExpressionAutomaton();
+                // panel = new REXPanel(this, automaton);
+                JOptionPane.showMessageDialog(this, "REX support not yet implemented", "Not Implemented", JOptionPane.INFORMATION_MESSAGE);
+                return;
+                // break;
             default:
                 JOptionPane.showMessageDialog(this, "Unknown automaton type: " + type, "Error", JOptionPane.ERROR_MESSAGE);
                 return;

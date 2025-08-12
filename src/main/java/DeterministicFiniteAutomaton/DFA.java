@@ -1,13 +1,21 @@
 package DeterministicFiniteAutomaton;
 
-import common.Automaton;
-import common.State;
-import common.Symbol;
-
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Queue;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+
+import common.Automaton;
+import common.State;
+import common.Symbol;
 
 /**
  * Represents a Deterministic Finite Automaton (DFA).
@@ -21,6 +29,17 @@ public class DFA extends Automaton {
 
   private State startState;
   private Set<State> finalStates;
+
+  /**
+   * Default constructor for DFA (used for parsing from text).
+   */
+  public DFA() {
+    super(MachineType.DFA);
+    this.states = new HashSet<>();
+    this.alphabet = new HashSet<>();
+    this.finalStates = new HashSet<>();
+    this.transitions = new HashSet<>();
+  }
 
   /**
    * Constructs a new DFA with the specified components.
@@ -148,7 +167,6 @@ public class DFA extends Automaton {
     return null;
   }
 
-  // TODO: Implement the validate method
   /**
    * Validates the DFA configuration.
    *
@@ -156,7 +174,25 @@ public class DFA extends Automaton {
    */
   @Override
   public List<ValidationMessage> validate() {
-    return null;
+    List<ValidationMessage> messages = new ArrayList<>();
+    
+    if (inputText == null || inputText.trim().isEmpty()) {
+      messages.add(new ValidationMessage("No input text provided", 0, ValidationMessage.ValidationMessageType.WARNING));
+      return messages;
+    }
+    
+    try {
+      ParseResult result = parse(inputText);
+      messages.addAll(result.getValidationMessages());
+      
+      if (result.isSuccess()) {
+        messages.add(new ValidationMessage("DFA is valid", 0, ValidationMessage.ValidationMessageType.INFO));
+      }
+    } catch (Exception e) {
+      messages.add(new ValidationMessage("Validation error: " + e.getMessage(), 0, ValidationMessage.ValidationMessageType.ERROR));
+    }
+    
+    return messages;
   }
 
   /**

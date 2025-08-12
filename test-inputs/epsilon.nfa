@@ -1,0 +1,8 @@
+Start: q0  
+Finals: q0 q2
+Alphabet: a b
+transitions:
+q0 -> q0 (a b)
+q0 -> q1 (eps)
+q1 -> q2 (a)
+q2 -> q2 (eps)

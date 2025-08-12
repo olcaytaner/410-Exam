@@ -1,8 +1,14 @@
-digraph ExampleGraph {
-    rankdir=LR;
-    node [shape=circle];
-    A -> B [label="0"];
-    B -> C [label="1"];
-    C -> A [label="0,1"];
-    C [shape=doublecircle];
+digraph TuringMachine {
+  rankdir=LR;
+  node [shape = circle];
+  "q_accept" [shape = doublecircle];
+  "q_accept";
+  "" [shape = none];
+  "" -> "q0";
+  "q1" -> "q_reject" [label = "_ -> _, RIGHT"];
+  "q0" -> "q0" [label = "0 -> 0, RIGHT"];
+  "q1" -> "q0" [label = "1 -> 1, RIGHT"];
+  "q0" -> "q_accept" [label = "_ -> _, RIGHT"];
+  "q1" -> "q1" [label = "0 -> 0, RIGHT"];
+  "q0" -> "q1" [label = "1 -> 1, RIGHT"];
 }
