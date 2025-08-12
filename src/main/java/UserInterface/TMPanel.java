@@ -7,7 +7,7 @@ import java.io.File;
 import java.io.*;
 import java.util.List;
 
-public class NFAPanel extends JPanel implements AutomatonPanel {
+public class TMPanel extends JPanel implements AutomatonPanel {
 
     JPanel textEditorPanel, graphPanel, topPanel;
     JTextArea textArea;
@@ -17,7 +17,7 @@ public class NFAPanel extends JPanel implements AutomatonPanel {
     private MainPanel mainPanel;
     private Automaton automaton;
 
-    public NFAPanel(MainPanel mainPanel, Automaton automaton) {
+    public TMPanel(MainPanel mainPanel, Automaton automaton) {
         this.mainPanel = mainPanel;
         this.automaton = automaton;
         this.setLayout(new BorderLayout());
@@ -82,12 +82,13 @@ public class NFAPanel extends JPanel implements AutomatonPanel {
         add(topPanel, BorderLayout.NORTH);
     }
 
+     
     private void createTopPanel() {
         topPanel = new JPanel(new BorderLayout());
         topPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         topPanel.setBackground(Color.WHITE);
         
-        JLabel tabLabel = new JLabel("NFA Tab");
+        JLabel tabLabel = new JLabel("TM Tab");
         tabLabel.setFont(new Font("Arial", Font.BOLD, 14));
         tabLabel.setForeground(new Color(102, 133, 102));
         

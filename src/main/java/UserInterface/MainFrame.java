@@ -77,6 +77,37 @@ public class MainFrame extends JFrame {
         
         menuBar.add(fileMenu);
         
+        JMenu actionsMenu = new JMenu("Actions");
+        
+        JMenuItem runItem = new JMenuItem("Run");
+        JMenuItem compileItem = new JMenuItem("Compile");
+        JMenuItem saveItem = new JMenuItem("Save");
+        
+        runItem.setBackground(new java.awt.Color(166, 255, 166));
+        compileItem.setBackground(new java.awt.Color(255, 166, 166));
+        saveItem.setBackground(new java.awt.Color(242, 255, 166));
+        
+        // Add action listeners that delegate to the current active panel
+        runItem.addActionListener(e -> {
+            if (mainPanel != null) mainPanel.runCurrentAutomaton();
+        });
+        
+        compileItem.addActionListener(e -> {
+            if (mainPanel != null) mainPanel.compileCurrentAutomaton();
+        });
+        
+        saveItem.addActionListener(e -> {
+            if (mainPanel != null) mainPanel.saveCurrentAutomaton();
+        });
+        
+        actionsMenu.add(runItem);
+        actionsMenu.addSeparator();
+        actionsMenu.add(compileItem);
+        actionsMenu.addSeparator();
+        actionsMenu.add(saveItem);
+        
+        menuBar.add(actionsMenu);
+        
         setJMenuBar(menuBar);
     }
 

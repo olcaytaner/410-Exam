@@ -7,13 +7,12 @@ import java.io.File;
 import java.io.*;
 import java.util.List;
 
-public class PDAPanel extends JPanel {
+public class PDAPanel extends JPanel implements AutomatonPanel {
 
     JPanel textEditorPanel, graphPanel, topPanel;
     JTextArea textArea;
     JScrollPane scrollPane;
     JTextArea warningField;
-    JMenuBar menuBar;
     private File file;
     private MainPanel mainPanel;
     private Automaton automaton;
@@ -57,7 +56,7 @@ public class PDAPanel extends JPanel {
         warningLabel.setFont(new Font("Arial", Font.BOLD, 12));
         warningLabel.setBorder(BorderFactory.createEmptyBorder(0, 0, 10, 0));
         
-        warningField = new JTextArea("Warnings will be displayed here after using Compile or Run from the Actions menu");
+        warningField = new JTextArea("Warnings will be displayed here after using Compile or Run from the main Actions menu");
         warningField.setEditable(false);
         warningField.setBackground(new Color(255, 255, 255));
         warningField.setLineWrap(true);
@@ -77,7 +76,7 @@ public class PDAPanel extends JPanel {
     }
 
     /**
-     * Creates the top panel with title label and menu bar positioned on the right
+     * SİL
      */
     private void createTopPanel() {
         topPanel = new JPanel(new BorderLayout());
@@ -88,64 +87,77 @@ public class PDAPanel extends JPanel {
         tabLabel.setFont(new Font("Arial", Font.BOLD, 14));
         tabLabel.setForeground(new Color(102, 133, 102));
         
-       
-        createMenuBar();
-        
         topPanel.add(tabLabel, BorderLayout.WEST);
-        topPanel.add(menuBar, BorderLayout.EAST);
     }
     
-    /**
-     * Creates the menu bar with run, compile, and save options
-     */
-    private void createMenuBar() {
-        menuBar = new JMenuBar();
-        menuBar.setBackground(Color.lightGray);
-
-        JMenu actionsMenu = new JMenu("Actions");
-        actionsMenu.setFont(new Font("Arial", Font.BOLD, 14));
-
-
-        
-        JMenuItem runItem = new JMenuItem("Run");
-        JMenuItem compileItem = new JMenuItem("Compile");
-        JMenuItem saveItem = new JMenuItem("Save");
-        
-     
-        runItem.setBackground(new Color(166, 255, 166));
-        compileItem.setBackground(new Color(255, 166, 166));
-        saveItem.setBackground(new Color(242, 255, 166));
-        
-       
-        runItem.addActionListener(e -> {
-            String inputText = textArea.getText();
-            JLabel imageLabel = automaton.toGraphviz(inputText);
-            graphPanel.removeAll();
-            graphPanel.add(imageLabel);
-            graphPanel.revalidate();
-            graphPanel.repaint();
-            updateWarningDisplay();
-        });
-        
-        compileItem.addActionListener(e -> updateWarningDisplay());
-        
-        saveItem.addActionListener(e -> {
-            File savedFile = mainPanel.fileManager.showSaveDialog(automaton, file != null ? file.getName() : null);
-            if (savedFile != null) {
-                PDAPanel.this.saveFileContent(savedFile);
-                file = savedFile;
-                mainPanel.fileManager.addToRecentFiles(file);
+    // AutomatonPanel interface implementations
+    @Override
+    public void runAutomaton() {
+        String inputText = textArea.getText();
+        JLabel imageLabel = automaton.toGraphviz(inputText);
+        graphPanel.removeAll();
+        graphPanel.add(imageLabel);
+        graphPanel.revalidate();
+        graphPanel.repaint();
+        updateWarningDisplay();
+    }
+    
+    @Override
+    public void compileAutomaton() {
+        updateWarningDisplay();
+    }
+    
+    @Override
+    public void saveAutomaton() {
+        File savedFile = mainPanel.fileManager.showSaveDialog(automaton, file != null ? file.getName() : null);
+        if (savedFile != null) {
+            saveFileContent(savedFile);
+            file = savedFile;
+            mainPanel.fileManager.addToRecentFiles(file);
+            
+            // Mark tab as saved if it exists
+            mainPanel.markCurrentTabAsSaved();
+        }
+    }
+    
+    @Override
+    public String getTextAreaContent() {
+        return textArea.getText();
+    }
+    
+    @Override
+    public Automaton getAutomaton() {
+        return automaton;
+    }
+    
+    @Override
+    public File getCurrentFile() {
+        return file;
+    }
+    
+    @Override
+    public void setCurrentFile(File file) {
+        this.file = file;
+    }
+    
+    @Override
+    public void addTextChangeListener(Runnable onChange) {
+        textArea.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
+            @Override
+            public void insertUpdate(javax.swing.event.DocumentEvent e) {
+                onChange.run();
+            }
+            
+            @Override
+            public void removeUpdate(javax.swing.event.DocumentEvent e) {
+                onChange.run();
+            }
+            
+            @Override
+            public void changedUpdate(javax.swing.event.DocumentEvent e) {
+                onChange.run();
             }
         });
-        
-        
-        actionsMenu.add(runItem);
-        actionsMenu.addSeparator();
-        actionsMenu.add(compileItem);
-        actionsMenu.addSeparator();
-        actionsMenu.add(saveItem);
-        
-        menuBar.add(actionsMenu);
     }
 
     /**
