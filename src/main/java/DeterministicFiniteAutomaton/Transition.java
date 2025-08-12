@@ -1,5 +1,8 @@
 package DeterministicFiniteAutomaton;
 
+import common.State;
+import common.Symbol;
+
 import java.util.Objects;
 
 /**
@@ -7,9 +10,9 @@ import java.util.Objects;
  * A transition defines how the automaton moves from one state to another when reading a specific input symbol.
  */
 public class Transition {
-  private final DeterministicFiniteAutomaton.State from;
-  private final DeterministicFiniteAutomaton.State to;
-  private final DeterministicFiniteAutomaton.Symbol symbol;
+  private final State from;
+  private final State to;
+  private final Symbol symbol;
 
   /**
    * Constructs a new Transition with the specified source state, symbol, and destination state.
@@ -18,7 +21,10 @@ public class Transition {
    * @param symbol The input symbol that triggers this transition, must not be null
    * @param to The destination state of the transition, must not be null
    */
-  public Transition(DeterministicFiniteAutomaton.State from, DeterministicFiniteAutomaton.Symbol symbol, DeterministicFiniteAutomaton.State to) {
+  public Transition(State from, Symbol symbol, State to) {
+    if (from == null || symbol == null || to == null) {
+      throw new IllegalArgumentException("Transition parameters cannot be null");
+    }
     this.from = from;
     this.symbol = symbol;
     this.to = to;
@@ -29,7 +35,7 @@ public class Transition {
    *
    * @return The state from which this transition originates
    */
-  public DeterministicFiniteAutomaton.State getFrom() {
+  public State getFrom() {
     return from;
   }
 
@@ -38,7 +44,7 @@ public class Transition {
    *
    * @return The state to which this transition leads
    */
-  public DeterministicFiniteAutomaton.State getTo() {
+  public State getTo() {
     return to;
   }
 
@@ -47,7 +53,7 @@ public class Transition {
    *
    * @return The symbol that causes this transition to be taken
    */
-  public DeterministicFiniteAutomaton.Symbol getSymbol() {
+  public Symbol getSymbol() {
     return symbol;
   }
 

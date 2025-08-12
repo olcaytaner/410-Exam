@@ -1,6 +1,8 @@
 package DeterministicFiniteAutomaton;
 
 import common.Automaton;
+import common.State;
+import common.Symbol;
 
 import java.util.*;
 import java.util.regex.Matcher;
@@ -13,12 +15,12 @@ import java.util.stream.Collectors;
  * as well as generate Graphviz DOT code for visualization.
  */
 public class DFA extends Automaton {
-  private Set<DeterministicFiniteAutomaton.State> states;
-  private Set<DeterministicFiniteAutomaton.Symbol> alphabet;
-  private Set<DeterministicFiniteAutomaton.Transition> transitions;
+  private Set<State> states;
+  private Set<Symbol> alphabet;
+  private Set<Transition> transitions;
 
-  private DeterministicFiniteAutomaton.State startState;
-  private Set<DeterministicFiniteAutomaton.State> finalStates;
+  private State startState;
+  private Set<State> finalStates;
 
   /**
    * Constructs a new DFA with the specified components.
@@ -29,11 +31,11 @@ public class DFA extends Automaton {
    * @param startState The initial/start state
    * @param transitions The set of transitions between states
    */
-  public DFA(Set<DeterministicFiniteAutomaton.State> states,
-            Set<DeterministicFiniteAutomaton.Symbol> alphabet,
-            Set<DeterministicFiniteAutomaton.State> finalStates,
-            DeterministicFiniteAutomaton.State startState, 
-            Set<DeterministicFiniteAutomaton.Transition> transitions) {
+  public DFA(Set<State> states,
+            Set<Symbol> alphabet,
+            Set<State> finalStates,
+            State startState, 
+            Set<Transition> transitions) {
     super(MachineType.DFA);
     this.states = states;
     this.alphabet = alphabet;
@@ -47,8 +49,8 @@ public class DFA extends Automaton {
    *
    * @return An unmodifiable set of all states
    */
-  public Set<DeterministicFiniteAutomaton.State> getStates() {
-    return states;
+  public Set<State> getStates() {
+    return Collections.unmodifiableSet(states);
   }
 
   /**
@@ -56,8 +58,8 @@ public class DFA extends Automaton {
    *
    * @return An unmodifiable set of input symbols
    */
-  public Set<DeterministicFiniteAutomaton.Symbol> getAlphabet() {
-    return alphabet;
+  public Set<Symbol> getAlphabet() {
+    return Collections.unmodifiableSet(alphabet);
   }
 
   /**
@@ -65,8 +67,8 @@ public class DFA extends Automaton {
    *
    * @return An unmodifiable set of all transitions
    */
-  public Set<DeterministicFiniteAutomaton.Transition> getTransitions() {
-    return transitions;
+  public Set<Transition> getTransitions() {
+    return Collections.unmodifiableSet(transitions);
   }
 
   /**
@@ -74,7 +76,7 @@ public class DFA extends Automaton {
    *
    * @return The start state, or null if not set
    */
-  public DeterministicFiniteAutomaton.State getStartState() {
+  public State getStartState() {
     return startState;
   }
 
@@ -83,8 +85,8 @@ public class DFA extends Automaton {
    *
    * @return An unmodifiable set of final states
    */
-  public Set<DeterministicFiniteAutomaton.State> getFinalStates() {
-    return finalStates;
+  public Set<State> getFinalStates() {
+    return Collections.unmodifiableSet(finalStates);
   }
 
   /**
@@ -104,7 +106,7 @@ public class DFA extends Automaton {
     this.startState = null;
     this.transitions = new HashSet<>();
 
-    Map<String, DeterministicFiniteAutomaton.State> stateMap = new HashMap<>();
+    Map<String, State> stateMap = new HashMap<>();
     String[] lines = inputText.split("\\R");
     Map<String, List<String>> sections = new HashMap<>();
     Map<String, Integer> sectionLineNumbers = new HashMap<>();
@@ -207,8 +209,8 @@ public class DFA extends Automaton {
    * @param messages List to collect any validation messages
    */
   private void processStates(List<String> stateLines, int lineNum, 
-                           Set<DeterministicFiniteAutomaton.State> states,
-                           Map<String, DeterministicFiniteAutomaton.State> stateMap,
+                           Set<State> states,
+                           Map<String, State> stateMap,
                            List<ValidationMessage> messages) {
     if (stateLines == null || stateLines.isEmpty()) {
       messages.add(new ValidationMessage("The 'states:' block cannot be empty.", lineNum, ValidationMessage.ValidationMessageType.ERROR));
@@ -217,7 +219,7 @@ public class DFA extends Automaton {
 
     String[] stateNames = stateLines.get(0).split("\\s+");
     for (String name : stateNames) {
-      DeterministicFiniteAutomaton.State newState = new DeterministicFiniteAutomaton.State(name);
+      State newState = new State(name);
       states.add(newState);
       stateMap.put(name, newState);
     }
@@ -232,7 +234,7 @@ public class DFA extends Automaton {
    * @param messages List to collect any validation messages
    */
   private void processAlphabet(List<String> alphabetLines, int lineNum,
-                             Set<DeterministicFiniteAutomaton.Symbol> alphabet,
+                             Set<Symbol> alphabet,
                              List<ValidationMessage> messages) {
     if (alphabetLines == null || alphabetLines.isEmpty()) {
       messages.add(new ValidationMessage("The 'alphabet:' block cannot be empty.", lineNum, ValidationMessage.ValidationMessageType.ERROR));
@@ -241,7 +243,7 @@ public class DFA extends Automaton {
 
     String[] symbolNames = alphabetLines.get(0).split("\\s+");
     for (String name : symbolNames) {
-      alphabet.add(new DeterministicFiniteAutomaton.Symbol(name));
+      alphabet.add(new Symbol(name.charAt(0)));
     }
   }
 
@@ -254,8 +256,8 @@ public class DFA extends Automaton {
    * @param messages List to collect any validation messages
    * @return The start State object, or null if invalid
    */
-  private DeterministicFiniteAutomaton.State processStartState(List<String> lines, int lineNum,
-                                                             Map<String, DeterministicFiniteAutomaton.State> stateMap,
+  private State processStartState(List<String> lines, int lineNum,
+                                                             Map<String, State> stateMap,
                                                              List<ValidationMessage> messages) {
     if (lines == null || lines.isEmpty()) {
       messages.add(new ValidationMessage("Start state definition is missing.", lineNum, ValidationMessage.ValidationMessageType.ERROR));
@@ -263,13 +265,13 @@ public class DFA extends Automaton {
     }
 
     String startStateName = lines.get(0).trim();
-    DeterministicFiniteAutomaton.State startState = stateMap.get(startStateName);
+    State startState = stateMap.get(startStateName);
     if (startState == null) {
       messages.add(new ValidationMessage("Start state '" + startStateName + "' is not defined in 'states'.", lineNum, ValidationMessage.ValidationMessageType.ERROR));
       return null;
     }
 
-    return new DeterministicFiniteAutomaton.State(startStateName, true, false);
+    return new State(startStateName, true, false);
   }
 
   /**
@@ -281,10 +283,10 @@ public class DFA extends Automaton {
    * @param messages List to collect any validation messages
    * @return A set of final State objects
    */
-  private Set<DeterministicFiniteAutomaton.State> processFinalStates(List<String> lines, int lineNum,
-                                                                   Map<String, DeterministicFiniteAutomaton.State> stateMap,
+  private Set<State> processFinalStates(List<String> lines, int lineNum,
+                                                                   Map<String, State> stateMap,
                                                                    List<ValidationMessage> messages) {
-    Set<DeterministicFiniteAutomaton.State> finalStates = new HashSet<>();
+    Set<State> finalStates = new HashSet<>();
 
     if (lines == null || lines.isEmpty()) {
       messages.add(new ValidationMessage("Final states definition is missing.", lineNum, ValidationMessage.ValidationMessageType.ERROR));
@@ -293,13 +295,13 @@ public class DFA extends Automaton {
 
     String[] finalStateNames = lines.get(0).split("\\s+");
     for (String name : finalStateNames) {
-      DeterministicFiniteAutomaton.State finalState = stateMap.get(name);
+      State finalState = stateMap.get(name);
       if (finalState == null) {
         messages.add(new ValidationMessage("Final state '" + name + "' is not defined in 'states'.", lineNum, ValidationMessage.ValidationMessageType.ERROR));
         continue;
       }
 
-      finalStates.add(new DeterministicFiniteAutomaton.State(finalState.getName(), false, true));
+      finalStates.add(new State(finalState.getName(), false, true));
     }
 
     return finalStates;
@@ -314,10 +316,10 @@ public class DFA extends Automaton {
    * @param messages List to collect any validation messages
    * @return A set of Transition objects representing the DFA's transitions
    */
-  private Set<DeterministicFiniteAutomaton.Transition> processTransitions(List<String> lines, int startLine,
-                                                                       Map<String, DeterministicFiniteAutomaton.State> stateMap,
+  private Set<Transition> processTransitions(List<String> lines, int startLine,
+                                                                       Map<String, State> stateMap,
                                                                        List<ValidationMessage> messages) {
-    Set<DeterministicFiniteAutomaton.Transition> transitionSet = new HashSet<>();
+    Set<Transition> transitionSet = new HashSet<>();
     if (lines == null) return transitionSet;
 
     for (int i = 0; i < lines.size(); i++) {
@@ -341,13 +343,13 @@ public class DFA extends Automaton {
         String toName = matcher.group(2);
         String[] symbols = matcher.group(3).trim().split("\\s+");
 
-        DeterministicFiniteAutomaton.State from = validateState(fromName, stateMap, currentLine, messages);
-        DeterministicFiniteAutomaton.State to = validateState(toName, stateMap, currentLine, messages);
+        State from = validateState(fromName, stateMap, currentLine, messages);
+        State to = validateState(toName, stateMap, currentLine, messages);
 
         for (String symStr : symbols) {
-          DeterministicFiniteAutomaton.Symbol sym = validateSymbol(new DeterministicFiniteAutomaton.Symbol(symStr), this.alphabet, currentLine, messages);
+          Symbol sym = validateSymbol(new Symbol(symStr.charAt(0)), this.alphabet, currentLine, messages);
 
-          transitionSet.add(new DeterministicFiniteAutomaton.Transition(from, sym, to));
+          transitionSet.add(new Transition(from, sym, to));
         }
 
       } else {
@@ -389,10 +391,10 @@ public class DFA extends Automaton {
    * @param messages List to collect any validation messages
    * @return The State object if valid, null otherwise
    */
-  private DeterministicFiniteAutomaton.State validateState(String name,
-                                                         Map<String, DeterministicFiniteAutomaton.State> stateMap,
+  private State validateState(String name,
+                                                         Map<String, State> stateMap,
                                                          int line, List<ValidationMessage> messages) {
-    DeterministicFiniteAutomaton.State state = stateMap.get(name);
+    State state = stateMap.get(name);
 
     if (state == null) {
       messages.add(new ValidationMessage("State '" + name + "' is not defined in 'states'.", line, ValidationMessage.ValidationMessageType.ERROR));
@@ -414,9 +416,9 @@ public class DFA extends Automaton {
    * @param messages List to collect any validation messages
    * @return The validated Symbol object, or null if invalid
    */
-  private DeterministicFiniteAutomaton.Symbol validateSymbol(Symbol symbol, Set<Symbol> alphabet,
+  private Symbol validateSymbol(Symbol symbol, Set<Symbol> alphabet,
                                                            int line, List<ValidationMessage> messages) {
-    if (!symbol.getValue().equals("eps") && !alphabet.contains(symbol)) {
+    if (!alphabet.contains(symbol)) {
       messages.add(new ValidationMessage("Input symbol '" + symbol + "' is not defined in 'alphabet'.", line, ValidationMessage.ValidationMessageType.ERROR));
       return null;
     }
@@ -433,28 +435,28 @@ public class DFA extends Automaton {
    * @param transitions Set of transitions in the DFA
    * @param messages List to collect validation messages
    */
-  private void checkForUnreachableStates(Set<DeterministicFiniteAutomaton.State> allStates, 
-                                       DeterministicFiniteAutomaton.State startState,
-                                       Set<DeterministicFiniteAutomaton.Transition> transitions,
+  private void checkForUnreachableStates(Set<State> allStates, 
+                                       State startState,
+                                       Set<Transition> transitions,
                                        List<ValidationMessage> messages) {
     if (startState == null || allStates.isEmpty()) return;
 
-    Set<DeterministicFiniteAutomaton.State> reachableStates = new HashSet<>();
-    Queue<DeterministicFiniteAutomaton.State> queue = new LinkedList<>();
+    Set<State> reachableStates = new HashSet<>();
+    Queue<State> queue = new LinkedList<>();
 
     reachableStates.add(startState);
     queue.add(startState);
 
-    Map<DeterministicFiniteAutomaton.State, Set<DeterministicFiniteAutomaton.State>> transitionMap = new HashMap<>();
-    for (DeterministicFiniteAutomaton.Transition t : transitions) {
+    Map<State, Set<State>> transitionMap = new HashMap<>();
+    for (Transition t : transitions) {
       transitionMap.computeIfAbsent(t.getFrom(), k -> new HashSet<>()).add(t.getTo());
     }
 
     while (!queue.isEmpty()) {
-      DeterministicFiniteAutomaton.State currentState = queue.poll();
-      Set<DeterministicFiniteAutomaton.State> nextStates = transitionMap.get(currentState);
+      State currentState = queue.poll();
+      Set<State> nextStates = transitionMap.get(currentState);
       if (nextStates != null) {
-        for (DeterministicFiniteAutomaton.State nextState : nextStates) {
+        for (State nextState : nextStates) {
           if (nextState != null && reachableStates.add(nextState)) {
             queue.add(nextState);
           }
@@ -462,7 +464,7 @@ public class DFA extends Automaton {
       }
     }
 
-    for (DeterministicFiniteAutomaton.State state : allStates) {
+    for (State state : allStates) {
       if (!reachableStates.contains(state)) {
         messages.add(new ValidationMessage("State '" + state.getName() + "' is unreachable from the start state.", 
                                           0, 
@@ -480,16 +482,16 @@ public class DFA extends Automaton {
    * @param transitions Set of transitions in the DFA
    * @param messages List to collect validation messages
    */
-  private void checkForDeadEndStates(Set<DeterministicFiniteAutomaton.State> allStates,
-                                   Set<DeterministicFiniteAutomaton.State> finalStates,
-                                   Set<DeterministicFiniteAutomaton.Transition> transitions,
+  private void checkForDeadEndStates(Set<State> allStates,
+                                   Set<State> finalStates,
+                                   Set<Transition> transitions,
                                    List<ValidationMessage> messages) {
 
     Set<State> statesWithOutgoing = transitions.stream()
         .map(Transition::getFrom)
         .collect(Collectors.toSet());
 
-    for (DeterministicFiniteAutomaton.State state : allStates) {
+    for (State state : allStates) {
       if (!finalStates.contains(state) && !statesWithOutgoing.contains(state)) {
         messages.add(new ValidationMessage("State '" + state.getName() + "' is a non-final state with no outgoing transitions (dead-end state).", 
                                           0, 
