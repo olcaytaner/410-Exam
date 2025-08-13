@@ -1,6 +1,6 @@
 states: q0 q1 q_accept q_reject
 input_alphabet: 0 1
-REJECT: q_reject
+reject: q_reject
 accept: q_accept
 start: q0
 tape_alphabet: 0 1 _

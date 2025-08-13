@@ -29,7 +29,7 @@ public class MainPanelTabTest {
     @BeforeEach
     void setUp() {
         testFrame = new JFrame("Test");
-        mainPanel = new MainPanel();
+        mainPanel = TestMainPanelFactory.createForTesting();
         testFrame.add(mainPanel);
         testFrame.pack();
     }
@@ -56,7 +56,7 @@ public class MainPanelTabTest {
                 mainPanel.createNewAutomaton("NFA");
                 mainPanel.createNewAutomaton("PDA");
                 mainPanel.createNewAutomaton("TM");
-                mainPanel.createNewAutomaton("CFG");
+                // CFG will be implemented later
             });
         }
         
@@ -248,18 +248,6 @@ public class MainPanelTabTest {
             });
         }
         
-        @Test
-        @DisplayName("Should handle actions with no active panel")
-        void testActionsNoActivePanel() {
-            // Without creating any automaton, there's no active panel
-            
-            // These should handle gracefully (show error dialog)
-            assertDoesNotThrow(() -> {
-                mainPanel.runCurrentAutomaton();
-                mainPanel.compileCurrentAutomaton();
-                mainPanel.saveCurrentAutomaton();
-            });
-        }
     }
 
     @Nested

@@ -1,2 +1,2 @@
-(a|b)+@(a|b)+
-a, b, @
+regex: (a|b)+@(a|b)+
+alphabet: a b @

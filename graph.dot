@@ -1,14 +1,11 @@
-digraph TuringMachine {
+digraph PDA {
   rankdir=LR;
   node [shape = circle];
-  "q_accept" [shape = doublecircle];
-  "q_accept";
-  "" [shape = none];
+  "q2" [shape=doublecircle];
+  "" [shape=point];
   "" -> "q0";
-  "q1" -> "q_reject" [label = "_ -> _, RIGHT"];
-  "q0" -> "q0" [label = "0 -> 0, RIGHT"];
-  "q1" -> "q0" [label = "1 -> 1, RIGHT"];
-  "q0" -> "q_accept" [label = "_ -> _, RIGHT"];
-  "q1" -> "q1" [label = "0 -> 0, RIGHT"];
-  "q0" -> "q1" [label = "1 -> 1, RIGHT"];
+  "q1":n -> "q1":w [label="a, A / AA"];
+  "q1":s -> "q1":e [label="b, A / eps"];
+  "q1" -> "q2" [label="eps, Z / eps"];
+  "q0" -> "q1" [label="a, Z / AZ"];
 }

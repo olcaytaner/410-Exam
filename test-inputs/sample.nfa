@@ -1,6 +1,7 @@
-Start: q0
-Finals: q2
-Alphabet: a b
+states: q0 q1 q2
+start: q0
+finals: q2
+alphabet: a b
 transitions:
 q0 -> q0 (a b)
 q0 -> q1 (a)

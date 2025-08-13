@@ -14,6 +14,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import common.Automaton;
+import common.InputNormalizer;
 import common.State;
 import common.Symbol;
 
@@ -118,7 +119,6 @@ public class DFA extends Automaton {
    */
   @Override
   public ParseResult parse(String inputText) {
-    List<ValidationMessage> messages = new ArrayList<>();
     this.states = new HashSet<>();
     this.alphabet = new HashSet<>();
     this.finalStates = new HashSet<>();
@@ -126,13 +126,18 @@ public class DFA extends Automaton {
     this.transitions = new HashSet<>();
 
     Map<String, State> stateMap = new HashMap<>();
-    String[] lines = inputText.split("\\R");
-    Map<String, List<String>> sections = new HashMap<>();
-    Map<String, Integer> sectionLineNumbers = new HashMap<>();
+    
+    // Use InputNormalizer for consistent parsing
+    InputNormalizer.NormalizedInput normalizedInput = InputNormalizer.normalize(inputText, MachineType.DFA);
+    List<ValidationMessage> messages = new ArrayList<>(normalizedInput.getMessages());
+    Map<String, List<String>> sections = normalizedInput.getSections();
+    Map<String, Integer> sectionLineNumbers = normalizedInput.getSectionLineNumbers();
 
-    parseSections(lines, sections, sectionLineNumbers, messages);
+    if (normalizedInput.hasErrors()) {
+      return new ParseResult(false, messages, null);
+    }
 
-    if (!validateKeywords(sections, messages)) {
+    if (!InputNormalizer.validateRequiredKeywords(sections, MachineType.DFA, messages)) {
       return new ParseResult(false, messages, null);
     }
 
@@ -155,7 +160,6 @@ public class DFA extends Automaton {
     return new ParseResult(true, messages, this);
   }
 
-  // TODO: Implement the execute method
   /**
    * Executes the DFA on a given input string.
    *
@@ -164,7 +168,65 @@ public class DFA extends Automaton {
    */
   @Override
   public ExecutionResult execute(String inputText) {
-    return null;
+    if (inputText == null) {
+      throw new IllegalArgumentException("Input text cannot be null");
+    }
+    
+    List<ValidationMessage> runtimeMessages = new ArrayList<>();
+    StringBuilder trace = new StringBuilder();
+    
+    if (startState == null) {
+      runtimeMessages.add(new ValidationMessage("No start state defined", 0, ValidationMessage.ValidationMessageType.ERROR));
+      return new ExecutionResult(false, runtimeMessages, "DFA not properly initialized");
+    }
+    
+    State currentState = startState;
+    trace.append("Initial state: ").append(currentState.getName()).append("\n");
+    
+    for (int i = 0; i < inputText.length(); i++) {
+      char inputChar = inputText.charAt(i);
+      Symbol inputSymbol = new Symbol(inputChar);
+      
+      // Check if symbol is in alphabet
+      if (!alphabet.contains(inputSymbol)) {
+        runtimeMessages.add(new ValidationMessage("Symbol '" + inputChar + "' not in alphabet", i, ValidationMessage.ValidationMessageType.ERROR));
+        return new ExecutionResult(false, runtimeMessages, trace.toString());
+      }
+      
+      // Find transition
+      Transition validTransition = null;
+      for (Transition transition : transitions) {
+        if (transition.getFrom().getName().equals(currentState.getName()) && 
+            transition.getSymbol().equals(inputSymbol)) {
+          validTransition = transition;
+          break;
+        }
+      }
+      
+      if (validTransition == null) {
+        trace.append("No transition from state ").append(currentState.getName())
+              .append(" on symbol '").append(inputChar).append("'\n");
+        runtimeMessages.add(new ValidationMessage("No transition defined", i, ValidationMessage.ValidationMessageType.ERROR));
+        return new ExecutionResult(false, runtimeMessages, trace.toString());
+      }
+      
+      currentState = validTransition.getTo();
+      trace.append("Read '").append(inputChar).append("' -> state ").append(currentState.getName()).append("\n");
+    }
+    
+    // Check if final state
+    boolean accepted = false;
+    for (State finalState : finalStates) {
+      if (finalState.getName().equals(currentState.getName())) {
+        accepted = true;
+        break;
+      }
+    }
+    
+    trace.append("Final state: ").append(currentState.getName());
+    trace.append(accepted ? " (ACCEPTED)" : " (REJECTED)").append("\n");
+    
+    return new ExecutionResult(accepted, runtimeMessages, trace.toString());
   }
 
   /**
@@ -195,45 +257,6 @@ public class DFA extends Automaton {
     return messages;
   }
 
-  /**
-   * Parses the input text into sections based on keywords.
-   * Sections are separated by keywords followed by colons (e.g., "states:").
-   *
-   * @param lines The input lines to parse
-   * @param sections Map to store the parsed sections
-   * @param lineNumbers Map to store the line numbers of section starts
-   * @param messages List to collect any validation messages
-   */
-  private void parseSections(String[] lines, Map<String, List<String>> sections, 
-                           Map<String, Integer> lineNumbers, List<ValidationMessage> messages) {
-    String currentSection = null;
-    for (int i = 0; i < lines.length; i++) {
-      String line = lines[i].trim();
-      if (line.isEmpty() || line.startsWith("#")) continue;
-
-      int colonIndex = line.indexOf(":");
-      if (colonIndex != -1) {
-        currentSection = line.substring(0, colonIndex).trim().toLowerCase();
-        String data = line.substring(colonIndex + 1).trim();
-
-        if (sections.containsKey(currentSection)) {
-          messages.add(new ValidationMessage("Duplicate keyword '" + currentSection + "'. Only the first definition will be used.", i + 1, ValidationMessage.ValidationMessageType.WARNING));
-          currentSection = null;
-          continue;
-        }
-        sections.put(currentSection, new ArrayList<>());
-        lineNumbers.put(currentSection, i + 1);
-
-        if (!data.isEmpty()) {
-          sections.get(currentSection).add(data);
-        }
-      } else if (currentSection != null) {
-        sections.get(currentSection).add(line);
-      } else {
-        messages.add(new ValidationMessage("Undefined content. All content must be under a keyword (e.g., 'states:' or 'States:').", i + 1, ValidationMessage.ValidationMessageType.ERROR));
-      }
-    }
-  }
 
   /**
    * Processes the states section of the DFA definition.
@@ -396,27 +419,6 @@ public class DFA extends Automaton {
     return transitionSet;
   }
 
-  /**
-   * Validates that all required keywords are present in the DFA definition.
-   *
-   * @param sections Map of section names to their content lines
-   * @param messages List to collect any validation messages
-   * @return true if all required keywords are present, false otherwise
-   */
-  private boolean validateKeywords(Map<String, List<String>> sections, List<ValidationMessage> messages) {
-    boolean allFound = true;
-    String[] requiredKeys = {"states", "alphabet", "start", "finals", "transitions"};
-
-    for (String key : requiredKeys) {
-      if (!sections.containsKey(key)) {
-        messages.add(new ValidationMessage("Missing required keyword definition for '" + key + ":'.", 0, ValidationMessage.ValidationMessageType.ERROR));
-
-        allFound = false;
-      }
-    }
-
-    return allFound;
-  }
 
   /**
    * Validates that a state name is defined and not a reserved word.

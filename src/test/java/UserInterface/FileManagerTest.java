@@ -1,24 +1,26 @@
 package UserInterface;
 
-import common.Automaton;
-import NondeterministicFiniteAutomaton.NFA;
-import DeterministicFiniteAutomaton.DFA;
-import PushDownAutomaton.PDA;
-import TuringMachine.TM;
-// import ContextFreeGrammar.CFGAutomaton; // TODO: Uncomment when implemented
-// import RegularExpression.RegularExpressionAutomaton; // TODO: Uncomment when implemented
-
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.io.TempDir;
-import static org.junit.jupiter.api.Assertions.*;
-
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+
+import DeterministicFiniteAutomaton.DFA;
+import NondeterministicFiniteAutomaton.NFA;
+import PushDownAutomaton.PDA;
+import TuringMachine.TM;
+import common.Automaton;
 
 /**
  * JUnit 5 test class for FileManager functionality.
@@ -35,8 +37,8 @@ public class FileManagerTest {
 
     @BeforeEach
     void setUp() {
-        // Create a minimal MainPanel for testing
-        mockMainPanel = new MainPanel();
+        // Create a headless MainPanel that won't show dialogs (no UI needed for this test)
+        mockMainPanel = TestMainPanelFactory.createForHeadlessTesting();
         fileManager = mockMainPanel.fileManager;
     }
 

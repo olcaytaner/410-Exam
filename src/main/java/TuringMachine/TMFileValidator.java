@@ -36,6 +36,12 @@ public class TMFileValidator {
      */
     public static List<ValidationMessage> validateFromString(String content) {
         ValidationContext context = new ValidationContext();
+        
+        if (content == null) {
+            context.validationMessages.add(new ValidationMessage("Input content cannot be null", 0, ValidationMessage.ValidationMessageType.ERROR));
+            return context.validationMessages;
+        }
+        
         parseContent(content, context);
 
         validateSections(context);

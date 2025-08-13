@@ -1,6 +1,7 @@
 package PushDownAutomaton;
 
 import common.Automaton;
+import common.InputNormalizer;
 import common.State;
 import common.Symbol;
 import static common.Automaton.ValidationMessage.ValidationMessageType;
@@ -29,7 +30,10 @@ public class PDA extends Automaton {
 
     @Override
     public ParseResult parse(String inputText) {
-        List<ValidationMessage> messages = new ArrayList<>();
+        if (inputText == null) {
+            throw new NullPointerException("Input text cannot be null");
+        }
+        
         this.states = new HashSet<>();
         this.inputAlphabet = new HashSet<>();
         this.stackAlphabet = new HashSet<>();
@@ -39,13 +43,18 @@ public class PDA extends Automaton {
         this.transitionMap = new HashMap<>();
 
         Map<String, State> stateMap = new HashMap<>();
-        String[] lines = inputText.split("\\R");
-        Map<String, List<String>> sections = new HashMap<>();
-        Map<String, Integer> sectionLineNumbers = new HashMap<>();
+        
+        // Use InputNormalizer for consistent parsing
+        InputNormalizer.NormalizedInput normalized = InputNormalizer.normalize(inputText, MachineType.PDA);
+        List<ValidationMessage> messages = new ArrayList<>(normalized.getMessages());
+        Map<String, List<String>> sections = normalized.getSections();
+        Map<String, Integer> sectionLineNumbers = normalized.getSectionLineNumbers();
 
-        parseSections(lines, sections, sectionLineNumbers, messages);
+        if (normalized.hasErrors()) {
+            return new ParseResult(false, messages, null);
+        }
 
-        if (!validateKeywords(sections, messages)) {
+        if (!InputNormalizer.validateRequiredKeywords(sections, MachineType.PDA, messages)) {
             return new ParseResult(false, messages, null);
         }
 

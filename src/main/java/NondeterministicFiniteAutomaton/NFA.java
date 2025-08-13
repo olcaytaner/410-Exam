@@ -2,6 +2,7 @@ package NondeterministicFiniteAutomaton;
 
 import common.Automaton;
 import common.Automaton.ValidationMessage.ValidationMessageType;
+import common.InputNormalizer;
 import common.State;
 import common.Symbol;
 import java.io.BufferedReader;
@@ -78,46 +79,204 @@ public class NFA extends Automaton {
      */
     @Override
     public ParseResult parse(String inputText) {
+        if (inputText == null) {
+            throw new NullPointerException("Input text cannot be null");
+        }
+        
+        this.states = new HashMap<>();
+        this.alphabet = new HashSet<>();
+        this.startState = null;
+        this.finalStates = new HashSet<>();
+        this.transitions = new HashMap<>();
 
-        List<ValidationMessage> warnings = new ArrayList<>();
-        try {
-            warnings = handleLines(inputText);
-        } catch (IOException e) {
-            warnings.add(new ValidationMessage("Error reading input", -1, ValidationMessageType.ERROR));
-            System.out.println("Error reading input: " + e.getMessage());
-            return new ParseResult(false, warnings, null);
+        // Use InputNormalizer for consistent parsing
+        InputNormalizer.NormalizedInput normalizedInput = InputNormalizer.normalize(inputText, MachineType.NFA);
+        List<ValidationMessage> messages = new ArrayList<>(normalizedInput.getMessages());
+        Map<String, List<String>> sections = normalizedInput.getSections();
+        Map<String, Integer> sectionLineNumbers = normalizedInput.getSectionLineNumbers();
+
+        if (normalizedInput.hasErrors()) {
+            return new ParseResult(false, messages, null);
         }
 
-        int errorCount = 0;
-        int warnCount = 0;
-        int infoCount = 0;
-
-        for (ValidationMessage warning : warnings) {
-            if (warning.getType() == ValidationMessageType.ERROR) {
-                errorCount++;
-            } else if (warning.getType() == ValidationMessageType.WARNING) {
-                warnCount++;
-            } else if (warning.getType() == ValidationMessageType.INFO) {
-                infoCount++;
-            }
+        if (!InputNormalizer.validateRequiredKeywords(sections, MachineType.NFA, messages)) {
+            return new ParseResult(false, messages, null);
         }
 
-        ParseResult parseResult;
+        // Process sections using a simplified approach similar to DFA
+        processStatesNFA(sections.get("states"), sectionLineNumbers.get("states"), messages);
+        processAlphabetNFA(sections.get("alphabet"), sectionLineNumbers.get("alphabet"), messages);
+        processStartStateNFA(sections.get("start"), sectionLineNumbers.get("start"), messages);
+        processFinalStatesNFA(sections.get("finals"), sectionLineNumbers.get("finals"), messages);
+        processTransitionsNFA(sections.get("transitions"), sectionLineNumbers.get("transitions"), messages);
 
+        boolean isSuccess = messages.stream().noneMatch(m -> m.getType() == ValidationMessageType.ERROR);
+        
+        ParseResult parseResult = new ParseResult(isSuccess, messages, isSuccess ? this : null);
+        
+        // Log results
+        int errorCount = (int) messages.stream().filter(m -> m.getType() == ValidationMessageType.ERROR).count();
+        int warnCount = (int) messages.stream().filter(m -> m.getType() == ValidationMessageType.WARNING).count();
+        int infoCount = (int) messages.stream().filter(m -> m.getType() == ValidationMessageType.INFO).count();
+        
         if (errorCount > 0) {
-            parseResult = new ParseResult(false, warnings, null);
             System.out.println("\n NFA parsing unsuccessful " + errorCount + " error(s), " + warnCount + " warning(s) and " + infoCount + " info(s).\n");
-        }else {
-            parseResult = new ParseResult(true, warnings, this);
+        } else {
             System.out.println("\n Successfully parsed NFA with " + errorCount + " error(s) and " +  warnCount + " warning(s) " + infoCount + " info(s).\n");
         }
 
-        for (ValidationMessage warning : warnings) {
-            System.out.println(warning);
+        for (ValidationMessage message : messages) {
+            System.out.println(message);
         }
 
-
         return parseResult;
+    }
+
+    /**
+     * Processes states section for NFA
+     */
+    private void processStatesNFA(List<String> stateLines, Integer lineNum, List<ValidationMessage> messages) {
+        if (stateLines == null || stateLines.isEmpty()) {
+            messages.add(new ValidationMessage("The 'states:' block cannot be empty.", lineNum != null ? lineNum : 0, ValidationMessageType.ERROR));
+            return;
+        }
+
+        String[] stateNames = stateLines.get(0).split("\\s+");
+        for (String name : stateNames) {
+            if (name.matches(statePattern)) {
+                this.states.put(name, new State(name));
+            } else {
+                messages.add(new ValidationMessage("Invalid state name: " + name, lineNum != null ? lineNum : 0, ValidationMessageType.ERROR));
+            }
+        }
+    }
+
+    /**
+     * Processes alphabet section for NFA
+     */
+    private void processAlphabetNFA(List<String> alphabetLines, Integer lineNum, List<ValidationMessage> messages) {
+        if (alphabetLines == null || alphabetLines.isEmpty()) {
+            messages.add(new ValidationMessage("The 'alphabet:' block cannot be empty.", lineNum != null ? lineNum : 0, ValidationMessageType.ERROR));
+            return;
+        }
+
+        String[] symbolNames = alphabetLines.get(0).split("\\s+");
+        for (String name : symbolNames) {
+            if (name.length() == 1 && Character.isLetter(name.charAt(0))) {
+                this.alphabet.add(new Symbol(name.charAt(0)));
+            } else {
+                messages.add(new ValidationMessage("Invalid alphabet symbol: " + name, lineNum != null ? lineNum : 0, ValidationMessageType.ERROR));
+            }
+        }
+    }
+
+    /**
+     * Processes start state section for NFA
+     */
+    private void processStartStateNFA(List<String> startLines, Integer lineNum, List<ValidationMessage> messages) {
+        if (startLines == null || startLines.isEmpty()) {
+            messages.add(new ValidationMessage("The 'start:' block cannot be empty.", lineNum != null ? lineNum : 0, ValidationMessageType.ERROR));
+            return;
+        }
+
+        String startStateName = startLines.get(0).trim();
+        if (startStateName.matches(statePattern)) {
+            if (this.states.containsKey(startStateName)) {
+                this.states.get(startStateName).setStart(true);
+                this.startState = this.states.get(startStateName);
+            } else {
+                this.states.put(startStateName, new State(startStateName, true, false));
+                this.startState = this.states.get(startStateName);
+            }
+        } else {
+            messages.add(new ValidationMessage("Invalid start state name: " + startStateName, lineNum != null ? lineNum : 0, ValidationMessageType.ERROR));
+        }
+    }
+
+    /**
+     * Processes final states section for NFA
+     */
+    private void processFinalStatesNFA(List<String> finalLines, Integer lineNum, List<ValidationMessage> messages) {
+        if (finalLines == null || finalLines.isEmpty()) {
+            messages.add(new ValidationMessage("The 'finals:' block cannot be empty.", lineNum != null ? lineNum : 0, ValidationMessageType.ERROR));
+            return;
+        }
+
+        String[] finalStateNames = finalLines.get(0).split("\\s+");
+        for (String name : finalStateNames) {
+            if (name.matches(statePattern)) {
+                if (this.states.containsKey(name)) {
+                    this.states.get(name).setAccept(true);
+                    this.finalStates.add(this.states.get(name));
+                } else {
+                    State finalState = new State(name, false, true);
+                    this.states.put(name, finalState);
+                    this.finalStates.add(finalState);
+                }
+            } else {
+                messages.add(new ValidationMessage("Invalid final state name: " + name, lineNum != null ? lineNum : 0, ValidationMessageType.ERROR));
+            }
+        }
+    }
+
+    /**
+     * Processes transitions section for NFA
+     */
+    private void processTransitionsNFA(List<String> transitionLines, Integer lineNum, List<ValidationMessage> messages) {
+        if (transitionLines == null) return;
+
+        for (int i = 0; i < transitionLines.size(); i++) {
+            String line = transitionLines.get(i);
+            int currentLineNumber = lineNum != null ? lineNum + i : 0;
+            
+            Pattern pattern = Pattern.compile(transitionPattern);
+            Matcher matcher = pattern.matcher(line);
+            
+            if (matcher.find()) {
+                String fromStateName = matcher.group(1);
+                String toStateName = matcher.group(2);
+                String symbolGroup = matcher.group(3);
+                
+                if (fromStateName != null && toStateName != null && symbolGroup != null) {
+                    // Ensure states exist
+                    this.states.putIfAbsent(fromStateName, new State(fromStateName));
+                    this.states.putIfAbsent(toStateName, new State(toStateName));
+                    
+                    State fromState = this.states.get(fromStateName);
+                    State toState = this.states.get(toStateName);
+                    
+                    // Parse symbols from group
+                    String symbolsString = symbolGroup.substring(1, symbolGroup.length() - 1);
+                    String[] symbols = symbolsString.split("\\s+");
+                    
+                    List<Transition> transitionList = new ArrayList<>();
+                    for (String symbolStr : symbols) {
+                        Symbol symbol;
+                        if (symbolStr.equals("eps")) {
+                            symbol = new Symbol('_'); // epsilon
+                        } else {
+                            symbol = new Symbol(symbolStr.charAt(0));
+                        }
+                        
+                        if (!this.alphabet.contains(symbol) && !symbolStr.equals("eps")) {
+                            messages.add(new ValidationMessage("Symbol not in alphabet: " + symbolStr, currentLineNumber, ValidationMessageType.ERROR));
+                            continue;
+                        }
+                        
+                        Transition transition = new Transition(fromState, toState, symbol);
+                        transitionList.add(transition);
+                    }
+                    
+                    if (!transitionList.isEmpty()) {
+                        this.transitions.computeIfAbsent(fromState, k -> new ArrayList<>()).addAll(transitionList);
+                    }
+                } else {
+                    messages.add(new ValidationMessage("Invalid transition format: " + line, currentLineNumber, ValidationMessageType.ERROR));
+                }
+            } else {
+                messages.add(new ValidationMessage("Invalid transition syntax: " + line, currentLineNumber, ValidationMessageType.ERROR));
+            }
+        }
     }
 
     /**

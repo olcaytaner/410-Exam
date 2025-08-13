@@ -1,17 +1,23 @@
 package UserInterface;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
-import static org.junit.jupiter.api.Assertions.*;
-
-import javax.swing.*;
-import java.awt.*;
+import java.awt.Component;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+
+import javax.swing.JFrame;
+import javax.swing.JPanel;
+
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
 
 import DeterministicFiniteAutomaton.DFA;
 import NondeterministicFiniteAutomaton.NFA;
@@ -35,7 +41,7 @@ public class UIPanelIntegrationTest {
     void setUp() {
         // Create a test frame and main panel for UI testing
         testFrame = new JFrame("Test");
-        mainPanel = new MainPanel();
+        mainPanel = TestMainPanelFactory.createForTesting();
         fileManager = mainPanel.fileManager;
         testFrame.add(mainPanel);
         testFrame.pack();

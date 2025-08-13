@@ -159,15 +159,26 @@ public class TM extends Automaton {
 
     @Override
     public ParseResult parse(String inputText) {
+        if (inputText == null) {
+            throw new NullPointerException("Input text cannot be null");
+        }
+        
+        // Perform validation first
         List<ValidationMessage> validationMessages = validate(inputText);
-
+        
         boolean hasErrors = validationMessages.stream().anyMatch(i -> i.getType() == ValidationMessageType.ERROR);
         if (hasErrors) {
             return new ParseResult(false, validationMessages, null);
         }
-
-        TM machine = TMParser.parse(inputText);
-        return new ParseResult(true, validationMessages, machine);
+        
+        try {
+            TM machine = TMParser.parse(inputText);
+            return new ParseResult(true, validationMessages, machine);
+        } catch (Exception e) {
+            List<ValidationMessage> messages = new ArrayList<>(validationMessages);
+            messages.add(new ValidationMessage("Parsing failed: " + e.getMessage(), 0, ValidationMessageType.ERROR));
+            return new ParseResult(false, messages, null);
+        }
     }
 
 
@@ -197,6 +208,11 @@ public class TM extends Automaton {
     }
 
     public List<ValidationMessage> validate(String inputText) {
+        if (inputText == null) {
+            List<ValidationMessage> messages = new ArrayList<>();
+            messages.add(new ValidationMessage("Input text cannot be null", 0, ValidationMessageType.ERROR));
+            return messages;
+        }
         return TMFileValidator.validateFromString(inputText);
-}
+    }
 }
