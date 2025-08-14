@@ -1,0 +1,19 @@
+#week2-4
+Start: q0
+Finals: q7
+Alphabet: a b c
+States: q0 q1 q2 q3 q4 q5 q6 q7
+transitions:
+q0 -> q0 (a b c)
+
+q0 -> q1 (a)
+q0 -> q2 (b)
+q0 -> q3 (c)
+
+q1 -> q4 (a)
+q2 -> q5 (b)
+q3 -> q6 (c)
+
+q4 -> q7 (a)
+q5 -> q7 (b)
+q6 -> q7 (c)

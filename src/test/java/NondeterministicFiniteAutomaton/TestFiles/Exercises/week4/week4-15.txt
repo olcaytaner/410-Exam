@@ -1,0 +1,16 @@
+#week4-15
+Start: q0
+Finals: q3 q6
+Alphabet: a b c
+States: q0 q1 q2 q3 q4 q5 q6
+transitions:
+q0 -> q1 (eps)
+q1 -> q1 (a)
+q1 -> q2 (a)
+q2 -> q3 (b c)
+q3 -> q1 (eps)
+q0 -> q4 (eps)
+q4 -> q5 (a b c)
+q4 -> q6 (a eps)
+q5 -> q6 (c)
+q6 -> q6 (b)

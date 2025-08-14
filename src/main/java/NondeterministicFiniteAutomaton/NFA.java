@@ -5,9 +5,6 @@ import common.Automaton.ValidationMessage.ValidationMessageType;
 import common.InputNormalizer;
 import common.State;
 import common.Symbol;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.StringReader;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -31,8 +28,8 @@ import java.util.regex.Pattern;
  */
 public class NFA extends Automaton {
 
-    private static final String transitionPattern = "(?:(q\\d+)|.) ?-> ?(?:(q\\d+)|\\S*)? (?:(\\((?:[a-zA-Z]|eps)(?:\\s(?:[a-zA-Z]|eps))*\\s?\\))|.+)?";
-    private static final String transitionSymbolPattern = "\\((?:[a-zA-Z]|eps)(?:\\s(?:[a-zA-Z]|eps))*\\s?\\)";
+    private static final String transitionPattern = "(?:(q\\d+)|.) ?-> ?(?:(q\\d+)|\\S*)? ?(?:(\\((?:[a-zA-Z0-9]|eps)(?:\\s(?:[a-zA-Z0-9]|eps))*\\s?\\))|.*)?";
+    private static final String transitionSymbolPattern = "\\((?:[a-zA-Z0-9]|eps)(?:\\s(?:[a-zA-Z0-9]|eps))*\\s?\\)";
     private static final String statePattern = "q\\d+";
 
     private Map<String, State> states;
@@ -129,11 +126,20 @@ public class NFA extends Automaton {
             System.out.println(message);
         }
 
+        if (isSuccess) {
+            messages.addAll(validate());
+        }
+
         return parseResult;
     }
 
     /**
-     * Processes states section for NFA
+     * Processes the 'states:' section of the NFA definition.
+     * Validates each state name and adds it to the NFA's state map.
+     *
+     * @param stateLines the list of lines containing state names
+     * @param lineNum the line number in the input where the states section begins
+     * @param messages the list to collect validation messages for errors or warnings
      */
     private void processStatesNFA(List<String> stateLines, Integer lineNum, List<ValidationMessage> messages) {
         if (stateLines == null || stateLines.isEmpty()) {
@@ -143,7 +149,7 @@ public class NFA extends Automaton {
 
         String[] stateNames = stateLines.get(0).split("\\s+");
         for (String name : stateNames) {
-            if (name.matches(statePattern)) {
+            if (name.matches("^" + statePattern + "$")) {
                 this.states.put(name, new State(name));
             } else {
                 messages.add(new ValidationMessage("Invalid state name: " + name, lineNum != null ? lineNum : 0, ValidationMessageType.ERROR));
@@ -151,8 +157,14 @@ public class NFA extends Automaton {
         }
     }
 
+
     /**
-     * Processes alphabet section for NFA
+     * Processes the 'alphabet:' section of the NFA definition.
+     * Validates each symbol, ensures no duplicates, and adds it to the NFA's alphabet set.
+     *
+     * @param alphabetLines the list of lines containing alphabet symbols
+     * @param lineNum the line number in the input where the alphabet section begins
+     * @param messages the list to collect validation messages for errors or warnings
      */
     private void processAlphabetNFA(List<String> alphabetLines, Integer lineNum, List<ValidationMessage> messages) {
         if (alphabetLines == null || alphabetLines.isEmpty()) {
@@ -162,16 +174,27 @@ public class NFA extends Automaton {
 
         String[] symbolNames = alphabetLines.get(0).split("\\s+");
         for (String name : symbolNames) {
-            if (name.length() == 1 && Character.isLetter(name.charAt(0))) {
-                this.alphabet.add(new Symbol(name.charAt(0)));
+            if (name.length() == 1 && Character.isLetterOrDigit(name.charAt(0))) {
+                Symbol symbol = new Symbol(name.charAt(0));
+                if (!this.alphabet.contains(symbol)) {
+                    this.alphabet.add(symbol);
+                }else {
+                    messages.add(new ValidationMessage("Duplicate Symbol: " + name, lineNum != null ? lineNum : 0, ValidationMessageType.ERROR));
+                }
             } else {
                 messages.add(new ValidationMessage("Invalid alphabet symbol: " + name, lineNum != null ? lineNum : 0, ValidationMessageType.ERROR));
             }
         }
     }
 
+
     /**
-     * Processes start state section for NFA
+     * Processes the 'start:' section of the NFA definition.
+     * Validates and sets the start state for the NFA.
+     *
+     * @param startLines the list of lines containing the start state
+     * @param lineNum the line number in the input where the start section begins
+     * @param messages the list to collect validation messages for errors or warnings
      */
     private void processStartStateNFA(List<String> startLines, Integer lineNum, List<ValidationMessage> messages) {
         if (startLines == null || startLines.isEmpty()) {
@@ -179,104 +202,77 @@ public class NFA extends Automaton {
             return;
         }
 
+        if (startLines.size() != 1) {
+            messages.add(new ValidationMessage("There cannot be more than 1 start state",  lineNum != null ? lineNum : 0, ValidationMessageType.ERROR));
+        }
+
         String startStateName = startLines.get(0).trim();
-        if (startStateName.matches(statePattern)) {
+        if (startStateName.matches("^" + statePattern.trim() + "$")) {
             if (this.states.containsKey(startStateName)) {
                 this.states.get(startStateName).setStart(true);
                 this.startState = this.states.get(startStateName);
-            } else {
-                this.states.put(startStateName, new State(startStateName, true, false));
-                this.startState = this.states.get(startStateName);
+            }else {
+                messages.add(new ValidationMessage("States does not contain start state",  lineNum != null ? lineNum : 0, ValidationMessageType.ERROR));
             }
         } else {
             messages.add(new ValidationMessage("Invalid start state name: " + startStateName, lineNum != null ? lineNum : 0, ValidationMessageType.ERROR));
         }
     }
 
+
     /**
-     * Processes final states section for NFA
+     * Processes the 'finals:' section of the NFA definition.
+     * Validates each final state and marks it as accepting in the NFA.
+     *
+     * @param finalLines the list of lines containing final state names
+     * @param lineNum the line number in the input where the finals section begins
+     * @param messages the list to collect validation messages for errors or warnings
      */
     private void processFinalStatesNFA(List<String> finalLines, Integer lineNum, List<ValidationMessage> messages) {
-        if (finalLines == null || finalLines.isEmpty()) {
+        if (finalLines == null) {
             messages.add(new ValidationMessage("The 'finals:' block cannot be empty.", lineNum != null ? lineNum : 0, ValidationMessageType.ERROR));
             return;
         }
 
-        String[] finalStateNames = finalLines.get(0).split("\\s+");
-        for (String name : finalStateNames) {
-            if (name.matches(statePattern)) {
-                if (this.states.containsKey(name)) {
-                    this.states.get(name).setAccept(true);
-                    this.finalStates.add(this.states.get(name));
+        if (!finalLines.isEmpty()) {
+            String[] finalStateNames = finalLines.get(0).split("\\s+");
+            for (String name : finalStateNames) {
+                if (name.matches(statePattern)) {
+                    if (this.states.containsKey(name)) {
+                        this.states.get(name).setAccept(true);
+                        this.finalStates.add(this.states.get(name));
+                    } else {
+                        messages.add(new ValidationMessage("States does not contain final state: " + name, lineNum != null ? lineNum : 0, ValidationMessageType.ERROR));
+                    }
                 } else {
-                    State finalState = new State(name, false, true);
-                    this.states.put(name, finalState);
-                    this.finalStates.add(finalState);
+                    messages.add(new ValidationMessage("Invalid final state name: " + name, lineNum != null ? lineNum : 0, ValidationMessageType.ERROR));
                 }
-            } else {
-                messages.add(new ValidationMessage("Invalid final state name: " + name, lineNum != null ? lineNum : 0, ValidationMessageType.ERROR));
             }
         }
+
     }
 
+
     /**
-     * Processes transitions section for NFA
+     * Processes the 'transitions:' section of the NFA definition.
+     * Validates the syntax and semantics of each transition line.
+     *
+     * @param transitionLines the list of lines defining transitions
+     * @param lineNum the line number in the input where the transitions section begins
+     * @param messages the list to collect validation messages for errors or warnings
      */
     private void processTransitionsNFA(List<String> transitionLines, Integer lineNum, List<ValidationMessage> messages) {
         if (transitionLines == null) return;
 
+        List<ValidationMessage> lMessages = new ArrayList<>();
+
         for (int i = 0; i < transitionLines.size(); i++) {
             String line = transitionLines.get(i);
             int currentLineNumber = lineNum != null ? lineNum + i : 0;
-            
-            Pattern pattern = Pattern.compile(transitionPattern);
-            Matcher matcher = pattern.matcher(line);
-            
-            if (matcher.find()) {
-                String fromStateName = matcher.group(1);
-                String toStateName = matcher.group(2);
-                String symbolGroup = matcher.group(3);
-                
-                if (fromStateName != null && toStateName != null && symbolGroup != null) {
-                    // Ensure states exist
-                    this.states.putIfAbsent(fromStateName, new State(fromStateName));
-                    this.states.putIfAbsent(toStateName, new State(toStateName));
-                    
-                    State fromState = this.states.get(fromStateName);
-                    State toState = this.states.get(toStateName);
-                    
-                    // Parse symbols from group
-                    String symbolsString = symbolGroup.substring(1, symbolGroup.length() - 1);
-                    String[] symbols = symbolsString.split("\\s+");
-                    
-                    List<Transition> transitionList = new ArrayList<>();
-                    for (String symbolStr : symbols) {
-                        Symbol symbol;
-                        if (symbolStr.equals("eps")) {
-                            symbol = new Symbol('_'); // epsilon
-                        } else {
-                            symbol = new Symbol(symbolStr.charAt(0));
-                        }
-                        
-                        if (!this.alphabet.contains(symbol) && !symbolStr.equals("eps")) {
-                            messages.add(new ValidationMessage("Symbol not in alphabet: " + symbolStr, currentLineNumber, ValidationMessageType.ERROR));
-                            continue;
-                        }
-                        
-                        Transition transition = new Transition(fromState, toState, symbol);
-                        transitionList.add(transition);
-                    }
-                    
-                    if (!transitionList.isEmpty()) {
-                        this.transitions.computeIfAbsent(fromState, k -> new ArrayList<>()).addAll(transitionList);
-                    }
-                } else {
-                    messages.add(new ValidationMessage("Invalid transition format: " + line, currentLineNumber, ValidationMessageType.ERROR));
-                }
-            } else {
-                messages.add(new ValidationMessage("Invalid transition syntax: " + line, currentLineNumber, ValidationMessageType.ERROR));
-            }
+
+            lMessages.addAll(handleTransitionLines(line, currentLineNumber));
         }
+        messages.addAll(lMessages);
     }
 
     /**
@@ -385,287 +381,6 @@ public class NFA extends Automaton {
         return getEpsilonClosure(set);
     }
 
-
-    /**
-     * Parses each line of the input text and delegates validation based on section headers (start, finals, alphabet, transitions).
-     * Keeps track of line numbers and section presence for post-parse validation.
-     * Collects warnings or errors encountered during the parsing of individual lines or sections.
-     *
-     * @param inputText full multiline string representing the NFA
-     * @return list of ValidationMessages indicating any issues found during parsing
-     * @throws IOException if an error occurs while reading the input
-     */
-    private List<ValidationMessage> handleLines(String inputText) throws IOException {
-
-        this.states = new HashMap<>();
-        this.alphabet =  new HashSet<>();
-        this.startState = null;
-        this.finalStates =  new HashSet<>();
-        this.transitions =  new HashMap<>();
-
-        Map<String, Boolean> lineBoolMap = new HashMap<>();
-        lineBoolMap.put("startLine", false);
-        lineBoolMap.put("finalsLine", false);
-        lineBoolMap.put("alphaLine", false);
-        lineBoolMap.put("transitionsLine", false);
-        lineBoolMap.put("isNextLineTransition", false);
-
-        //startLineNo, finalsLineNo, alphaLineNo
-        Map<String, Integer> lineNumbers = new HashMap<>();
-        lineNumbers.put("currentLineNo", 0);
-        lineNumbers.put("startLineNo", -1);
-        lineNumbers.put("finalsLineNo", -1);
-        lineNumbers.put("alphaLineNo", -1);
-
-        List<ValidationMessage> warnings = new ArrayList<>();
-
-        BufferedReader reader = new BufferedReader(new StringReader(inputText));
-        String line;
-        while ((line = reader.readLine()) != null){
-            line = line.trim();
-            int count = lineNumbers.getOrDefault("currentLineNo",0);
-            lineNumbers.put("currentLineNo", count + 1);
-
-            if (line.startsWith("#")) {
-                //comment line
-                continue;
-            }
-
-            if (line.toLowerCase().startsWith("start:")){
-                lineBoolMap.put("isNextLineTransition", false);
-
-                if (!lineBoolMap.get("startLine")){
-                    lineBoolMap.put("startLine", true);
-                    lineNumbers.put("startLineNo", lineNumbers.get("currentLineNo"));
-
-                    warnings.addAll(handleStartStateLine(line, lineNumbers.get("currentLineNo")));
-                }else {
-                    //there is already a start line
-                    warnings.add(new ValidationMessage("There is already a start line", lineNumbers.get("currentLineNo"), ValidationMessageType.ERROR));
-                    continue;
-                }
-
-            } else
-            if (line.toLowerCase().startsWith("finals:")) {
-                lineBoolMap.put("isNextLineTransition", false);
-
-                if (!lineBoolMap.get("finalsLine")){
-                    lineBoolMap.put("finalsLine", true);
-                    lineNumbers.put("finalsLineNo", lineNumbers.get("currentLineNo"));
-
-                    warnings.addAll(handleFinalStatesLine(line, lineNumbers.get("currentLineNo")));
-                } else {
-                    //there is already a finals line
-                    warnings.add(new ValidationMessage("There is already a finals line", lineNumbers.get("currentLineNo"), ValidationMessageType.ERROR));
-                    continue;
-                }
-
-            } else
-            if (line.toLowerCase().startsWith("alphabet:")) {
-                lineBoolMap.put("isNextLineTransition", false);
-
-                if (!lineBoolMap.get("alphaLine")){
-                    lineBoolMap.put("alphaLine", true);
-                    lineNumbers.put("alphaLineNo", lineNumbers.get("currentLineNo"));
-
-                    warnings.addAll(handleAlphabetLine(line, lineNumbers.get("currentLineNo")));
-                }else {
-                    //there is already an alphabet line
-                    warnings.add(new ValidationMessage("There is already a alphabet line", lineNumbers.get("currentLineNo"),  ValidationMessageType.ERROR));
-                    continue;
-                }
-
-            } else
-            if (line.toLowerCase().startsWith("transitions:")) {
-                lineBoolMap.put("isNextLineTransition", true);
-                if (!lineBoolMap.get("transitionsLine")){
-                    lineBoolMap.put("transitionsLine", true);
-                }else {
-                    //there is already a transitions line
-                    warnings.add(new ValidationMessage("There is already a \"transitions:\" line", lineNumbers.get("currentLineNo"),  ValidationMessageType.ERROR));
-                    continue;
-                }
-
-                if (!line.trim().equals("transitions:")) {
-                    warnings.add(new ValidationMessage("\"transitions:\" line should only contain \"transitions:\"", lineNumbers.get("currentLineNo"), ValidationMessageType.ERROR));
-                }
-
-            } else
-            if (line.contains("->")) {
-
-                if (!lineBoolMap.get("isNextLineTransition")) {
-                    //no "transitions:" line
-                    warnings.add(new ValidationMessage("No \"transitions:\" line for this transition", lineNumbers.get("currentLineNo"), ValidationMessageType.ERROR));
-                }else {
-                    warnings.addAll(handleTransitionLines(line, lineNumbers.get("currentLineNo")));
-                }
-
-            } else
-            if (!line.isEmpty()) {
-
-                warnings.add(new ValidationMessage("Skipping Unknown Line: " + line, lineNumbers.get("currentLineNo"), ValidationMessageType.WARNING));
-                lineBoolMap.put("isNextLineTransition", false);
-
-            }
-
-        }
-
-        warnings.addAll(runPostParseChecks(lineNumbers, lineBoolMap));
-
-        return warnings;
-    }
-
-    /**
-     * Parses and validates the "start:" line from the NFA definition.
-     * Ensures exactly one valid start state is provided and marks it in the states map.
-     *
-     * @param line   the input line containing the start state
-     * @param lineNo the line number for error reporting
-     * @return a list of ValidationMessages indicating syntax or semantic issues
-     */
-    private List<ValidationMessage> handleStartStateLine(String line, int lineNo){
-
-        List<ValidationMessage> warnings = new ArrayList<>();
-
-        String[] arr = line.split(" ");
-
-        if (arr.length < 2){
-            //no starts state
-            warnings.add(new ValidationMessage("No start state", lineNo, ValidationMessageType.ERROR));
-            return warnings;
-        } else if (arr.length > 2) {
-            //more than 1 start state
-            warnings.add(new ValidationMessage("More than 1 start state", lineNo, ValidationMessageType.ERROR));
-            return warnings;
-        } else {
-
-            String stateName = arr[1].trim();
-            if (stateName.matches(statePattern)){ //q then number
-                //correct
-                System.out.println("Start line is correct: " + line);
-
-                if (this.states.containsKey(stateName)){
-                    this.states.get(stateName).setStart(true);
-                }else {
-                    this.states.put(stateName, new State(stateName, true, false));
-                }
-                this.startState = this.states.get(stateName);
-
-            }else {
-                //wrong state name
-                warnings.add(new ValidationMessage("Wrong start state name: " + stateName, lineNo,  ValidationMessageType.ERROR));
-                return warnings;
-            }
-
-        }
-
-        return warnings;
-    }
-
-    /**
-     * Parses and validates the "finals:" line from the NFA definition.
-     * Ensures that all listed states follow the correct naming convention and are marked as final states.
-     * Adds new states to the internal state map if they do not already exist.
-     *
-     * @param line the input line containing final states
-     * @param lineNo the line number for error reporting
-     * @return list of validation messages indicating any syntax errors
-     */
-    private List<ValidationMessage> handleFinalStatesLine(String line, int lineNo){
-        List<ValidationMessage> warnings = new ArrayList<>();
-
-        String[] arr = line.split(" ");
-
-        if (arr.length < 2){
-            //no state
-            warnings.add(new ValidationMessage("No final state", lineNo,  ValidationMessageType.ERROR));
-            return warnings;
-        }else {
-            boolean isCorrect = true;
-            for (int i = 1; i < arr.length; i++) {
-                if (!arr[i].matches(statePattern)){
-                    //wrong state naming
-                    isCorrect = false;
-                    warnings.add(new ValidationMessage("Wrong final state name: " + arr[i], lineNo,  ValidationMessageType.ERROR));
-                }
-            }
-            if (isCorrect){
-                System.out.println("Final state is correct: " + line);
-                for (int i = 1; i < arr.length; i++) {
-
-                    if (this.states.containsKey(arr[i])){
-                        this.states.get(arr[i]).setAccept(true);
-                        this.finalStates.add(this.states.get(arr[i]));
-                    }else {
-                        State finalState = new State(arr[i], false, true);
-                        this.states.put(arr[i], finalState);
-                        this.finalStates.add(finalState);
-                    }
-
-                }
-
-            }
-
-        }
-
-        return warnings;
-    }
-
-    /**
-     * Parses and validates the "alphabet:" line from the NFA definition.
-     * Checks each symbol for validity (must be a single letter and not 'eps') and detects duplicates.
-     *
-     * @param line   the input line containing alphabet symbols
-     * @param lineNo the line number for error reporting
-     * @return a list of ValidationMessages describing any format or semantic errors
-     */
-    private List<ValidationMessage> handleAlphabetLine(String line, int lineNo){
-        List<ValidationMessage> warnings = new ArrayList<>();
-
-        String[] arr = line.split(" ");
-
-        if (arr.length < 2){
-            //no letter
-            warnings.add(new ValidationMessage("No alphabet letter", lineNo,   ValidationMessageType.ERROR));
-        }else {
-            boolean isCorrect = true;
-            for (int i = 1; i < arr.length; i++) {
-                if (arr[i].equals("eps")){
-                    //wrong letter naming
-                    isCorrect = false;
-                    warnings.add(new ValidationMessage("Alphabet letter cannot be eps", lineNo, ValidationMessageType.ERROR));
-                }
-
-                if (arr[i].length() != 1){
-                    //not a character
-                    isCorrect = false;
-                    warnings.add(new ValidationMessage("Alphabet is not a character: " + arr[i], lineNo,  ValidationMessageType.ERROR));
-                }else {
-                    if (!Character.isLetter(arr[i].charAt(0))) {
-                        //char is not a letter
-                        isCorrect = false;
-                        warnings.add(new ValidationMessage("Alphabet is not a letter: " + arr[i], lineNo,  ValidationMessageType.ERROR));
-                    }else {
-                        //correct letter
-                        Symbol symbol = new Symbol(arr[i].charAt(0));
-                        if (this.alphabet.contains(symbol)) {
-                            //duplicate letter
-                            warnings.add(new ValidationMessage("Duplicate letter: " + arr[i], lineNo,  ValidationMessageType.WARNING));
-                        }
-                        this.alphabet.add(symbol);
-                    }
-                }
-
-            }
-            if (isCorrect){
-                System.out.println("Alphabet syntax is correct: " + line);
-            }
-
-        }
-
-        return warnings;
-    }
-
     /**
      * Parses and validates a single transition line.
      * Ensures correct syntax for state names and symbols, verifies alphabet inclusion, and adds transitions.
@@ -677,36 +392,30 @@ public class NFA extends Automaton {
     private List<ValidationMessage> handleTransitionLines(String line, int lineNo){
         List<ValidationMessage> warnings = new ArrayList<>();
 
-        Pattern pattern = Pattern.compile(transitionPattern);
-        Matcher matcher = pattern.matcher(line);
-        //System.out.println("group count: " + matcher.groupCount());
+        Pattern fullPattern = Pattern.compile("^" + transitionPattern + "$");
+        Pattern partialPattern = Pattern.compile(transitionPattern);
+        Matcher matcher = fullPattern.matcher(line);
         String wrongPart = line;
         String message = "";
-        String firstStateName = null;
-        String secondStateName = null;
+        String fromStateName = null;
+        String toStateName = null;
         if (matcher.find()) {
             wrongPart = wrongPart.replace("->", "");
             if (matcher.group(1) != null && matcher.group(1).matches(statePattern)) {
-                //System.out.println("first state correct");
-                //System.out.println(matcher.group(1));
-                firstStateName = matcher.group(1);
+                fromStateName = matcher.group(1);
                 wrongPart = wrongPart.replace(matcher.group(1),"");
             }else {
                 message += "First state incorrect \n";
             }
 
             if (matcher.group(2) != null && matcher.group(2).matches(statePattern)) {
-                //System.out.println("second state correct");
-                //System.out.println(matcher.group(2));
-                secondStateName = matcher.group(2);
+                toStateName = matcher.group(2);
                 wrongPart = wrongPart.replace(matcher.group(2),"");
             }else {
                 message += "Second state incorrect \n";
             }
 
             if (matcher.group(3) != null && matcher.group(3).matches(transitionSymbolPattern)) {
-                //System.out.println("transition letters correct");
-                //System.out.println(matcher.group(3));
                 wrongPart = wrongPart.replace(matcher.group(3),"");
             }else {
                 message += "Transition letters incorrect \n";
@@ -714,7 +423,12 @@ public class NFA extends Automaton {
             wrongPart = wrongPart.trim();
 
         }else {
-            message = "Whole line is wrong ";
+            matcher = partialPattern.matcher(line);
+            if (matcher.find()) {
+                message = "Valid transition found, but line has extra/invalid content";
+            }else {
+                message = "Whole line is wrong ";
+            }
         }
 
         if (!message.isEmpty() || !wrongPart.isEmpty()) {
@@ -723,11 +437,11 @@ public class NFA extends Automaton {
         }else {
             //syntax correct, check for duplicate
             boolean alreadyExists = false;
-            if (firstStateName != null && this.states.get(firstStateName) != null) {
-                State fromState = this.states.get(firstStateName);
+            if (fromStateName != null && this.states.get(fromStateName) != null) {
+                State fromState = this.states.get(fromStateName);
                 if (this.transitions.get(fromState) != null) {
                     for (Transition t : this.transitions.get(fromState)) {
-                        if (t.getTo().getName().equals(secondStateName)) {
+                        if (t.getTo().getName().equals(toStateName)) {
                             alreadyExists = true;
                             break;
                         }
@@ -736,107 +450,71 @@ public class NFA extends Automaton {
             }
 
             if (alreadyExists) {
-                warnings.add(new ValidationMessage("There is already this transition: " + firstStateName + " -> " + secondStateName,
+                warnings.add(new ValidationMessage("There is already this transition: " + fromStateName + " -> " + toStateName,
                         lineNo, ValidationMessageType.ERROR));
-                //System.out.println("Transition already exists");
             }
 
-            if (firstStateName != null && secondStateName != null) {
+            if (fromStateName != null && toStateName != null) {
 
-                this.states.putIfAbsent(firstStateName, new State(firstStateName));
-                this.states.putIfAbsent(secondStateName, new State(secondStateName));
-
-                State fromState = this.states.get(firstStateName);
-                State toState = this.states.get(secondStateName);
+                State fromState = this.states.getOrDefault(fromStateName, null);
+                State toState = this.states.getOrDefault(toStateName, null);
 
                 String transitionName = matcher.group(3);
-                String[] symbols = transitionName.substring(1, transitionName.length()-1).split("\\s");
 
+                if (fromState != null && toState != null && transitionName != null) {
 
-                List<Transition> transitionList = new ArrayList<>();
-                for (String symbol : symbols) {
-                    Symbol symbolTemp;
-                    if (symbol.equals("eps")) {
-                        symbolTemp = new Symbol('_');
-                    }else{
-                        symbolTemp = new Symbol(symbol.charAt(0));
-                    }
-                    if (!this.alphabet.contains(symbolTemp) && !symbol.equals("eps")) {
-                        //alphabet does not contain transition symbol
-                        warnings.add(new ValidationMessage("Alphabet does not contain transition symbol: " + symbol,
-                                lineNo, ValidationMessageType.ERROR));
-                        continue;
-                    }
-                    Transition transition = new Transition(fromState,toState,symbolTemp);
-                    if (!alreadyExists){
-                        if (transitionList.contains(transition)) {
-                            warnings.add(new ValidationMessage("Duplicate transition symbol: " + symbolTemp.getValue(), lineNo, ValidationMessageType.ERROR));
-                        }else {
-                            //unique transition and unique symbol
-                            transitionList.add(transition);
+                    String[] symbols = transitionName.substring(1, transitionName.length()-1).split("\\s");
+
+                    List<Transition> transitionList = new ArrayList<>();
+                    for (String symbol : symbols) {
+                        Symbol symbolTemp;
+                        if (symbol.equals("eps")) {
+                            symbolTemp = new Symbol('_');
+                        }else{
+                            symbolTemp = new Symbol(symbol.charAt(0));
+                        }
+                        if (!this.alphabet.contains(symbolTemp) && !symbol.equals("eps")) {
+                            warnings.add(new ValidationMessage("Alphabet does not contain transition symbol: " + symbol,
+                                    lineNo, ValidationMessageType.ERROR));
+                            continue;
+                        }
+                        Transition transition = new Transition(fromState,toState,symbolTemp);
+                        if (!alreadyExists){
+                            if (transitionList.contains(transition)) {
+                                warnings.add(new ValidationMessage("Duplicate transition symbol: " + symbolTemp.getValue(), lineNo, ValidationMessageType.ERROR));
+                            }else {
+                                //unique transition and unique symbol
+                                transitionList.add(transition);
+                            }
                         }
                     }
-                }
 
-                if (!transitionList.isEmpty()) {
-                    if (this.transitions.containsKey(fromState)){
-                        this.transitions.get(fromState).addAll(transitionList);
-                    }else {
-                        this.transitions.put(fromState,transitionList);
+                    if (!transitionList.isEmpty()) {
+                        if (this.transitions.containsKey(fromState)){
+                            this.transitions.get(fromState).addAll(transitionList);
+                        }else {
+                            this.transitions.put(fromState,transitionList);
+                        }
+                        System.out.println("Transition correct: " + line);
+                        //correct
                     }
-                    System.out.println("Transition correct: " + line);
-                    //correct
-                }
-            }
-        }
-
-        return warnings;
-    }
-
-    /**
-     * Runs post-parsing checks to ensure completeness of NFA specification.
-     * Validates presence of start line, final line, alphabet line, transitions, and symbol usage.
-     *
-     * @param lineNumbers    map containing line numbers for reference
-     * @param lineBoolMap    map tracking presence of key lines in the input
-     * @return a list of ValidationMessages representing any missing or unused components
-     */
-    private List<ValidationMessage> runPostParseChecks(Map<String, Integer> lineNumbers, Map<String, Boolean> lineBoolMap){
-        List<ValidationMessage> warnings = new ArrayList<>();
-
-        for (Symbol symbol : this.alphabet) {
-            boolean found = false;
-            for (List<Transition> transitions : this.transitions.values()) {
-                for (Transition transition : transitions) {
-                    if (transition.getSymbol().equals(symbol)) {
-                        found = true;
-                        break;
+                }else {
+                    if (transitionName == null) {
+                        warnings.add(new ValidationMessage("Transition symbol is wrong", lineNo, ValidationMessageType.ERROR));
                     }
-                }
-                if (found) {
-                    break;
+                    String s = "";
+                    if (fromState == null){
+                        s += "From state is not in states: " + fromStateName + "\n";
+                    }
+                    if (toState == null){
+                        s += "To state is not in states: " + toStateName + "\n";
+                    }
+                    warnings.add(new ValidationMessage(s, lineNo, ValidationMessageType.ERROR));
                 }
             }
-            if (!found) {
-                warnings.add(new ValidationMessage("Symbol not used: " + symbol.getValue(), lineNumbers.get("alphaLineNo"), ValidationMessageType.WARNING));
-            }
+
         }
 
-        if (!lineBoolMap.get("startLine")){
-            warnings.add(new ValidationMessage("There is no start line", -1, ValidationMessageType.ERROR));
-        }
-        if (!lineBoolMap.get("finalsLine")){
-            warnings.add(new ValidationMessage("There is no final line", -1, ValidationMessageType.ERROR));
-        }
-        if (!lineBoolMap.get("alphaLine")){
-            warnings.add(new ValidationMessage("There is no alphabet line", -1, ValidationMessageType.ERROR));
-        }
-        if (!lineBoolMap.get("isNextLineTransition")){
-            warnings.add(new ValidationMessage("There is no \"transitions\" line", -1, ValidationMessageType.WARNING));
-        }
-        if (this.transitions.isEmpty()){
-            warnings.add(new ValidationMessage("There are no correct transitions", -1, ValidationMessageType.WARNING));
-        }
         return warnings;
     }
 
@@ -1040,7 +718,7 @@ public class NFA extends Automaton {
     private List<ValidationMessage> validateSymbol(Symbol symbol){
         List<ValidationMessage> warnings = new ArrayList<>();
 
-        if (!(symbol.isEpsilon() || Character.isLetter(symbol.getValue()))) {
+        if (!(symbol.isEpsilon() || Character.isLetterOrDigit(symbol.getValue()))) {
             warnings.add(new ValidationMessage("Symbol is not valid: " + symbol.getValue(), -1, ValidationMessage.ValidationMessageType.ERROR));
         }
         return warnings;
@@ -1076,7 +754,6 @@ public class NFA extends Automaton {
         for (List<Transition> transitions : transitions.values()) {
             for (Transition t : transitions) {
                 if (!addedTransitions.contains(t)) {
-                    addedTransitions.add(t);
 
                     List<Transition> sameTransitionsFromState = getSameTransitionsFromState(t.getFrom(), t.getTo());
 
@@ -1095,8 +772,10 @@ public class NFA extends Automaton {
 
                     String label = String.join(", ", symbols);
 
-                    dot.append(String.format("  \"%s\" -> \"%s\" [label=\"%s\"];\n",
-                            t.getFrom().getName(), t.getTo().getName(), label));
+                    if (!label.isEmpty()){
+                        dot.append(String.format("  \"%s\" -> \"%s\" [label=\"%s\"];\n",
+                                t.getFrom().getName(), t.getTo().getName(), label));
+                    }
 
                     if (epsilonExists){
                         dot.append(String.format("  \"%s\" -> \"%s\" [label=\"%s\", style=\"dashed\"];\n",

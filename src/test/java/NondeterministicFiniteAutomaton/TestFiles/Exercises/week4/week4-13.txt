@@ -1,0 +1,15 @@
+#week4-13
+Start: q0
+Finals: q3
+Alphabet: a b c
+States: q0 q1 q2 q3 q4 q5
+transitions:
+q0 -> q0 (a)
+q0 -> q1 (b)
+q1 -> q2 (b)
+q2 -> q3 (c)
+q3 -> q1 (eps)
+q1 -> q4 (a)
+q4 -> q3 (b)
+q0 -> q5 (b)
+q5 -> q0 (c)

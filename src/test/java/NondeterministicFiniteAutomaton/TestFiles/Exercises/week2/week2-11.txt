@@ -1,0 +1,13 @@
+#week2-11
+Start: q1
+Finals: q1 q4
+Alphabet: 0 1
+States: q1 q2 q3 q4
+transitions:
+q1 -> q2 (0)
+q2 -> q4 (eps)
+
+q4 -> q3 (0)
+q3 -> q2 (0)
+q4 -> q2 (1)
+q4 -> q1 (0)

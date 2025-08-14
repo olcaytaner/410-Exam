@@ -1,0 +1,12 @@
+#week2-10
+Start: q1
+Finals: q3 q4
+Alphabet: a b
+States: q1 q2 q3 q4
+transitions:
+q1 -> q1 (a)
+q1 -> q2 (b)
+q2 -> q3 (a)
+q3 -> q4 (b)
+q4 -> q2 (a)
+q4 -> q1 (b)
