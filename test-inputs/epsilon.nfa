@@ -1,4 +1,5 @@
-Start: q0  
+states: q0 q1 q2
+Start: q0
 Finals: q0 q2
 Alphabet: a b
 transitions:

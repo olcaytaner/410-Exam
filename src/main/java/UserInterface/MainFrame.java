@@ -2,6 +2,9 @@ package UserInterface;
 
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.util.List;
 
 import javax.swing.JFrame;
 import javax.swing.JMenu;
@@ -14,10 +17,21 @@ public class MainFrame extends JFrame {
 
     private MainPanel mainPanel;
     private boolean isFullscreen = false;
+    private JMenu recentFilesMenu;
     
     public MainFrame() {
         setTitle("CS.410 Graph System");
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+        addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                // Save currently open tabs before closing
+                if (mainPanel != null) {
+                    mainPanel.saveCurrentSession();
+                }
+                System.exit(0);
+            }
+        });
         
         // Start maximized instead of fixed size
         setExtendedState(JFrame.MAXIMIZED_BOTH);
@@ -25,6 +39,7 @@ public class MainFrame extends JFrame {
         createMenuBar();
 
         mainPanel = new MainPanel();
+        mainPanel.setParentFrame(this);
         add(mainPanel);
 
         setVisible(true);
@@ -82,6 +97,9 @@ public class MainFrame extends JFrame {
         
         fileMenu.add(newMenu);
         fileMenu.add(openItem);
+        
+        // Create Recent Files submenu
+        createRecentFilesMenu(fileMenu);
         
         menuBar.add(fileMenu);
         
@@ -158,6 +176,68 @@ public class MainFrame extends JFrame {
         viewMenu.add(prevTabItem);
         
         menuBar.add(viewMenu);
+    }
+    
+    private void createRecentFilesMenu(JMenu fileMenu) {
+        recentFilesMenu = new JMenu("Recent Files");
+        fileMenu.add(recentFilesMenu);
+        
+        // Initial population of recent files
+        updateRecentFilesMenu();
+    }
+    
+    /**
+     * Updates the Recent Files menu with current recent files
+     */
+    public void updateRecentFilesMenu() {
+        if (recentFilesMenu == null || mainPanel == null) return;
+        
+        recentFilesMenu.removeAll();
+        
+        List<String> recentFiles = mainPanel.getRecentFiles();
+        
+        if (recentFiles.isEmpty()) {
+            JMenuItem noFilesItem = new JMenuItem("No recent files");
+            noFilesItem.setEnabled(false);
+            recentFilesMenu.add(noFilesItem);
+        } else {
+            // Add recent files with keyboard shortcuts Ctrl+1, Ctrl+2, etc.
+            for (int i = 0; i < Math.min(recentFiles.size(), 9); i++) {
+                String filePath = recentFiles.get(i);
+                String fileName = new java.io.File(filePath).getName();
+                JMenuItem fileItem = new JMenuItem((i + 1) + " " + fileName);
+                
+                // Add keyboard shortcut Ctrl+(i+1)
+                fileItem.setAccelerator(KeyStroke.getKeyStroke(
+                    KeyEvent.VK_1 + i, InputEvent.CTRL_DOWN_MASK));
+                
+                final String finalFilePath = filePath;
+                fileItem.addActionListener(e -> mainPanel.openRecentFile(finalFilePath));
+                
+                recentFilesMenu.add(fileItem);
+            }
+            
+            // Add remaining files (up to 10 total) without shortcuts
+            for (int i = 9; i < recentFiles.size(); i++) {
+                String filePath = recentFiles.get(i);
+                String fileName = new java.io.File(filePath).getName();
+                JMenuItem fileItem = new JMenuItem(fileName);
+                
+                final String finalFilePath = filePath;
+                fileItem.addActionListener(e -> mainPanel.openRecentFile(finalFilePath));
+                
+                recentFilesMenu.add(fileItem);
+            }
+            
+            // Add separator and clear option
+            recentFilesMenu.addSeparator();
+            JMenuItem clearItem = new JMenuItem("Clear Recent Files");
+            clearItem.addActionListener(e -> {
+                mainPanel.clearRecentFiles();
+                updateRecentFilesMenu();
+            });
+            recentFilesMenu.add(clearItem);
+        }
     }
     
     private void toggleFullscreen() {

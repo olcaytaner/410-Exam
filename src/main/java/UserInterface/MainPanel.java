@@ -9,7 +9,6 @@ import java.awt.Font;
 import java.awt.Insets;
 import java.io.File;
 import java.util.ArrayList;
-import java.util.LinkedList;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
@@ -31,8 +30,8 @@ import TuringMachine.TM;
 import common.Automaton;
 
 public class MainPanel extends JPanel {
-    public LinkedList<File> savedPageList;
     public JPanel recentFilesPanel;
+    private MainFrame parentFrame;
 
     private JPanel objectPanel;
     private AutomatonPanel currentActivePanel;
@@ -135,10 +134,10 @@ public class MainPanel extends JPanel {
          * Adds a file to recent files if not already present
          */
         public void addToRecentFiles(File file) {
-            if (!savedPageList.contains(file)) {
-                savedPageList.add(file);
-                addRecentFileButton(file);
-                refreshRecentFilesUI();
+            preferencesManager.addRecentFile(file.getAbsolutePath());
+            refreshRecentFilesList();
+            if (parentFrame != null) {
+                parentFrame.updateRecentFilesMenu();
             }
         }
         
@@ -243,6 +242,21 @@ public class MainPanel extends JPanel {
         fileButton.setBackground(fileManager.getColorForExtension(extension));
         
         fileButton.addActionListener(e -> fileManager.openFile(file));
+        
+        // Add right-click context menu
+        JPopupMenu contextMenu = new JPopupMenu();
+        JMenuItem removeItem = new JMenuItem("Remove from Recent Files");
+        removeItem.addActionListener(e -> {
+            preferencesManager.removeRecentFile(file.getAbsolutePath());
+            refreshRecentFilesList();
+            if (parentFrame != null) {
+                parentFrame.updateRecentFilesMenu();
+            }
+        });
+        contextMenu.add(removeItem);
+        
+        fileButton.setComponentPopupMenu(contextMenu);
+        
         recentFilesPanel.add(fileButton);
         recentFilesPanel.add(Box.createVerticalStrut(5));
     }
@@ -256,12 +270,39 @@ public class MainPanel extends JPanel {
     }
     
     /**
-     * Loads recent files from savedPageList and creates buttons for them
+     * Loads recent files from PreferencesManager and creates buttons for them
      */
     private void loadRecentFilesButtons() {
-        for(File file : savedPageList) {
-            addRecentFileButton(file);
+        for(String filePath : preferencesManager.getRecentFiles()) {
+            File file = new File(filePath);
+            if (file.exists()) {
+                addRecentFileButton(file);
+            } else {
+                // Remove non-existent files from recent files
+                preferencesManager.removeRecentFile(filePath);
+            }
         }
+    }
+    
+    /**
+     * Refreshes the entire recent files list from PreferencesManager
+     */
+    private void refreshRecentFilesList() {
+        // Clear current UI
+        recentFilesPanel.removeAll();
+        
+        // Re-add header
+        JLabel recentFilesLabel = new JLabel("Recent Files");
+        recentFilesLabel.setFont(new Font("Arial", Font.BOLD, 16));
+        recentFilesLabel.setForeground(new Color(64, 64, 64));
+        recentFilesPanel.add(recentFilesLabel);
+        recentFilesPanel.add(Box.createVerticalStrut(10));
+        
+        // Re-load all recent files
+        loadRecentFilesButtons();
+        
+        // Refresh UI
+        refreshRecentFilesUI();
     }
     
     /**
@@ -416,8 +457,6 @@ public class MainPanel extends JPanel {
         
         centerPanel.add(objectPanel, BorderLayout.CENTER);
 
-        savedPageList = new LinkedList<>();
-
         // Recent Files header
         JLabel recentFilesLabel = new JLabel("Recent Files");
         recentFilesLabel.setFont(new Font("Arial", Font.BOLD, 16));
@@ -427,6 +466,9 @@ public class MainPanel extends JPanel {
 
         // Load existing recent files
         loadRecentFilesButtons();
+        
+        // Restore previous session if files were open
+        restorePreviousSession();
 
         // Create split pane for resizable sidebar
         mainSplitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, recentFilesPanel, centerPanel);
@@ -807,5 +849,86 @@ public class MainPanel extends JPanel {
             prevIndex = openTabs.size() - 1;
         }
         switchToTab(prevIndex);
+    }
+    
+    /**
+     * Gets recent files for menu integration
+     */
+    public java.util.List<String> getRecentFiles() {
+        return preferencesManager.getRecentFiles();
+    }
+    
+    /**
+     * Clears all recent files
+     */
+    public void clearRecentFiles() {
+        preferencesManager.clearRecentFiles();
+        refreshRecentFilesList();
+        if (parentFrame != null) {
+            parentFrame.updateRecentFilesMenu();
+        }
+    }
+    
+    /**
+     * Opens a recent file by path
+     */
+    public void openRecentFile(String filePath) {
+        File file = new File(filePath);
+        if (file.exists()) {
+            fileManager.openFile(file);
+        } else {
+            preferencesManager.removeRecentFile(filePath);
+            refreshRecentFilesList();
+            if (parentFrame != null) {
+                parentFrame.updateRecentFilesMenu();
+            }
+            JOptionPane.showMessageDialog(this,
+                "File no longer exists: " + filePath,
+                "File Not Found",
+                JOptionPane.WARNING_MESSAGE);
+        }
+    }
+    
+    /**
+     * Sets the parent frame for menu updates
+     */
+    public void setParentFrame(MainFrame frame) {
+        this.parentFrame = frame;
+    }
+    
+    /**
+     * Saves currently open tabs for session restore
+     */
+    public void saveCurrentSession() {
+        java.util.List<String> openFilePaths = new java.util.ArrayList<>();
+        
+        for (AutomatonTab tab : openTabs) {
+            if (tab.getFile() != null) {
+                openFilePaths.add(tab.getFile().getAbsolutePath());
+            }
+        }
+        
+        preferencesManager.setLastOpenedFiles(openFilePaths);
+    }
+    
+    /**
+     * Restores previously opened files from last session
+     */
+    private void restorePreviousSession() {
+        java.util.List<String> lastOpenedFiles = preferencesManager.getLastOpenedFiles();
+        
+        for (String filePath : lastOpenedFiles) {
+            File file = new File(filePath);
+            if (file.exists()) {
+                try {
+                    fileManager.openFile(file);
+                } catch (Exception ex) {
+                    System.err.println("Error restoring file: " + filePath + " - " + ex.getMessage());
+                }
+            } else {
+                // Remove non-existent files from last opened files
+                preferencesManager.removeRecentFile(filePath);
+            }
+        }
     }
 }
