@@ -1,19 +1,26 @@
 package UserInterface;
 
+import java.awt.event.InputEvent;
+import java.awt.event.KeyEvent;
+
 import javax.swing.JFrame;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
+import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
 
 public class MainFrame extends JFrame {
 
     private MainPanel mainPanel;
+    private boolean isFullscreen = false;
     
     public MainFrame() {
         setTitle("CS.410 Graph System");
-        setSize(800, 600);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        
+        // Start maximized instead of fixed size
+        setExtendedState(JFrame.MAXIMIZED_BOTH);
 
         createMenuBar();
 
@@ -49,6 +56,7 @@ public class MainFrame extends JFrame {
         newMenu.add(rexItem);
         
         JMenuItem openItem = new JMenuItem("Open From Computer");
+        openItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O, InputEvent.CTRL_DOWN_MASK));
         
         nfaItem.addActionListener(e -> {
             if (mainPanel != null) mainPanel.createNewAutomaton("NFA");
@@ -80,12 +88,14 @@ public class MainFrame extends JFrame {
         JMenu actionsMenu = new JMenu("Actions");
         
         JMenuItem runItem = new JMenuItem("Run");
-        JMenuItem compileItem = new JMenuItem("Compile");
-        JMenuItem saveItem = new JMenuItem("Save");
+        runItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_R, InputEvent.CTRL_DOWN_MASK));
         
-        runItem.setBackground(new java.awt.Color(166, 255, 166));
-        compileItem.setBackground(new java.awt.Color(255, 166, 166));
-        saveItem.setBackground(new java.awt.Color(242, 255, 166));
+        JMenuItem compileItem = new JMenuItem("Compile");
+        compileItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_B, InputEvent.CTRL_DOWN_MASK));
+        
+        JMenuItem saveItem = new JMenuItem("Save");
+        saveItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, InputEvent.CTRL_DOWN_MASK));
+        
         
         // Add action listeners that delegate to the current active panel
         runItem.addActionListener(e -> {
@@ -108,10 +118,69 @@ public class MainFrame extends JFrame {
         
         menuBar.add(actionsMenu);
         
+        // Add View menu
+        createViewMenu(menuBar);
+        
         setJMenuBar(menuBar);
     }
+    
+    private void createViewMenu(JMenuBar menuBar) {
+        JMenu viewMenu = new JMenu("View");
+        
+        // Fullscreen toggle
+        JMenuItem fullscreenItem = new JMenuItem("Toggle Fullscreen");
+        fullscreenItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F11, 0));
+        fullscreenItem.addActionListener(e -> toggleFullscreen());
+        
+        // Toggle sidebar
+        JMenuItem toggleSidebarItem = new JMenuItem("Toggle Sidebar");
+        toggleSidebarItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_BACK_SLASH, InputEvent.CTRL_DOWN_MASK));
+        toggleSidebarItem.addActionListener(e -> toggleSidebar());
+        
+        // Tab navigation
+        JMenuItem nextTabItem = new JMenuItem("Next Tab");
+        nextTabItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_TAB, InputEvent.CTRL_DOWN_MASK));
+        nextTabItem.addActionListener(e -> {
+            if (mainPanel != null) mainPanel.switchToNextTab();
+        });
+        
+        JMenuItem prevTabItem = new JMenuItem("Previous Tab");
+        prevTabItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_TAB, InputEvent.CTRL_DOWN_MASK | InputEvent.SHIFT_DOWN_MASK));
+        prevTabItem.addActionListener(e -> {
+            if (mainPanel != null) mainPanel.switchToPreviousTab();
+        });
+        
+        viewMenu.add(fullscreenItem);
+        viewMenu.addSeparator();
+        viewMenu.add(toggleSidebarItem);
+        viewMenu.addSeparator();
+        viewMenu.add(nextTabItem);
+        viewMenu.add(prevTabItem);
+        
+        menuBar.add(viewMenu);
+    }
+    
+    private void toggleFullscreen() {
+        if (isFullscreen) {
+            // Exit fullscreen - return to maximized windowed mode
+            setExtendedState(JFrame.MAXIMIZED_BOTH);
+            isFullscreen = false;
+        } else {
+            // Enter fullscreen - use MAXIMIZED_BOTH for now
+            setExtendedState(JFrame.MAXIMIZED_BOTH);
+            isFullscreen = true;
+        }
+        repaint();
+    }
+    
+    private void toggleSidebar() {
+        if (mainPanel != null) {
+            mainPanel.toggleSidebar();
+        }
+    }
+    
 
-            public static void main(String[] args) {
+    public static void main(String[] args) {
                 SwingUtilities.invokeLater(MainFrame::new);
             }
         }

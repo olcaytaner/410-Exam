@@ -1,14 +1,14 @@
 package common;
 
+import java.io.ByteArrayOutputStream;
 import java.util.List;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import guru.nidi.graphviz.engine.Format;
-import guru.nidi.graphviz.engine.Graphviz;
+
 import javax.swing.ImageIcon;
 import javax.swing.JLabel;
 import javax.swing.SwingConstants;
+
+import guru.nidi.graphviz.engine.Format;
+import guru.nidi.graphviz.engine.Graphviz;
 
 public abstract class Automaton {
 
@@ -165,39 +165,25 @@ public String getFileExtension(){
         }
         
         String dotCode = parsedAutomaton.toDotCode(inputText);
-        FileWriter writer = null;
-
+        
         try {
-            writer = new FileWriter("graph.dot");
-            writer.write(dotCode);
-        } catch (IOException r) {
-            r.printStackTrace();
-        }
-
-        try {
-            writer.close();
-        } catch (IOException t) {
-            t.printStackTrace();
-        }
-
-        try {
-            Graphviz.fromString(dotCode).render(Format.PNG).toFile(new File("graph.png"));
-
-            System.out.println("DOT file exists: " + new File("graph.dot").exists());
-            System.out.println("PNG file exists: " + new File("graph.png").exists());
-            System.out.println("Working directory: " + System.getProperty("user.dir"));
-        } catch (IOException y) {
-            y.printStackTrace();
-        }
-
-        File imageFile = new File("graph.png");
-        if (imageFile.exists()) {
-            ImageIcon imageIcon = new ImageIcon(imageFile.getAbsolutePath());
-            imageIcon.getImage().flush(); 
+            // Generate graph image directly in memory - no files created
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            Graphviz.fromString(dotCode)
+                .render(Format.PNG)
+                .toOutputStream(baos);
+            
+            byte[] imageData = baos.toByteArray();
+            baos.close();
+            
+            // Create ImageIcon directly from byte array
+            ImageIcon imageIcon = new ImageIcon(imageData);
             JLabel imageLabel = new JLabel(imageIcon);
             return imageLabel;
-        } else {
-            System.out.println("graph.png not found!");
+            
+        } catch (Exception e) {
+            System.err.println("Error generating graph: " + e.getMessage());
+            e.printStackTrace();
             return null;
         }
     }
