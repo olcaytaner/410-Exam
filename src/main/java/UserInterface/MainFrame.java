@@ -114,6 +114,12 @@ public class MainFrame extends JFrame {
         JMenuItem saveItem = new JMenuItem("Save");
         saveItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, InputEvent.CTRL_DOWN_MASK));
         
+        JMenuItem testItem = new JMenuItem("Test");
+        testItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_T, InputEvent.CTRL_DOWN_MASK));
+        
+        JMenuItem testWithFileItem = new JMenuItem("Test with File...");
+        testWithFileItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_T, InputEvent.CTRL_DOWN_MASK | InputEvent.SHIFT_DOWN_MASK));
+        
         
         // Add action listeners that delegate to the current active panel
         runItem.addActionListener(e -> {
@@ -124,6 +130,14 @@ public class MainFrame extends JFrame {
             if (mainPanel != null) mainPanel.compileCurrentAutomaton();
         });
         
+        testItem.addActionListener(e -> {
+            if (mainPanel != null) mainPanel.testCurrentAutomaton();
+        });
+        
+        testWithFileItem.addActionListener(e -> {
+            if (mainPanel != null) mainPanel.testCurrentAutomatonWithFile();
+        });
+        
         saveItem.addActionListener(e -> {
             if (mainPanel != null) mainPanel.saveCurrentAutomaton();
         });
@@ -131,6 +145,9 @@ public class MainFrame extends JFrame {
         actionsMenu.add(runItem);
         actionsMenu.addSeparator();
         actionsMenu.add(compileItem);
+        actionsMenu.addSeparator();
+        actionsMenu.add(testItem);
+        actionsMenu.add(testWithFileItem);
         actionsMenu.addSeparator();
         actionsMenu.add(saveItem);
         

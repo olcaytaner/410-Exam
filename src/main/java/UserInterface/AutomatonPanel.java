@@ -19,9 +19,31 @@ public interface AutomatonPanel {
     void compileAutomaton();
     
     /**
-     * Saves the current content to a file
+     * Saves the current content to a file (quick save if file exists, save as if new)
      */
     void saveAutomaton();
+    
+    /**
+     * Always shows save dialog (Save As functionality)
+     */
+    default void saveAsAutomaton() {
+        // Default implementation for backward compatibility
+        saveAutomaton();
+    }
+    
+    /**
+     * Tests the automaton with matching .test file
+     */
+    default void testAutomaton() {
+        // Default implementation - no operation
+    }
+    
+    /**
+     * Tests the automaton with user-selected test file
+     */
+    default void testAutomatonWithFile() {
+        // Default implementation - no operation
+    }
     
     /**
      * Gets the current text from the text editor

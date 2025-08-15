@@ -803,11 +803,44 @@ public class MainPanel extends JPanel {
     }
     
     /**
-     * Saves the currently active automaton
+     * Saves the currently active automaton (quick save)
      */
     public void saveCurrentAutomaton() {
         if (currentActivePanel != null) {
             currentActivePanel.saveAutomaton();
+        } else {
+            JOptionPane.showMessageDialog(this, "No active automaton panel found.", "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+    
+    /**
+     * Save As the currently active automaton (always shows dialog)
+     */
+    public void saveAsCurrentAutomaton() {
+        if (currentActivePanel != null) {
+            currentActivePanel.saveAsAutomaton();
+        } else {
+            JOptionPane.showMessageDialog(this, "No active automaton panel found.", "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+    
+    /**
+     * Tests the currently active automaton with matching .test file
+     */
+    public void testCurrentAutomaton() {
+        if (currentActivePanel != null) {
+            currentActivePanel.testAutomaton();
+        } else {
+            JOptionPane.showMessageDialog(this, "No active automaton panel found.", "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+    
+    /**
+     * Tests the currently active automaton with user-selected test file
+     */
+    public void testCurrentAutomatonWithFile() {
+        if (currentActivePanel != null) {
+            currentActivePanel.testAutomatonWithFile();
         } else {
             JOptionPane.showMessageDialog(this, "No active automaton panel found.", "Error", JOptionPane.ERROR_MESSAGE);
         }
@@ -824,6 +857,24 @@ public class MainPanel extends JPanel {
             if (activeTab.getFile() != null) {
                 activeTab.setTitle(activeTab.getFile().getName());
             }
+            updateTabButtons();
+        }
+    }
+    
+    /**
+     * Updates the current tab's file association (used during Save As operations)
+     */
+    public void updateCurrentTabFile(File newFile) {
+        if (activeTabIndex >= 0 && activeTabIndex < openTabs.size()) {
+            AutomatonTab activeTab = openTabs.get(activeTabIndex);
+            activeTab.setFile(newFile);
+            activeTab.setTitle(newFile.getName());
+            
+            // Also update the panel's file reference
+            if (activeTab.getPanel() instanceof AbstractAutomatonPanel) {
+                ((AbstractAutomatonPanel) activeTab.getPanel()).setCurrentFile(newFile);
+            }
+            
             updateTabButtons();
         }
     }

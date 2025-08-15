@@ -20,11 +20,13 @@ import javax.swing.Timer;
 import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
+import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
+import javax.swing.filechooser.FileNameExtensionFilter;
 
 import common.Automaton;
 import common.TestRunner;
@@ -283,6 +285,62 @@ public abstract class AbstractAutomatonPanel extends JPanel implements Automaton
     }
 
     /**
+     * Tests the automaton with matching .test file (interface implementation)
+     */
+    @Override
+    public void testAutomaton() {
+        runTests();
+    }
+
+    /**
+     * Tests the automaton with user-selected test file (interface implementation)
+     */
+    @Override
+    public void testAutomatonWithFile() {
+        // First compile/parse the current automaton
+        String inputText = textArea.getText();
+        automaton.setInputText(inputText);
+        
+        Automaton.ParseResult parseResult = automaton.parse(inputText);
+        if (!parseResult.isSuccess()) {
+            JOptionPane.showMessageDialog(this, 
+                "Cannot run tests: Automaton has parsing errors. Check warnings panel.", 
+                "Test Error", JOptionPane.ERROR_MESSAGE);
+            updateWarningDisplay();
+            return;
+        }
+        
+        // Show file chooser for test file
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setDialogTitle("Select Test File");
+        fileChooser.setFileFilter(new FileNameExtensionFilter("Test Files (*.test)", "test"));
+        
+        // Set current directory to same as automaton file if available
+        if (file != null && file.getParent() != null) {
+            fileChooser.setCurrentDirectory(new File(file.getParent()));
+        }
+        
+        int result = fileChooser.showOpenDialog(this);
+        if (result == JFileChooser.APPROVE_OPTION) {
+            File selectedTestFile = fileChooser.getSelectedFile();
+            
+            // Run tests with selected file
+            try {
+                Automaton testAutomaton = parseResult.getAutomaton();
+                TestRunner.TestResult testResult = TestRunner.runTests(testAutomaton, selectedTestFile.getAbsolutePath());
+                
+                // Display results
+                showTestResults(testResult);
+                
+            } catch (Exception e) {
+                JOptionPane.showMessageDialog(this, 
+                    "Error running tests with selected file: " + e.getMessage(), 
+                    "Test Execution Error", JOptionPane.ERROR_MESSAGE);
+            }
+        }
+    }
+
+    /**
      * Find the corresponding test file for the current automaton
      */
     private String findTestFile() {
@@ -356,12 +414,33 @@ public abstract class AbstractAutomatonPanel extends JPanel implements Automaton
     
     @Override
     public void saveAutomaton() {
+        if (file != null) {
+            // File already exists, just save directly (quick save)
+            saveFileContent(file);
+            mainPanel.markCurrentTabAsSaved();
+        } else {
+            // No file associated, show save dialog (Save As)
+            saveAsAutomaton();
+        }
+    }
+    
+    /**
+     * Save As - always shows save dialog
+     */
+    @Override
+    public void saveAsAutomaton() {
         File savedFile = mainPanel.fileManager.showSaveDialog(automaton, file != null ? file.getName() : null);
         if (savedFile != null) {
             saveFileContent(savedFile);
+            
+            // Update file reference
             file = savedFile;
+            
+            // Add to recent files
             mainPanel.fileManager.addToRecentFiles(file);
             
+            // Update tab file association and title
+            mainPanel.updateCurrentTabFile(savedFile);
             mainPanel.markCurrentTabAsSaved();
         }
     }
