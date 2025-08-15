@@ -1,0 +1,11 @@
+# This file contains input strings for Turing Machine testing.
+# Each line represents a single input string.
+# Lines starting with '#' are comments and will be ignored.
+# Empty lines will also be ignored.
+
+0
+1
+00
+11
+010
+101

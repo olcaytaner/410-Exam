@@ -1,0 +1,13 @@
+,0
+a,0
+b,0
+c,0
+ab,0
+abc,0
+aba,1
+abab,0
+ababa,1
+bab,0
+baba,1
+cababa,1
+ccababa,1

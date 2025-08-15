@@ -1,0 +1,18 @@
+#week2-15
+Start: q0
+Finals: q1 q2 q3
+Alphabet: a b c
+States: q0 q1 q2 q3
+transitions:
+q0 -> q1 (a)
+q0 -> q2 (b)
+q0 -> q3 (c)
+
+q1 -> q2 (b)
+q1 -> q3 (c)
+
+q2 -> q1 (a)
+q2 -> q3 (c)
+
+q3 -> q1 (a)
+q3 -> q2 (b)

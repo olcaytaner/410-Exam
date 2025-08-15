@@ -1,0 +1,14 @@
+#week3-1
+Start: q0
+Finals: q3
+Alphabet: 0 1
+States: q0 q1 q2 q3 q4 q5 q6
+transitions:
+q0 -> q1 (eps)
+q1 -> q2 (0)
+q2 -> q3 (0)
+q3 -> q3 (0 1)
+
+q0 -> q4 (eps)
+q4 -> q5 (1)
+q5 -> q6 (0 1)

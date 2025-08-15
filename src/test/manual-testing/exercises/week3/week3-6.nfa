@@ -1,0 +1,20 @@
+#week3-6
+Start: q0
+Finals: q4 q9
+Alphabet: a b
+States: q0 q1 q2 q3 q4 q5 q6 q7 q8 q9 q10
+transitions:
+q0 -> q1 (eps)
+q1 -> q2 (b)
+q2 -> q3 (a b)
+q3 -> q3 (a b)
+q3 -> q4 (b)
+
+q0 -> q5 (eps)
+q5 -> q6 (a)
+q6 -> q5 (b)
+q5 -> q7 (a)
+q7 -> q8 (a)
+q8 -> q9 (eps)
+q9 -> q10 (a b)
+q10 -> q9 (a b)

@@ -7,6 +7,8 @@ import java.awt.Font;
 import java.awt.Image;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
@@ -17,6 +19,7 @@ import javax.swing.Timer;
 
 import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
+import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -24,6 +27,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 
 import common.Automaton;
+import common.TestRunner;
 
 /**
  * Abstract base class for all automaton panels to eliminate code duplication.
@@ -74,7 +78,7 @@ public abstract class AbstractAutomatonPanel extends JPanel implements Automaton
     }
 
     /**
-     * Create the top panel with tab label
+     * Creates the top panel with tab label and test button.
      */
     private void createTopPanel() {
         topPanel = new JPanel(new BorderLayout());
@@ -85,7 +89,17 @@ public abstract class AbstractAutomatonPanel extends JPanel implements Automaton
         tabLabel.setFont(new Font("Arial", Font.BOLD, 14));
         tabLabel.setForeground(new Color(102, 133, 102));
         
+        JButton testButton = new JButton("Test");
+        testButton.setPreferredSize(new Dimension(80, 30));
+        testButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                runTests();
+            }
+        });
+        
         topPanel.add(tabLabel, BorderLayout.WEST);
+        topPanel.add(testButton, BorderLayout.EAST);
     }
 
     /**
@@ -215,6 +229,130 @@ public abstract class AbstractAutomatonPanel extends JPanel implements Automaton
     public void compileAutomaton() {
         updateWarningDisplay();
     }
+
+    /**
+     * Run tests for the current automaton using a corresponding test file
+     */
+    protected void runTests() {
+        // First compile/parse the current automaton
+        String inputText = textArea.getText();
+        automaton.setInputText(inputText);
+        
+        Automaton.ParseResult parseResult = automaton.parse(inputText);
+        if (!parseResult.isSuccess()) {
+            JOptionPane.showMessageDialog(this, 
+                "Cannot run tests: Automaton has parsing errors. Check warnings panel.", 
+                "Test Error", JOptionPane.ERROR_MESSAGE);
+            updateWarningDisplay();
+            return;
+        }
+        
+        // Look for test file
+        String testFilePath = findTestFile();
+        if (testFilePath == null) {
+            String message = "No test file found. Expected a .test file with the same name as your automaton file.\n\n";
+            
+            if (file != null) {
+                String expectedTestFile = file.getName().replaceFirst("\\.[^.]*$", ".test");
+                message += "Current file: " + file.getName() + "\n";
+                message += "Expected test file: " + expectedTestFile + "\n\n";
+            } else {
+                message += "Please save your automaton file first, then try testing.\n\n";
+            }
+            
+            message += "Example: if your file is q1.nfa, create q1.test with test cases.";
+            
+            JOptionPane.showMessageDialog(this, message, 
+                "Test File Not Found", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        
+        // Run tests
+        try {
+            Automaton testAutomaton = parseResult.getAutomaton();
+            TestRunner.TestResult result = TestRunner.runTests(testAutomaton, testFilePath);
+            
+            // Display results
+            showTestResults(result);
+            
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, 
+                "Error running tests: " + e.getMessage(), 
+                "Test Execution Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    /**
+     * Find the corresponding test file for the current automaton
+     */
+    private String findTestFile() {
+        if (file != null) {
+            // Get the base name without extension
+            String fileName = file.getName();
+            String baseName;
+            int lastDot = fileName.lastIndexOf('.');
+            if (lastDot > 0) {
+                baseName = fileName.substring(0, lastDot);
+            } else {
+                baseName = fileName;
+            }
+            
+            // Look for .test file in the same directory
+            File testFile = new File(file.getParent(), baseName + ".test");
+            if (testFile.exists()) {
+                return testFile.getAbsolutePath();
+            }
+        }
+        
+        return null;
+    }
+
+    /**
+     * Display test results in a dialog
+     */
+    private void showTestResults(TestRunner.TestResult result) {
+        StringBuilder message = new StringBuilder();
+        message.append("Test Results:\n");
+        message.append(String.format("Passed: %d/%d tests\n\n", 
+                                    result.getPassedTests(), result.getTotalTests()));
+        
+        // Show detailed results
+        for (TestRunner.TestCaseResult testResult : result.getDetailedResults()) {
+            message.append(testResult.toString()).append("\n");
+        }
+        
+        // Show failures if any
+        if (!result.getFailures().isEmpty()) {
+            message.append("\nFailure Details:\n");
+            for (String failure : result.getFailures()) {
+                message.append("• ").append(failure).append("\n");
+            }
+        }
+        
+        // Determine dialog type based on results
+        int messageType;
+        String title;
+        if (result.getFailedTests() == 0) {
+            messageType = JOptionPane.INFORMATION_MESSAGE;
+            title = "All Tests Passed!";
+        } else if (result.getPassedTests() > 0) {
+            messageType = JOptionPane.WARNING_MESSAGE;
+            title = "Some Tests Failed";
+        } else {
+            messageType = JOptionPane.ERROR_MESSAGE;
+            title = "All Tests Failed";
+        }
+        
+        // Create scrollable text area for long results
+        JTextArea resultArea = new JTextArea(message.toString());
+        resultArea.setEditable(false);
+        resultArea.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
+        
+        JScrollPane resultScrollPane = new JScrollPane(resultArea);
+        resultScrollPane.setPreferredSize(new Dimension(500, 300));
+        
+        JOptionPane.showMessageDialog(this, resultScrollPane, title, messageType);
+    }
     
     @Override
     public void saveAutomaton() {
@@ -322,6 +460,8 @@ public abstract class AbstractAutomatonPanel extends JPanel implements Automaton
     public void loadFile(File file) {
         try (FileReader reader = new FileReader(file)) {
             textArea.read(reader, null);
+            // Set the current file so test discovery works
+            this.file = file;
         } catch (IOException e) {
             JOptionPane.showMessageDialog(this, "Error loading file: " + e.getMessage());
         }

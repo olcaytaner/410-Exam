@@ -1,0 +1,15 @@
+#week4-12
+Start: q0
+Finals: q1 q3
+Alphabet: a b
+States: q0 q1 q2 q3 q4 q5
+transitions:
+q0 -> q0 (a)
+q0 -> q1 (b)
+q1 -> q2 (b)
+q2 -> q3 (b)
+q2 -> q2 (a)
+q0 -> q4 (b)
+q4 -> q0 (b)
+q1 -> q5 (a)
+q5 -> q0 (b)
