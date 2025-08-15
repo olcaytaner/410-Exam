@@ -1,8 +1,0 @@
-# Simple DFA test file
-Start: q0
-Finals: q1
-Alphabet: 0 1
-transitions:
-q0 -> q1 (1)
-q1 -> q0 (0)
-q1 -> q1 (1)
