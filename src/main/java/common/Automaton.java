@@ -9,6 +9,7 @@ import javax.swing.SwingConstants;
 
 import guru.nidi.graphviz.engine.Format;
 import guru.nidi.graphviz.engine.Graphviz;
+import guru.nidi.graphviz.engine.GraphvizJdkEngine;
 
 public abstract class Automaton {
 
@@ -167,6 +168,11 @@ public String getFileExtension(){
         String dotCode = parsedAutomaton.toDotCode(inputText);
         
         try {
+            // Configure to use pure Java engine (no GraphViz installation required)
+            // GraphvizJdkEngine uses GraalVM or Nashorn JavaScript engine for rendering
+            // This works on all platforms including ARM64 macOS
+            Graphviz.useEngine(new GraphvizJdkEngine());
+            
             // Generate graph image directly in memory - no files created
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             Graphviz.fromString(dotCode)
@@ -184,7 +190,15 @@ public String getFileExtension(){
         } catch (Exception e) {
             System.err.println("Error generating graph: " + e.getMessage());
             e.printStackTrace();
-            return null;
+            
+            // Return a more informative error label
+            JLabel errorLabel = new JLabel("<html><body style='text-align: center;'>"
+                + "<h2>Graph Generation Failed</h2>"
+                + "<p>Error: " + e.getMessage() + "</p>"
+                + "<p>Make sure GraalVM JS dependencies are installed</p>"
+                + "</body></html>");
+            errorLabel.setHorizontalAlignment(SwingConstants.CENTER);
+            return errorLabel;
         }
     }
 }

@@ -4,7 +4,10 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.Image;
+import java.awt.RenderingHints;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.event.ActionEvent;
@@ -18,6 +21,8 @@ import java.util.List;
 import javax.swing.Timer;
 
 import javax.swing.BorderFactory;
+import javax.swing.Box;
+import javax.swing.BoxLayout;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
@@ -26,6 +31,7 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
+import javax.swing.SwingWorker;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
 import common.Automaton;
@@ -50,6 +56,28 @@ public abstract class AbstractAutomatonPanel extends JPanel implements Automaton
     private ImageIcon originalImage;
     private Timer resizeTimer;
     private static final int RESIZE_DELAY = 300; // milliseconds
+    
+    // Loading indicator components
+    private JPanel loadingPanel;
+    private JLabel loadingSpinner;
+    private JLabel loadingText;
+    private Timer spinnerTimer;
+    private int spinnerAngle = 0;
+    
+    /**
+     * Result class to pass data from background thread to UI thread
+     */
+    private static class GraphGenerationResult {
+        public final Automaton.ParseResult parseResult;
+        public final JLabel imageLabel;
+        public final String inputText;
+        
+        public GraphGenerationResult(Automaton.ParseResult parseResult, JLabel imageLabel, String inputText) {
+            this.parseResult = parseResult;
+            this.imageLabel = imageLabel;
+            this.inputText = inputText;
+        }
+    }
 
     /**
      * Constructor that sets up the common UI layout
@@ -190,41 +218,101 @@ public abstract class AbstractAutomatonPanel extends JPanel implements Automaton
     // AutomatonPanel interface implementations
     @Override
     public void runAutomaton() {
-        String inputText = textArea.getText();
-        JLabel imageLabel = automaton.toGraphviz(inputText);
+        final String inputText = textArea.getText();
         
-        if (imageLabel != null) {
-            // Cache the original image and DOT code for resizing
-            originalImage = (ImageIcon) imageLabel.getIcon();
-            cachedDotCode = generateDotCodeForInput(inputText);
-            
-            // Use the new scaling method to fit current panel size
-            int availableWidth = Math.max(graphPanel.getWidth() - 60, 500);
-            int availableHeight = Math.max(graphPanel.getHeight() - 80, 400);
-            
-            ImageIcon scaledImage = scaleImageToFit(originalImage, availableWidth, availableHeight);
-            updateGraphPanelWithImage(scaledImage);
-        } else {
-            // Clear cached data if generation failed
-            originalImage = null;
-            cachedDotCode = null;
-            
-            // Show error message if image generation failed
-            JLabel errorLabel = new JLabel("<html><body style='text-align: center;'>" +
-                "<h3>Graph generation failed</h3>" +
-                "<p>Check the warnings panel for details</p>" +
-                "</body></html>");
-            errorLabel.setHorizontalAlignment(JLabel.CENTER);
-            errorLabel.setVerticalAlignment(JLabel.CENTER);
-            errorLabel.setForeground(new Color(150, 50, 50));
-            
-            graphPanel.removeAll();
-            graphPanel.add(errorLabel, BorderLayout.CENTER);
-            graphPanel.revalidate();
-            graphPanel.repaint();
-        }
+        // Show loading indicator immediately
+        showLoadingIndicator();
         
-        updateWarningDisplay();
+        // Create SwingWorker to handle parsing and GraphViz processing in background
+        SwingWorker<GraphGenerationResult, Void> worker = new SwingWorker<GraphGenerationResult, Void>() {
+            @Override
+            protected GraphGenerationResult doInBackground() throws Exception {
+                // This runs on background thread - First parse, then generate if successful
+                Automaton.ParseResult parseResult = automaton.parse(inputText);
+                
+                JLabel imageLabel = null;
+                if (parseResult.isSuccess()) {
+                    // Only generate image if parsing succeeded
+                    imageLabel = automaton.toGraphviz(inputText);
+                }
+                
+                return new GraphGenerationResult(parseResult, imageLabel, inputText);
+            }
+            
+            @Override
+            protected void done() {
+                // This runs on EDT when background work is complete
+                hideLoadingIndicator();
+                
+                try {
+                    GraphGenerationResult result = get(); // Get result from doInBackground()
+                    
+                    // Always update warnings first to show parsing errors
+                    updateWarningDisplayWithParseResult(result.parseResult, result.inputText);
+                    
+                    if (result.parseResult.isSuccess() && result.imageLabel != null && result.imageLabel.getIcon() != null) {
+                        // Parsing succeeded and we have a valid image
+                        originalImage = (ImageIcon) result.imageLabel.getIcon();
+                        cachedDotCode = generateDotCodeForInput(result.inputText);
+                        
+                        // Use the new scaling method to fit current panel size
+                        int availableWidth = Math.max(graphPanel.getWidth() - 60, 500);
+                        int availableHeight = Math.max(graphPanel.getHeight() - 80, 400);
+                        
+                        ImageIcon scaledImage = scaleImageToFit(originalImage, availableWidth, availableHeight);
+                        updateGraphPanelWithImage(scaledImage);
+                    } else {
+                        // Parsing failed or no image generated - clear cached data and show error
+                        originalImage = null;
+                        cachedDotCode = null;
+                        
+                        String errorMessage;
+                        if (!result.parseResult.isSuccess()) {
+                            errorMessage = "<h3>Parsing Failed</h3><p>Check the warnings panel for syntax errors</p>";
+                        } else {
+                            errorMessage = "<h3>Graph generation failed</h3><p>Check the warnings panel for details</p>";
+                        }
+                        
+                        JLabel errorLabel = new JLabel("<html><body style='text-align: center;'>" + errorMessage + "</body></html>");
+                        errorLabel.setHorizontalAlignment(JLabel.CENTER);
+                        errorLabel.setVerticalAlignment(JLabel.CENTER);
+                        errorLabel.setForeground(new Color(150, 50, 50));
+                        
+                        graphPanel.removeAll();
+                        graphPanel.add(errorLabel, BorderLayout.CENTER);
+                        graphPanel.revalidate();
+                        graphPanel.repaint();
+                    }
+                } catch (Exception e) {
+                    // Handle any exceptions that occurred during processing
+                    hideLoadingIndicator();
+                    
+                    // Clear cached data
+                    originalImage = null;
+                    cachedDotCode = null;
+                    
+                    // Show error message
+                    JLabel errorLabel = new JLabel("<html><body style='text-align: center;'>" +
+                        "<h3>Unexpected Error</h3>" +
+                        "<p>Error: " + e.getMessage() + "</p>" +
+                        "</body></html>");
+                    errorLabel.setHorizontalAlignment(JLabel.CENTER);
+                    errorLabel.setVerticalAlignment(JLabel.CENTER);
+                    errorLabel.setForeground(new Color(150, 50, 50));
+                    
+                    graphPanel.removeAll();
+                    graphPanel.add(errorLabel, BorderLayout.CENTER);
+                    graphPanel.revalidate();
+                    graphPanel.repaint();
+                    
+                    // Update warnings to show the exception - fallback to basic validation
+                    updateWarningDisplay();
+                }
+            }
+        };
+        
+        // Start the background work
+        worker.execute();
     }
     
     @Override
@@ -519,6 +607,85 @@ public abstract class AbstractAutomatonPanel extends JPanel implements Automaton
         warningField.setText(warningText);
         warningField.setCaretPosition(0); 
     }
+    
+    /**
+     * Update warning display for a successfully parsed automaton
+     */
+    protected void updateWarningDisplayForParsedAutomaton(String inputText) {
+        // Parse the input text to get a fresh automaton instance
+        Automaton.ParseResult parseResult = automaton.parse(inputText);
+        
+        StringBuilder result = new StringBuilder();
+        
+        // Always show parsing messages first (includes syntax errors)
+        List<Automaton.ValidationMessage> parseMessages = parseResult.getValidationMessages();
+        if (parseMessages != null && !parseMessages.isEmpty()) {
+            for (Automaton.ValidationMessage msg : parseMessages) {
+                result.append(msg.toString()).append("\n");
+            }
+        }
+        
+        if (parseResult.isSuccess() && parseResult.getAutomaton() != null) {
+            // Use the parsed automaton for validation
+            Automaton parsedAutomaton = parseResult.getAutomaton();
+            parsedAutomaton.setInputText(inputText);
+            
+            List<Automaton.ValidationMessage> validationMessages = parsedAutomaton.validate();
+            if (validationMessages != null && !validationMessages.isEmpty()) {
+                for (Automaton.ValidationMessage msg : validationMessages) {
+                    result.append(msg.toString()).append("\n");
+                }
+            }
+        }
+        
+        String warningText;
+        if (result.length() == 0) {
+            warningText = "No warnings or errors found!";
+        } else {
+            warningText = result.toString();
+        }
+        
+        warningField.setText(warningText);
+        warningField.setCaretPosition(0);
+    }
+    
+    /**
+     * Update warning display using an existing parse result
+     */
+    protected void updateWarningDisplayWithParseResult(Automaton.ParseResult parseResult, String inputText) {
+        StringBuilder result = new StringBuilder();
+        
+        // Always show parsing messages first (includes syntax errors)
+        List<Automaton.ValidationMessage> parseMessages = parseResult.getValidationMessages();
+        if (parseMessages != null && !parseMessages.isEmpty()) {
+            for (Automaton.ValidationMessage msg : parseMessages) {
+                result.append(msg.toString()).append("\n");
+            }
+        }
+        
+        if (parseResult.isSuccess() && parseResult.getAutomaton() != null) {
+            // Use the parsed automaton for validation
+            Automaton parsedAutomaton = parseResult.getAutomaton();
+            parsedAutomaton.setInputText(inputText);
+            
+            List<Automaton.ValidationMessage> validationMessages = parsedAutomaton.validate();
+            if (validationMessages != null && !validationMessages.isEmpty()) {
+                for (Automaton.ValidationMessage msg : validationMessages) {
+                    result.append(msg.toString()).append("\n");
+                }
+            }
+        }
+        
+        String warningText;
+        if (result.length() == 0) {
+            warningText = "No warnings or errors found!";
+        } else {
+            warningText = result.toString();
+        }
+        
+        warningField.setText(warningText);
+        warningField.setCaretPosition(0);
+    }
 
     /**
      * Saves the current content to a file
@@ -619,5 +786,96 @@ public abstract class AbstractAutomatonPanel extends JPanel implements Automaton
         graphPanel.add(imageWrapper, BorderLayout.CENTER);
         graphPanel.revalidate();
         graphPanel.repaint();
+    }
+    
+    /**
+     * Initialize the loading indicator components
+     */
+    private void initializeLoadingComponents() {
+        // Create loading panel
+        loadingPanel = new JPanel(new BorderLayout());
+        loadingPanel.setBackground(Color.WHITE);
+        
+        // Create spinner with custom painting
+        loadingSpinner = new JLabel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                Graphics2D g2d = (Graphics2D) g.create();
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                
+                int centerX = getWidth() / 2;
+                int centerY = getHeight() / 2;
+                int radius = 20;
+                
+                // Draw spinning dots
+                for (int i = 0; i < 8; i++) {
+                    double angle = (spinnerAngle + i * 45) * Math.PI / 180;
+                    int x = centerX + (int) (radius * Math.cos(angle));
+                    int y = centerY + (int) (radius * Math.sin(angle));
+                    
+                    int alpha = 255 - (i * 30);
+                    if (alpha < 50) alpha = 50;
+                    
+                    g2d.setColor(new Color(0, 100, 200, alpha));
+                    g2d.fillOval(x - 3, y - 3, 6, 6);
+                }
+                g2d.dispose();
+            }
+        };
+        loadingSpinner.setPreferredSize(new Dimension(80, 80));
+        loadingSpinner.setHorizontalAlignment(JLabel.CENTER);
+        
+        // Create loading text
+        loadingText = new JLabel("Generating visualization...");
+        loadingText.setHorizontalAlignment(JLabel.CENTER);
+        loadingText.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 14));
+        loadingText.setForeground(new Color(60, 60, 60));
+        
+        // Create spinner animation timer
+        spinnerTimer = new Timer(100, new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                spinnerAngle = (spinnerAngle + 45) % 360;
+                loadingSpinner.repaint();
+            }
+        });
+        
+        // Assemble loading panel
+        JPanel centerPanel = new JPanel();
+        centerPanel.setLayout(new BoxLayout(centerPanel, BoxLayout.Y_AXIS));
+        centerPanel.setBackground(Color.WHITE);
+        centerPanel.add(Box.createVerticalGlue());
+        centerPanel.add(loadingSpinner);
+        centerPanel.add(Box.createVerticalStrut(10));
+        centerPanel.add(loadingText);
+        centerPanel.add(Box.createVerticalGlue());
+        
+        loadingPanel.add(centerPanel, BorderLayout.CENTER);
+    }
+    
+    /**
+     * Show the loading indicator
+     */
+    private void showLoadingIndicator() {
+        if (loadingPanel == null) {
+            initializeLoadingComponents();
+        }
+        
+        graphPanel.removeAll();
+        graphPanel.add(loadingPanel, BorderLayout.CENTER);
+        graphPanel.revalidate();
+        graphPanel.repaint();
+        
+        spinnerTimer.start();
+    }
+    
+    /**
+     * Hide the loading indicator
+     */
+    private void hideLoadingIndicator() {
+        if (spinnerTimer != null) {
+            spinnerTimer.stop();
+        }
     }
 }

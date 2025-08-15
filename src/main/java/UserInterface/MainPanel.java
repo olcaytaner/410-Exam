@@ -359,6 +359,7 @@ public class MainPanel extends JPanel {
         button.setFont(new Font("Arial", Font.BOLD, 14));
         button.setForeground(Color.WHITE);
         button.setBackground(backgroundColor);
+        button.setOpaque(true); // Required for Mac to show background color
         button.setBorder(BorderFactory.createEmptyBorder(12, 25, 12, 25));
         button.setFocusPainted(false);
         button.setAlignmentX(Component.CENTER_ALIGNMENT);
