@@ -31,6 +31,7 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
+import javax.swing.JTextField;
 import javax.swing.SwingWorker;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
@@ -43,6 +44,9 @@ import common.TestRunner;
  */
 public abstract class AbstractAutomatonPanel extends JPanel implements AutomatonPanel {
 
+    // Configuration flag for inline testing feature
+    private static final boolean ENABLE_INLINE_TESTING = true; // Set to false for production
+    
     protected JPanel textEditorPanel, graphPanel, topPanel;
     protected JTextArea textArea;
     protected JScrollPane scrollPane;
@@ -50,6 +54,12 @@ public abstract class AbstractAutomatonPanel extends JPanel implements Automaton
     protected File file;
     protected MainPanel mainPanel;
     protected Automaton automaton;
+    
+    // Inline testing components
+    protected JPanel inlineTestPanel;
+    protected JTextField inlineTestInput;
+    protected JLabel inlineTestResult;
+    protected JButton inlineTestButton;
     
     // Graph visualization caching and resizing
     private String cachedDotCode;
@@ -88,6 +98,9 @@ public abstract class AbstractAutomatonPanel extends JPanel implements Automaton
         
         initializePanel();
         createTopPanel();
+        if (ENABLE_INLINE_TESTING) {
+            createInlineTestPanel();
+        }
         createTextEditorPanel();
         createGraphPanel();
         createWarningPanel();
@@ -130,6 +143,98 @@ public abstract class AbstractAutomatonPanel extends JPanel implements Automaton
         
         topPanel.add(tabLabel, BorderLayout.WEST);
         topPanel.add(testButton, BorderLayout.EAST);
+    }
+
+    /**
+     * Create the inline test panel for quick testing
+     */
+    private void createInlineTestPanel() {
+        inlineTestPanel = new JPanel();
+        inlineTestPanel.setLayout(new BoxLayout(inlineTestPanel, BoxLayout.X_AXIS));
+        inlineTestPanel.setBorder(BorderFactory.createEmptyBorder(5, 20, 5, 20));
+        inlineTestPanel.setBackground(new Color(245, 245, 245));
+        
+        // Create components
+        JLabel testLabel = new JLabel("Quick Test: ");
+        testLabel.setFont(new Font("Arial", Font.BOLD, 12));
+        
+        inlineTestInput = new JTextField();
+        inlineTestInput.setMaximumSize(new Dimension(300, 30));
+        inlineTestInput.setPreferredSize(new Dimension(200, 30));
+        inlineTestInput.setToolTipText("Enter input string to test (empty for epsilon)");
+        
+        inlineTestButton = new JButton("Test");
+        inlineTestButton.setPreferredSize(new Dimension(70, 30));
+        
+        inlineTestResult = new JLabel("");
+        inlineTestResult.setFont(new Font("Arial", Font.BOLD, 12));
+        inlineTestResult.setBorder(BorderFactory.createEmptyBorder(0, 15, 0, 0));
+        
+        // Add action listener for test button
+        inlineTestButton.addActionListener(e -> runInlineTest());
+        
+        // Add enter key listener for input field
+        inlineTestInput.addActionListener(e -> runInlineTest());
+        
+        // Assemble the panel
+        inlineTestPanel.add(testLabel);
+        inlineTestPanel.add(Box.createHorizontalStrut(10));
+        inlineTestPanel.add(inlineTestInput);
+        inlineTestPanel.add(Box.createHorizontalStrut(10));
+        inlineTestPanel.add(inlineTestButton);
+        inlineTestPanel.add(Box.createHorizontalStrut(15));
+        inlineTestPanel.add(inlineTestResult);
+        inlineTestPanel.add(Box.createHorizontalGlue());
+    }
+    
+    /**
+     * Run inline test for the entered input
+     */
+    private void runInlineTest() {
+        String input = inlineTestInput.getText();
+        String automatonText = textArea.getText();
+        
+        // Parse the automaton
+        Automaton.ParseResult parseResult = automaton.parse(automatonText);
+        
+        if (!parseResult.isSuccess()) {
+            inlineTestResult.setText("⚠ Parse Error");
+            inlineTestResult.setForeground(new Color(200, 100, 0));
+            updateWarningDisplayWithParseResult(parseResult, automatonText);
+            return;
+        }
+        
+        // Execute the test
+        try {
+            Automaton parsedAutomaton = parseResult.getAutomaton();
+            Automaton.ExecutionResult execResult = parsedAutomaton.execute(input);
+            
+            boolean accepted = execResult.isAccepted();
+            String displayInput = input.isEmpty() ? "ε" : "\"" + input + "\"";
+            
+            if (accepted) {
+                inlineTestResult.setText("✓ " + displayInput + " → ACCEPT");
+                inlineTestResult.setForeground(new Color(0, 150, 0));
+            } else {
+                inlineTestResult.setText("✗ " + displayInput + " → REJECT");
+                inlineTestResult.setForeground(new Color(200, 0, 0));
+            }
+            
+            // Update warning field with execution trace
+            String traceInfo = "Quick Test Result:\n";
+            traceInfo += "Input: " + displayInput + "\n";
+            traceInfo += "Result: " + (accepted ? "ACCEPTED" : "REJECTED") + "\n";
+            if (execResult.getTrace() != null && !execResult.getTrace().isEmpty()) {
+                traceInfo += "\nExecution Trace:\n" + execResult.getTrace();
+            }
+            warningField.setText(traceInfo);
+            warningField.setCaretPosition(0);
+            
+        } catch (Exception e) {
+            inlineTestResult.setText("⚠ Execution Error");
+            inlineTestResult.setForeground(new Color(200, 100, 0));
+            warningField.setText("Execution Error: " + e.getMessage());
+        }
     }
 
     /**
@@ -210,9 +315,19 @@ public abstract class AbstractAutomatonPanel extends JPanel implements Automaton
      * Assemble the final layout
      */
     private void assembleLayout() {
+        // Create a north panel that contains both top panel and inline test panel
+        if (ENABLE_INLINE_TESTING && inlineTestPanel != null) {
+            JPanel northContainer = new JPanel();
+            northContainer.setLayout(new BoxLayout(northContainer, BoxLayout.Y_AXIS));
+            northContainer.add(topPanel);
+            northContainer.add(inlineTestPanel);
+            this.add(northContainer, BorderLayout.NORTH);
+        } else {
+            this.add(topPanel, BorderLayout.NORTH);
+        }
+        
         this.add(textEditorPanel, BorderLayout.WEST);
         this.add(graphPanel, BorderLayout.CENTER);
-        this.add(topPanel, BorderLayout.NORTH);
     }
 
     // AutomatonPanel interface implementations

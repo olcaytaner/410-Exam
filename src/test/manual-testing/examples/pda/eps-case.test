@@ -1,0 +1,85 @@
+# Test cases for PDA with epsilon transitions
+# This PDA accepts strings of the form a^n b^n where n >= 1
+# Format: input_string,expected_result (1=accept, 0=reject)
+
+# Basic valid cases - a^n b^n
+ab,1
+aabb,1
+aaabbb,1
+aaaabbbb,1
+aaaaabbbbb,1
+aaaaaabbbbbb,1
+
+# Edge cases that should be rejected
+# Empty string
+,0
+
+# Single characters
+a,0
+b,0
+
+# Only a's (no b's)
+aa,0
+aaa,0
+aaaa,0
+
+# Only b's (no a's)
+bb,0
+bbb,0
+bbbb,0
+
+# Wrong order - b's before a's
+ba,0
+bbaa,0
+bbbaaaa,0
+
+# Mixed order
+abab,0
+aababb,0
+ababab,0
+
+# Unequal counts - more a's than b's
+aab,0
+aaab,0
+aaaab,0
+aaaabb,0
+aaaaabb,0
+
+# Unequal counts - more b's than a's
+abb,0
+abbb,0
+abbbb,0
+aabbbb,0
+aabbbbb,0
+
+# Invalid characters or patterns
+aabbc,0
+aaabbc,0
+caabb,0
+
+# Complex invalid patterns
+aaabbba,0
+aabbaa,0
+abba,0
+abab,0
+baab,0
+
+# Longer valid strings
+aaaaaaaaabbbbbbbb,1
+aaaaaaaaaabbbbbbbbb,1
+aaaaaaaaaaabbbbbbbbbb,1
+
+# Longer invalid strings
+aaaaaaaaabbbbbbb,0
+aaaaaaaaaaabbbbbbbb,0
+aaaaaaaaabbbbbbbbbb,0
+
+# Edge cases with alternating patterns
+abababab,0
+babababa,0
+
+# Cases with extra characters
+aabba,0
+aabbaa,0
+baabb,0
+aabbb,0
