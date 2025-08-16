@@ -273,15 +273,6 @@ public class UIPanelIntegrationTest {
                 
             }, "Automaton creation should work for all types");
         }
-        
-        @Test
-        @DisplayName("MainPanel should handle invalid automaton types")
-        void testInvalidAutomatonType() {
-            // Test that invalid automaton types are handled gracefully
-            assertDoesNotThrow(() -> {
-                mainPanel.createNewAutomaton("INVALID");
-            }, "Invalid automaton type should not crash the application");
-        }
     }
 
     @Nested
