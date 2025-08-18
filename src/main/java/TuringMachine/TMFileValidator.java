@@ -90,7 +90,7 @@ public class TMFileValidator {
     }
 
     private static void validateSections(ValidationContext context) {
-        String[] requiredSections = {"states", "input_alphabet", "tape_alphabet", "start", "accept", "reject", "transitions"};
+        String[] requiredSections = {"states", "input_alphabet", "tape_alphabet", "start", "accept", "transitions"};
         for (String section : requiredSections) {
             if (!context.sectionLines.containsKey(section)) {
                 context.addMessage(0, ValidationMessageType.ERROR, "MISSING_SECTION", "Missing section: '" + section + ":'");
@@ -166,7 +166,11 @@ public class TMFileValidator {
     private static void validateSpecialStates(ValidationContext context) {
         context.start = validateSpecialState(context, "start", "MISSING_START_STATE", "UNDEFINED_START");
         context.accept = validateSpecialState(context, "accept", "MISSING_ACCEPT_STATE", "UNDEFINED_ACCEPT");
-        context.reject = validateSpecialState(context, "reject", "MISSING_REJECT_STATE", "UNDEFINED_REJECT");
+        if (context.sectionContent.containsKey("reject")) {
+            context.reject = validateSpecialState(context, "reject", "MISSING_REJECT_STATE", "UNDEFINED_REJECT");
+        } else {
+            context.reject = null;
+        }
     }
 
     private static String validateSpecialState(ValidationContext context, String stateType, String missingCode, String undefinedCode) {
@@ -229,7 +233,7 @@ public class TMFileValidator {
                 context.addMessage(lineNumber, ValidationMessageType.WARNING, "UNDECLARED_INPUT_SYMBOL", "Read symbol '" + read + "' not in input_alphabet");
 
             if (!context.transitionsSeen.add(key)) {
-                context.addMessage(lineNumber, ValidationMessageType.WARNING, "DUPLICATE_TRANSITION", "Duplicate transition for: (" + key + ")");
+                context.addMessage(lineNumber, ValidationMessageType.ERROR, "DUPLICATE_TRANSITION", "Duplicate transition for: (" + key + ")");
             }
 
             context.usedStates.add(from);

@@ -57,19 +57,34 @@ public class TMParser {
 
     private static void createStates(ParseContext context) {
         String statesRaw = context.sectionContent.get("states");
+        String acceptStateName = context.sectionContent.get("accept");
+        String startStateName = context.sectionContent.get("start");
+
         for (String s : statesRaw.split("\\s+")) {
             State newState = new State(s, s.equalsIgnoreCase("q_accept"), s.equalsIgnoreCase("q_reject"));
+            if (s.equals(startStateName)) {
+                newState.setStart(true);
+            }
             context.stateMap.put(s, newState);
             context.states.add(newState);
         }
 
-        String startStateName = context.sectionContent.get("start");
-        String acceptStateName = context.sectionContent.get("accept");
-        String rejectStateName = context.sectionContent.get("reject");
-
         context.startState = context.stateMap.get(startStateName);
         context.acceptState = context.stateMap.get(acceptStateName);
-        context.rejectState = context.stateMap.get(rejectStateName);
+
+        // The reject state is optional
+        if (context.sectionContent.containsKey("reject")) {
+            String rejectStateName = context.sectionContent.get("reject");
+            context.rejectState = context.stateMap.get(rejectStateName);
+        } else {
+            // If no reject state is specified, create a default one.
+            State defaultReject = new State("q_reject", false, true);
+            if (!context.stateMap.containsKey("q_reject")) {
+                context.stateMap.put("q_reject", defaultReject);
+                context.states.add(defaultReject);
+            }
+            context.rejectState = context.stateMap.get("q_reject");
+        }
     }
 
     private static void createAlphabets(ParseContext context) {
