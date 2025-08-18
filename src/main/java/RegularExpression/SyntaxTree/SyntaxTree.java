@@ -240,7 +240,6 @@ public class SyntaxTree extends Automaton {
         root = stk.pop();
     }
 
-
     public boolean alphabetHas(char c) {
         for (char ch : alphabet)
             if (ch == c)
