@@ -178,12 +178,15 @@ public class InputNormalizer {
                 
                 sections.put(currentSection, new ArrayList<>());
                 sectionLineNumbers.put(currentSection, i + 1);
-                
+                sectionLineNumbers.put(line, i + 1);
+
                 if (!data.isEmpty()) {
                     sections.get(currentSection).add(data);
+                    sectionLineNumbers.put(data, i + 1);
                 }
             } else if (currentSection != null) {
                 sections.get(currentSection).add(line);
+                sectionLineNumbers.put(line, i + 1);
             } else {
                 messages.add(new Automaton.ValidationMessage(
                     "Undefined content. All content must be under a keyword section.", 

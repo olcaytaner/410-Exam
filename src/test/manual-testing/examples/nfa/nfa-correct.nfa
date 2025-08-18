@@ -1,6 +1,7 @@
 Start: q1
 Finals: q2 q3
 Alphabet: a b c
+States: q1 q2 q3
 transitions:
 q1 -> q2 (a eps)
 q3 -> q1 (a)
