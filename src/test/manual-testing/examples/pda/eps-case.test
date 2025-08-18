@@ -65,9 +65,9 @@ abab,0
 baab,0
 
 # Longer valid strings
-aaaaaaaaabbbbbbbb,1
-aaaaaaaaaabbbbbbbbb,1
-aaaaaaaaaaabbbbbbbbbb,1
+aaaaaaaaabbbbbbbbb,1
+aaaaaaaaaabbbbbbbbbb,1
+aaaaaaaaaaabbbbbbbbbbb,1
 
 # Longer invalid strings
 aaaaaaaaabbbbbbb,0
