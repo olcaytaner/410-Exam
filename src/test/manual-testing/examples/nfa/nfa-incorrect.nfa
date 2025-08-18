@@ -1,6 +1,7 @@
 Start: q1 q2
 Finals: q2 qasd
 Alphabet: a b c eps ?
+States: qa q1
 transitions:
 q1 -> q2 (a eps)
 q? -> q1 (a)

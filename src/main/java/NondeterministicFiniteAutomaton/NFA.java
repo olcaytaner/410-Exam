@@ -101,11 +101,11 @@ public class NFA extends Automaton {
         }
 
         // Process sections using a simplified approach similar to DFA
-        processStatesNFA(sections.get("states"), sectionLineNumbers.get("states"), messages);
-        processAlphabetNFA(sections.get("alphabet"), sectionLineNumbers.get("alphabet"), messages);
-        processStartStateNFA(sections.get("start"), sectionLineNumbers.get("start"), messages);
-        processFinalStatesNFA(sections.get("finals"), sectionLineNumbers.get("finals"), messages);
-        processTransitionsNFA(sections.get("transitions"), sectionLineNumbers.get("transitions"), messages);
+        processStatesNFA(sections.get("states"), sectionLineNumbers, messages);
+        processAlphabetNFA(sections.get("alphabet"), sectionLineNumbers, messages);
+        processStartStateNFA(sections.get("start"), sectionLineNumbers, messages);
+        processFinalStatesNFA(sections.get("finals"), sectionLineNumbers, messages);
+        processTransitionsNFA(sections.get("transitions"), sectionLineNumbers, messages);
 
         boolean isSuccess = messages.stream().noneMatch(m -> m.getType() == ValidationMessageType.ERROR);
         
@@ -141,18 +141,20 @@ public class NFA extends Automaton {
      * @param lineNum the line number in the input where the states section begins
      * @param messages the list to collect validation messages for errors or warnings
      */
-    private void processStatesNFA(List<String> stateLines, Integer lineNum, List<ValidationMessage> messages) {
+    private void processStatesNFA(List<String> stateLines, Map<String, Integer> lineNum, List<ValidationMessage> messages) {
+        int lineNumber = lineNum.get("states") != null ? lineNum.get("states") : -1;
         if (stateLines == null || stateLines.isEmpty()) {
-            messages.add(new ValidationMessage("The 'states:' block cannot be empty.", lineNum != null ? lineNum : 0, ValidationMessageType.ERROR));
+            messages.add(new ValidationMessage("The 'states:' block cannot be empty.", lineNumber, ValidationMessageType.ERROR));
             return;
         }
 
-        String[] stateNames = stateLines.get(0).split("\\s+");
+        String[] stateNames = String.join(" ", stateLines).split("\\s+");
         for (String name : stateNames) {
+            lineNumber = findLineNumberFromSectionLines(name, lineNum, stateLines);
             if (name.matches("^" + statePattern + "$")) {
                 this.states.put(name, new State(name));
             } else {
-                messages.add(new ValidationMessage("Invalid state name: " + name, lineNum != null ? lineNum : 0, ValidationMessageType.ERROR));
+                messages.add(new ValidationMessage("Invalid state name: " + name, lineNum.getOrDefault(name, lineNumber), ValidationMessageType.ERROR));
             }
         }
     }
@@ -166,23 +168,25 @@ public class NFA extends Automaton {
      * @param lineNum the line number in the input where the alphabet section begins
      * @param messages the list to collect validation messages for errors or warnings
      */
-    private void processAlphabetNFA(List<String> alphabetLines, Integer lineNum, List<ValidationMessage> messages) {
+    private void processAlphabetNFA(List<String> alphabetLines, Map<String, Integer> lineNum, List<ValidationMessage> messages) {
+        int lineNumber = lineNum.get("alphabet") != null ? lineNum.get("alphabet") : -1;
         if (alphabetLines == null || alphabetLines.isEmpty()) {
-            messages.add(new ValidationMessage("The 'alphabet:' block cannot be empty.", lineNum != null ? lineNum : 0, ValidationMessageType.ERROR));
+            messages.add(new ValidationMessage("The 'alphabet:' block cannot be empty.", lineNumber, ValidationMessageType.ERROR));
             return;
         }
 
-        String[] symbolNames = alphabetLines.get(0).split("\\s+");
+        String[] symbolNames = String.join(" ", alphabetLines).split("\\s+");
         for (String name : symbolNames) {
+            lineNumber = findLineNumberFromSectionLines(name, lineNum, alphabetLines);
             if (name.length() == 1 && Character.isLetterOrDigit(name.charAt(0))) {
                 Symbol symbol = new Symbol(name.charAt(0));
                 if (!this.alphabet.contains(symbol)) {
                     this.alphabet.add(symbol);
                 }else {
-                    messages.add(new ValidationMessage("Duplicate Symbol: " + name, lineNum != null ? lineNum : 0, ValidationMessageType.ERROR));
+                    messages.add(new ValidationMessage("Duplicate Symbol: " + name, lineNumber, ValidationMessageType.ERROR));
                 }
             } else {
-                messages.add(new ValidationMessage("Invalid alphabet symbol: " + name, lineNum != null ? lineNum : 0, ValidationMessageType.ERROR));
+                messages.add(new ValidationMessage("Invalid alphabet symbol: " + name, lineNumber, ValidationMessageType.ERROR));
             }
         }
     }
@@ -196,26 +200,28 @@ public class NFA extends Automaton {
      * @param lineNum the line number in the input where the start section begins
      * @param messages the list to collect validation messages for errors or warnings
      */
-    private void processStartStateNFA(List<String> startLines, Integer lineNum, List<ValidationMessage> messages) {
+    private void processStartStateNFA(List<String> startLines, Map<String, Integer> lineNum, List<ValidationMessage> messages) {
+        int lineNumber = lineNum.get("start") != null ? lineNum.get("start") : -1;
         if (startLines == null || startLines.isEmpty()) {
-            messages.add(new ValidationMessage("The 'start:' block cannot be empty.", lineNum != null ? lineNum : 0, ValidationMessageType.ERROR));
+            messages.add(new ValidationMessage("The 'start:' block cannot be empty.", lineNumber, ValidationMessageType.ERROR));
             return;
         }
 
         if (startLines.size() != 1) {
-            messages.add(new ValidationMessage("There cannot be more than 1 start state",  lineNum != null ? lineNum : 0, ValidationMessageType.ERROR));
+            messages.add(new ValidationMessage("There cannot be more than 1 start state",  lineNumber, ValidationMessageType.ERROR));
         }
 
         String startStateName = startLines.get(0).trim();
+        lineNumber = lineNum.getOrDefault(startStateName, lineNumber);
         if (startStateName.matches("^" + statePattern.trim() + "$")) {
             if (this.states.containsKey(startStateName)) {
                 this.states.get(startStateName).setStart(true);
                 this.startState = this.states.get(startStateName);
             }else {
-                messages.add(new ValidationMessage("States does not contain start state",  lineNum != null ? lineNum : 0, ValidationMessageType.ERROR));
+                messages.add(new ValidationMessage("States does not contain start state",  lineNumber, ValidationMessageType.ERROR));
             }
         } else {
-            messages.add(new ValidationMessage("Invalid start state name: " + startStateName, lineNum != null ? lineNum : 0, ValidationMessageType.ERROR));
+            messages.add(new ValidationMessage("Invalid start state name: " + startStateName, lineNumber, ValidationMessageType.ERROR));
         }
     }
 
@@ -228,24 +234,26 @@ public class NFA extends Automaton {
      * @param lineNum the line number in the input where the finals section begins
      * @param messages the list to collect validation messages for errors or warnings
      */
-    private void processFinalStatesNFA(List<String> finalLines, Integer lineNum, List<ValidationMessage> messages) {
+    private void processFinalStatesNFA(List<String> finalLines, Map<String, Integer> lineNum, List<ValidationMessage> messages) {
+        int lineNumber = lineNum.get("finals") != null ? lineNum.get("finals") : -1;
         if (finalLines == null) {
-            messages.add(new ValidationMessage("The 'finals:' block cannot be empty.", lineNum != null ? lineNum : 0, ValidationMessageType.ERROR));
+            messages.add(new ValidationMessage("The 'finals:' block cannot be empty.", lineNumber, ValidationMessageType.ERROR));
             return;
         }
 
         if (!finalLines.isEmpty()) {
-            String[] finalStateNames = finalLines.get(0).split("\\s+");
+            String[] finalStateNames = String.join(" ", finalLines).split("\\s+");
             for (String name : finalStateNames) {
-                if (name.matches(statePattern)) {
+                lineNumber = findLineNumberFromSectionLines(name, lineNum, finalLines);
+                if (name.matches("^" + statePattern + "$")) {
                     if (this.states.containsKey(name)) {
                         this.states.get(name).setAccept(true);
                         this.finalStates.add(this.states.get(name));
                     } else {
-                        messages.add(new ValidationMessage("States does not contain final state: " + name, lineNum != null ? lineNum : 0, ValidationMessageType.ERROR));
+                        messages.add(new ValidationMessage("States does not contain final state: " + name, lineNumber, ValidationMessageType.ERROR));
                     }
                 } else {
-                    messages.add(new ValidationMessage("Invalid final state name: " + name, lineNum != null ? lineNum : 0, ValidationMessageType.ERROR));
+                    messages.add(new ValidationMessage("Invalid final state name: " + name, lineNumber, ValidationMessageType.ERROR));
                 }
             }
         }
@@ -261,14 +269,14 @@ public class NFA extends Automaton {
      * @param lineNum the line number in the input where the transitions section begins
      * @param messages the list to collect validation messages for errors or warnings
      */
-    private void processTransitionsNFA(List<String> transitionLines, Integer lineNum, List<ValidationMessage> messages) {
+    private void processTransitionsNFA(List<String> transitionLines, Map<String, Integer> lineNum, List<ValidationMessage> messages) {
         if (transitionLines == null) return;
 
         List<ValidationMessage> lMessages = new ArrayList<>();
 
         for (int i = 0; i < transitionLines.size(); i++) {
             String line = transitionLines.get(i);
-            int currentLineNumber = lineNum != null ? lineNum + i : 0;
+            int currentLineNumber = findLineNumberFromSectionLines(line, lineNum, transitionLines);
 
             lMessages.addAll(handleTransitionLines(line, currentLineNumber));
         }
@@ -379,6 +387,18 @@ public class NFA extends Automaton {
         Set<State> set = new LinkedHashSet<>();
         set.add(state);
         return getEpsilonClosure(set);
+    }
+
+    private int findLineNumberFromSectionLines(String line, Map<String, Integer> lineMap, List<String> sectionLines) {
+        String s = "";
+        for (String sectionLine : sectionLines) {
+            if (sectionLine.contains(line)) {
+                s = sectionLine;
+                break;
+            }
+        }
+
+        return lineMap.getOrDefault(s, -100);
     }
 
     /**

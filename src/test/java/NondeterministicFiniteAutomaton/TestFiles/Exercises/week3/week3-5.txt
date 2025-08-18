@@ -1,6 +1,6 @@
 #week3-5
 Start: q0
-Finals: q5 q8
+Finals: q0 q5 q8
 Alphabet: a b c
 States: q0 q1 q2 q3 q4 q5 q6 q7 q8
 transitions:

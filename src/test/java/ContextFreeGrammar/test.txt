@@ -3,4 +3,4 @@ Terminals = 0 1
 Start = S
 #comment
 
-S -> 0 S 1 | eps
+S -> 0 S 1 | _

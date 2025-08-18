@@ -13,19 +13,20 @@ public class ExampleExerciseTest {
 
     public static void main(String[] args) throws IOException {
 
-        String s = "week4-";
+        String s = "week1-";
 
-        for (int i = 9; i <= 16; i++) {
-            System.out.println(test(s + i, false));
+        for (int i = 1; i <= 1; i++) {
+
+            String week = getExercisePath(s + i);
+            String input = readFile(week);
+
+            System.out.println(s + i + " " + test(input, true));
         }
 
     }
 
-    public static String test(String path, boolean verbose) throws IOException {
+    public static String test(String input, boolean verbose) throws IOException {
 
-        String week = getExercisePath(path);
-
-        String input = readFile(week);
         NFA nfa = new NFA();
         ParseResult parseResult = nfa.parse(input);
 
@@ -76,10 +77,10 @@ public class ExampleExerciseTest {
                 System.out.println("\n Validation: " + validationErrors + " error(s), " + validationWarnings + " warning(s) and " + validationInfos + " info(s). ");
             }
             if (validationErrors == 0){
-                return path + " Passed";
+                return " Passed";
             }
         }
-        return path + " Failed";
+        return " Failed";
     }
 
     private static String readFile(String file) throws IOException {

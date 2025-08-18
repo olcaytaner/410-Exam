@@ -5,6 +5,10 @@ package TuringMachine;
  */
 public class State extends common.State {
 
+    public State(String name, boolean isAccept) {
+        super(name, false, isAccept, !isAccept);
+    }
+
     /**
      * Constructs a new State.
      * @param name The name of the state.

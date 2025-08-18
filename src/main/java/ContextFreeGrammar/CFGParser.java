@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.*;
+import common.Symbol;
 
 /**
  * Parser for Context-Free Grammar files.
@@ -239,8 +240,8 @@ public class CFGParser {
         }
 
         // Special case for epsilon
-        if (name.equals("eps")) {
-            return new Terminal("eps");
+        if (name.equals("_")) {
+            return new Terminal("_");
         }
 
         return null;

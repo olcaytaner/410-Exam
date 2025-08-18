@@ -20,7 +20,7 @@ public class CFGTest {
      * @param args command-line arguments (not used)
      */
     public static void main(String[] args) {
-        String filePath = "src/format.txt";
+        String filePath = "src/test/java/ContextFreeGrammar/test.txt";
 
         try {
             // Parse the grammar file

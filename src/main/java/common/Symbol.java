@@ -31,6 +31,15 @@ public class Symbol {
   public char getValue() { return value; }
 
   /**
+   * Returns the name of this symbol.
+   *
+   * @return the name of this symbol as a string
+   */
+  public String getName() {
+    return Character.toString(value);
+  }
+
+  /**
    * Checks if this symbol represents the epsilon (empty string) symbol.
    * Epsilon is represented internally by the underscore character '_'.
    * 
