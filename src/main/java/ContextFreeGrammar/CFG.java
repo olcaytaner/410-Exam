@@ -454,6 +454,361 @@ public class CFG extends Automaton {
         return null;
     }
 
+    /**
+     * Converts the grammar to Chomsky Normal Form (CNF).
+     * This method performs the following steps:
+     * 1. Eliminate epsilon productions
+     * 2. Eliminate unit productions
+     * 3. Convert to CNF format (A -> BC or A -> a)
+     * 4. Handle mixed productions and long productions
+     *
+     * @return a new CFG in Chomsky Normal Form
+     */
+    public CFG toChomskyNormalForm() {
+        // Create copies to avoid modifying the original grammar
+        Set<NonTerminal> newVariables = new HashSet<>(variables);
+        Set<Terminal> newTerminals = new HashSet<>(terminals);
+        List<Production> newProductions = new ArrayList<>(productions);
+        NonTerminal newStartSymbol = startSymbol;
+
+        // Step 1: Add new start symbol to handle epsilon in original start symbol
+        NonTerminal originalStart = startSymbol;
+        NonTerminal newStart = new NonTerminal("S'");
+        while (newVariables.contains(newStart)) {
+            newStart = new NonTerminal(newStart.getName() + "'");
+        }
+
+        newVariables.add(newStart);
+        newProductions.add(new Production(newStart, Arrays.asList(originalStart)));
+        newStartSymbol = newStart;
+
+        // Step 2: Eliminate epsilon productions
+        newProductions = eliminateEpsilonProductions(newProductions, newVariables);
+
+        // Step 3: Eliminate unit productions
+        newProductions = eliminateUnitProductions(newProductions, newVariables);
+
+        // Step 4: Convert long productions and mixed productions to CNF
+        newProductions = convertToCNFFormat(newProductions, newVariables, newTerminals);
+
+        return new CFG(newVariables, newTerminals, newProductions, newStartSymbol);
+    }
+
+    /**
+     * Step 1: Eliminate epsilon (empty) productions from the grammar.
+     * This method finds all nullable variables and creates new productions
+     * without the nullable variables.
+     */
+    private List<Production> eliminateEpsilonProductions(List<Production> productions, Set<NonTerminal> variables) {
+        // Find all nullable variables (variables that can derive epsilon)
+        Set<NonTerminal> nullable = findNullableVariables(productions);
+
+        List<Production> newProductions = new ArrayList<>();
+
+        for (Production p : productions) {
+            // Skip epsilon productions
+            if (p.getRight().isEmpty()) {
+                continue;
+            }
+
+            // Generate all combinations by including/excluding nullable variables
+            List<List<Symbol>> combinations = generateCombinations(p.getRight(), nullable);
+
+            for (List<Symbol> combination : combinations) {
+                if (!combination.isEmpty()) { // Don't add empty productions
+                    newProductions.add(new Production(p.getLeft(), combination));
+                }
+            }
+        }
+
+        // Remove duplicate productions
+        return removeDuplicateProductions(newProductions);
+    }
+
+    /**
+     * Finds all variables that can derive epsilon (empty string).
+     */
+    private Set<NonTerminal> findNullableVariables(List<Production> productions) {
+        Set<NonTerminal> nullable = new HashSet<>();
+        boolean changed = true;
+
+        while (changed) {
+            changed = false;
+            for (Production p : productions) {
+                if (!nullable.contains(p.getLeft())) {
+                    // Check if right side is empty (direct epsilon production)
+                    if (p.getRight().isEmpty()) {
+                        nullable.add(p.getLeft());
+                        changed = true;
+                    }
+                    // Check if all symbols on right side are nullable
+                    else if (p.getRight().stream().allMatch(symbol ->
+                            symbol instanceof NonTerminal && nullable.contains(symbol))) {
+                        nullable.add(p.getLeft());
+                        changed = true;
+                    }
+                }
+            }
+        }
+
+        return nullable;
+    }
+
+    /**
+     * Generates all possible combinations by including/excluding nullable variables.
+     */
+    private List<List<Symbol>> generateCombinations(List<Symbol> symbols, Set<NonTerminal> nullable) {
+        List<List<Symbol>> result = new ArrayList<>();
+        generateCombinationsHelper(symbols, nullable, 0, new ArrayList<>(), result);
+        return result;
+    }
+
+    private void generateCombinationsHelper(List<Symbol> symbols, Set<NonTerminal> nullable,
+                                            int index, List<Symbol> current, List<List<Symbol>> result) {
+        if (index == symbols.size()) {
+            result.add(new ArrayList<>(current));
+            return;
+        }
+
+        Symbol symbol = symbols.get(index);
+
+        // Always include non-nullable symbols
+        if (!(symbol instanceof NonTerminal) || !nullable.contains(symbol)) {
+            current.add(symbol);
+            generateCombinationsHelper(symbols, nullable, index + 1, current, result);
+            current.remove(current.size() - 1);
+        } else {
+            // For nullable variables, try both including and excluding
+            // Include the variable
+            current.add(symbol);
+            generateCombinationsHelper(symbols, nullable, index + 1, current, result);
+            current.remove(current.size() - 1);
+
+            // Exclude the variable
+            generateCombinationsHelper(symbols, nullable, index + 1, current, result);
+        }
+    }
+
+    /**
+     * Step 2: Eliminate unit productions (A -> B where B is a single non-terminal).
+     */
+    private List<Production> eliminateUnitProductions(List<Production> productions, Set<NonTerminal> variables) {
+        List<Production> newProductions = new ArrayList<>();
+
+        // Separate unit and non-unit productions
+        List<Production> unitProductions = new ArrayList<>();
+        List<Production> nonUnitProductions = new ArrayList<>();
+
+        for (Production p : productions) {
+            if (p.getRight().size() == 1 && p.getRight().get(0) instanceof NonTerminal) {
+                unitProductions.add(p);
+            } else {
+                nonUnitProductions.add(p);
+            }
+        }
+
+        // Build unit production chains
+        Map<NonTerminal, Set<NonTerminal>> unitChains = buildUnitChains(unitProductions, variables);
+
+        // For each variable, add all non-unit productions reachable through unit chains
+        for (NonTerminal var : variables) {
+            Set<NonTerminal> reachable = unitChains.getOrDefault(var, new HashSet<>());
+            reachable.add(var); // Include itself
+
+            for (NonTerminal reachableVar : reachable) {
+                for (Production p : nonUnitProductions) {
+                    if (p.getLeft().equals(reachableVar)) {
+                        newProductions.add(new Production(var, p.getRight()));
+                    }
+                }
+            }
+        }
+
+        return removeDuplicateProductions(newProductions);
+    }
+
+    /**
+     * Builds chains of unit productions (A -> B -> C -> ...).
+     */
+    private Map<NonTerminal, Set<NonTerminal>> buildUnitChains(List<Production> unitProductions, Set<NonTerminal> variables) {
+        Map<NonTerminal, Set<NonTerminal>> chains = new HashMap<>();
+
+        // Initialize
+        for (NonTerminal var : variables) {
+            chains.put(var, new HashSet<>());
+        }
+
+        // Add direct unit production relationships
+        for (Production p : unitProductions) {
+            NonTerminal from = p.getLeft();
+            NonTerminal to = (NonTerminal) p.getRight().get(0);
+            chains.get(from).add(to);
+        }
+
+        // Compute transitive closure using Floyd-Warshall
+        for (NonTerminal k : variables) {
+            for (NonTerminal i : variables) {
+                for (NonTerminal j : variables) {
+                    if (chains.get(i).contains(k) && chains.get(k).contains(j)) {
+                        chains.get(i).add(j);
+                    }
+                }
+            }
+        }
+
+        return chains;
+    }
+
+    /**
+     * Step 3: Convert remaining productions to CNF format.
+     * This handles:
+     * - Mixed productions (A -> aB, A -> Ba, etc.)
+     * - Long productions (A -> BCD, A -> BCDE, etc.)
+     * - Productions with multiple terminals
+     */
+    private List<Production> convertToCNFFormat(List<Production> productions, Set<NonTerminal> variables, Set<Terminal> terminals) {
+        List<Production> newProductions = new ArrayList<>();
+        Map<String, NonTerminal> terminalVariables = new HashMap<>();
+        int newVarCounter = 0;
+
+        for (Production p : productions) {
+            List<Symbol> rightSide = p.getRight();
+
+            // Case 1: A -> a (already in CNF)
+            if (rightSide.size() == 1 && rightSide.get(0) instanceof Terminal) {
+                newProductions.add(p);
+                continue;
+            }
+
+            // Case 2: A -> BC where B and C are non-terminals (already in CNF)
+            if (rightSide.size() == 2 &&
+                    rightSide.get(0) instanceof NonTerminal &&
+                    rightSide.get(1) instanceof NonTerminal) {
+                newProductions.add(p);
+                continue;
+            }
+
+            // Case 3: Need to convert to CNF
+            List<Symbol> processedRight = new ArrayList<>();
+
+            // Replace terminals with new variables (except for single terminal productions)
+            for (Symbol symbol : rightSide) {
+                if (symbol instanceof Terminal && rightSide.size() > 1) {
+                    NonTerminal termVar = getOrCreateTerminalVariable(symbol.getName(), terminalVariables, variables, newVarCounter++);
+                    processedRight.add(termVar);
+
+                    // Add production: NewVar -> terminal
+                    newProductions.add(new Production(termVar, Arrays.asList(symbol)));
+                } else {
+                    processedRight.add(symbol);
+                }
+            }
+
+            // Handle long productions (more than 2 symbols)
+            if (processedRight.size() > 2) {
+                newProductions.addAll(breakLongProduction(p.getLeft(), processedRight, variables, newVarCounter));
+                newVarCounter += processedRight.size() - 2;
+            } else {
+                newProductions.add(new Production(p.getLeft(), processedRight));
+            }
+        }
+
+        return removeDuplicateProductions(newProductions);
+    }
+
+    private static boolean nameExists(Set<NonTerminal> vars, String name) {
+        for (NonTerminal v : vars) {
+            if (v.getName().equals(name)) return true;
+        }
+        return false;
+    }
+
+    /**
+     * Gets or creates a new variable to represent a terminal.
+     * NOTE: 'counter' here is optional; increments don't escape to the caller.
+     */
+    private NonTerminal getOrCreateTerminalVariable(String terminalName,
+                                                    Map<String, NonTerminal> terminalVariables,
+                                                    Set<NonTerminal> variables,
+                                                    int counter) {
+
+        NonTerminal existing = terminalVariables.get(terminalName);
+        if (existing != null) return existing;
+
+        String base = "T_" + terminalName;
+        String newVarName = base;
+        int suffix = Math.max(1, counter); // seed from counter if you want
+        while (nameExists(variables, newVarName)) {
+            newVarName = base + "_" + (suffix++);
+        }
+
+        NonTerminal newVar = new NonTerminal(newVarName);
+        terminalVariables.put(terminalName, newVar);
+        variables.add(newVar);
+        return newVar;
+    }
+
+    /**
+     * Breaks a long production (A -> BCDE) into binary productions.
+     */
+    private List<Production> breakLongProduction(NonTerminal left, List<Symbol> rightSide,
+                                                 Set<NonTerminal> variables, int startCounter) {
+
+        List<Production> result = new ArrayList<>();
+        if (rightSide.size() <= 2) {
+            result.add(new Production(left, rightSide));
+            return result;
+        }
+
+        NonTerminal currentLeft = left;
+        int suffix = Math.max(1, startCounter);
+
+        for (int i = 0; i < rightSide.size() - 2; i++) {
+            // Create unique intermediate variable name without lambdas
+            String base = "X_" + i;
+            String newVarName = base + "_" + (suffix++);
+            while (nameExists(variables, newVarName)) {
+                newVarName = base + "_" + (suffix++);
+            }
+
+            NonTerminal newVar = new NonTerminal(newVarName);
+            variables.add(newVar);
+
+            // CurrentLeft -> Symbol[i] NewVar
+            result.add(new Production(currentLeft,
+                    Arrays.asList(rightSide.get(i), newVar)));
+
+            currentLeft = newVar;
+        }
+
+        // LastNewVar -> Symbol[n-2] Symbol[n-1]
+        result.add(new Production(currentLeft, Arrays.asList(
+                rightSide.get(rightSide.size() - 2),
+                rightSide.get(rightSide.size() - 1))));
+
+        return result;
+    }
+
+    /**
+     * Removes duplicate productions from the list.
+     */
+    private List<Production> removeDuplicateProductions(List<Production> productions) {
+        Set<String> seen = new HashSet<>();
+        List<Production> unique = new ArrayList<>();
+
+        for (Production p : productions) {
+            String key = p.getLeft().getName() + "->" +
+                    p.getRight().stream().map(Symbol::getName).collect(Collectors.joining(""));
+
+            if (!seen.contains(key)) {
+                seen.add(key);
+                unique.add(p);
+            }
+        }
+
+        return unique;
+    }
+
     // Automaton abstract method implementations
     @Override
     public ParseResult parse(String inputText) {
@@ -476,36 +831,308 @@ public class CFG extends Automaton {
     @Override
     public ExecutionResult execute(String inputText) {
         List<ValidationMessage> messages = new ArrayList<>();
-        String trace = "CFG execution trace for: " + inputText + "\n";
+        StringBuilder trace = new StringBuilder();
+        trace.append("CFG execution trace for input: \"").append(inputText).append("\"\n\n");
+
         boolean accepted = false;
 
-        // Basic string derivation check (simplified implementation)
         try {
-            // This is a placeholder for actual parsing logic
-            // You can implement CYK algorithm or recursive descent parsing here
-            trace += "Checking if string can be derived from grammar...\n";
-            trace += "Start symbol: " + (startSymbol != null ? startSymbol.getName() : "undefined") + "\n";
-
-            // For now, just check if the string contains only terminal symbols
-            if (inputText != null && !inputText.isEmpty()) {
-                Set<String> terminalNames = terminals.stream()
-                        .map(Terminal::getName)
-                        .collect(Collectors.toSet());
-
-                boolean allTerminals = inputText.chars()
-                        .mapToObj(c -> String.valueOf((char) c))
-                        .allMatch(terminalNames::contains);
-
-                accepted = allTerminals && startSymbol != null;
-                trace += "String contains only terminals: " + allTerminals + "\n";
-                trace += "Result: " + (accepted ? "ACCEPTED" : "REJECTED") + "\n";
+            // Validate grammar first
+            if (startSymbol == null) {
+                messages.add(new ValidationMessage("No start symbol defined", 0, ValidationMessage.ValidationMessageType.ERROR));
+                trace.append("ERROR: No start symbol defined\n");
+                return new ExecutionResult(false, messages, trace.toString());
             }
+
+            if (productions.isEmpty()) {
+                messages.add(new ValidationMessage("No productions defined", 0, ValidationMessage.ValidationMessageType.ERROR));
+                trace.append("ERROR: No productions defined\n");
+                return new ExecutionResult(false, messages, trace.toString());
+            }
+
+            // Convert to CNF first
+            trace.append("Converting grammar to Chomsky Normal Form...\n");
+            CFG cnfGrammar = this.toChomskyNormalForm();
+            trace.append("CNF conversion completed.\n");
+            trace.append("Original productions: ").append(this.productions.size()).append("\n");
+            trace.append("CNF productions: ").append(cnfGrammar.getProductions().size()).append("\n\n");
+
+            // Handle empty string case
+            if (inputText == null || inputText.isEmpty()) {
+                trace.append("Input is empty string (ε)\n");
+                trace.append("Checking if start symbol can derive ε...\n");
+
+                // Check if original start symbol has epsilon production
+                for (Production p : this.productions) {
+                    if (p.getLeft().equals(this.startSymbol) && p.getRight().isEmpty()) {
+                        accepted = true;
+                        trace.append("Found epsilon production: ").append(this.startSymbol.getName()).append(" -> ε\n");
+                        break;
+                    }
+                }
+
+                if (!accepted) {
+                    trace.append("No epsilon production found for start symbol\n");
+                }
+
+                trace.append("Result: ").append(accepted ? "ACCEPTED" : "REJECTED").append("\n");
+                return new ExecutionResult(accepted, messages, trace.toString());
+            }
+
+            trace.append("Input length: ").append(inputText.length()).append("\n");
+            trace.append("Start symbol: ").append(cnfGrammar.getStartSymbol().getName()).append("\n\n");
+
+            // Validate that all characters in input are terminals
+            Set<String> terminalNames = terminals.stream()
+                    .map(Terminal::getName)
+                    .collect(Collectors.toSet());
+
+            trace.append("Validating input characters...\n");
+            for (char c : inputText.toCharArray()) {
+                String charStr = String.valueOf(c);
+                if (!terminalNames.contains(charStr)) {
+                    messages.add(new ValidationMessage("Character '" + c + "' is not a terminal in the grammar", 0, ValidationMessage.ValidationMessageType.ERROR));
+                    trace.append("ERROR: Character '").append(c).append("' is not defined as a terminal\n");
+                    return new ExecutionResult(false, messages, trace.toString());
+                }
+            }
+            trace.append("All input characters are valid terminals\n\n");
+
+            // Use CYK algorithm on CNF grammar
+            accepted = cnfGrammar.cykParse(inputText, trace);
+
+            trace.append("\nFinal Result: ").append(accepted ? "ACCEPTED" : "REJECTED").append("\n");
+
+            if (accepted) {
+                trace.append("The string can be derived from the grammar\n");
+            } else {
+                trace.append("The string cannot be derived from the grammar\n");
+            }
+
         } catch (Exception e) {
             messages.add(new ValidationMessage("Execution error: " + e.getMessage(), 0, ValidationMessage.ValidationMessageType.ERROR));
-            trace += "Error during execution: " + e.getMessage() + "\n";
+            trace.append("ERROR during execution: ").append(e.getMessage()).append("\n");
+            return new ExecutionResult(false, messages, trace.toString());
         }
 
-        return new ExecutionResult(accepted, messages, trace);
+        return new ExecutionResult(accepted, messages, trace.toString());
+    }
+
+    /**
+     * Implements the CYK (Cocke-Younger-Kasami) algorithm for context-free parsing.
+     * This algorithm works with grammars in Chomsky Normal Form, but we'll adapt it
+     * to work with general CFGs by handling various production forms.
+     *
+     * @param input the input string to parse
+     * @param trace the trace builder for logging
+     * @return true if the string can be derived from the grammar, false otherwise
+     */
+    private boolean cykParse(String input, StringBuilder trace) {
+        int n = input.length();
+        trace.append("Starting CYK parsing algorithm\n");
+        trace.append("Input: \"").append(input).append("\"\n");
+        trace.append("Length: ").append(n).append("\n\n");
+
+        // Create CYK table: table[i][j] contains set of non-terminals that can derive substring from i with length j+1
+        Set<NonTerminal>[][] table = new Set[n][n];
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < n; j++) {
+                table[i][j] = new HashSet<>();
+            }
+        }
+
+        // Phase 1: Fill diagonal (length 1 substrings)
+        trace.append("Phase 1: Processing single characters\n");
+        for (int i = 0; i < n; i++) {
+            char currentChar = input.charAt(i);
+            String charStr = String.valueOf(currentChar);
+            trace.append("Position ").append(i).append(": '").append(currentChar).append("'\n");
+
+            // Find all productions A -> a where a is the current character
+            for (Production p : productions) {
+                if (p.getRight().size() == 1 &&
+                        p.getRight().get(0) instanceof Terminal &&
+                        p.getRight().get(0).getName().equals(charStr)) {
+
+                    table[i][0].add(p.getLeft());
+                    trace.append("  Added ").append(p.getLeft().getName())
+                            .append(" (from production: ").append(p.getLeft().getName())
+                            .append(" -> ").append(charStr).append(")\n");
+                }
+            }
+
+            // Handle unit productions iteratively
+            boolean changed = true;
+            while (changed) {
+                changed = false;
+                Set<NonTerminal> newSymbols = new HashSet<>();
+
+                for (NonTerminal nt : table[i][0]) {
+                    // Look for unit productions A -> B where B is already in the set
+                    for (Production p : productions) {
+                        if (p.getRight().size() == 1 &&
+                                p.getRight().get(0) instanceof NonTerminal &&
+                                p.getRight().get(0).equals(nt) &&
+                                !table[i][0].contains(p.getLeft())) {
+
+                            newSymbols.add(p.getLeft());
+                            trace.append("  Added ").append(p.getLeft().getName())
+                                    .append(" (unit production: ").append(p.getLeft().getName())
+                                    .append(" -> ").append(nt.getName()).append(")\n");
+                            changed = true;
+                        }
+                    }
+                }
+                table[i][0].addAll(newSymbols);
+            }
+
+            if (table[i][0].isEmpty()) {
+                trace.append("  No productions found for '").append(currentChar).append("'\n");
+            }
+            trace.append("\n");
+        }
+
+        // Phase 2: Fill table for substrings of length 2 to n
+        trace.append("Phase 2: Processing longer substrings\n");
+        for (int length = 2; length <= n; length++) {
+            trace.append("Processing substrings of length ").append(length).append(":\n");
+
+            for (int i = 0; i <= n - length; i++) {
+                int j = length - 1; // j represents length - 1 for 0-based indexing
+                String substring = input.substring(i, i + length);
+                trace.append("  Substring [").append(i).append(",").append(i + length - 1)
+                        .append("]: \"").append(substring).append("\"\n");
+
+                // Try all possible splits of the substring
+                for (int k = 0; k < length - 1; k++) {
+                    Set<NonTerminal> leftSet = table[i][k];
+                    Set<NonTerminal> rightSet = table[i + k + 1][j - k - 1];
+
+                    if (!leftSet.isEmpty() && !rightSet.isEmpty()) {
+                        trace.append("    Split at position ").append(k + 1)
+                                .append(": \"").append(input.substring(i, i + k + 1))
+                                .append("\" | \"").append(input.substring(i + k + 1, i + length))
+                                .append("\"\n");
+
+                        // Check all combinations of non-terminals from left and right sets
+                        for (NonTerminal left : leftSet) {
+                            for (NonTerminal right : rightSet) {
+                                // Look for productions A -> BC where B ∈ leftSet and C ∈ rightSet
+                                for (Production p : productions) {
+                                    if (p.getRight().size() == 2 &&
+                                            p.getRight().get(0) instanceof NonTerminal &&
+                                            p.getRight().get(1) instanceof NonTerminal &&
+                                            p.getRight().get(0).equals(left) &&
+                                            p.getRight().get(1).equals(right)) {
+
+                                        if (!table[i][j].contains(p.getLeft())) {
+                                            table[i][j].add(p.getLeft());
+                                            trace.append("      Added ").append(p.getLeft().getName())
+                                                    .append(" (from production: ").append(p.getLeft().getName())
+                                                    .append(" -> ").append(left.getName())
+                                                    .append(" ").append(right.getName()).append(")\n");
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Handle longer productions (A -> BCD, A -> BCDE, etc.)
+                // This extends the basic CYK to handle productions with more than 2 symbols
+                for (Production p : productions) {
+                    if (p.getRight().size() > 2 && p.getRight().size() == length) {
+                        boolean canDerive = true;
+                        trace.append("    Checking production: ").append(p.getLeft().getName())
+                                .append(" -> ");
+                        for (Symbol s : p.getRight()) {
+                            trace.append(s.getName()).append(" ");
+                        }
+                        trace.append("\n");
+
+                        // Check if each symbol in the production can derive the corresponding part of the input
+                        for (int symbolIndex = 0; symbolIndex < p.getRight().size(); symbolIndex++) {
+                            Symbol symbol = p.getRight().get(symbolIndex);
+                            char inputChar = input.charAt(i + symbolIndex);
+
+                            if (symbol instanceof Terminal) {
+                                if (!symbol.getName().equals(String.valueOf(inputChar))) {
+                                    canDerive = false;
+                                    break;
+                                }
+                            } else if (symbol instanceof NonTerminal) {
+                                if (!table[i + symbolIndex][0].contains(symbol)) {
+                                    canDerive = false;
+                                    break;
+                                }
+                            }
+                        }
+
+                        if (canDerive) {
+                            table[i][j].add(p.getLeft());
+                            trace.append("      Added ").append(p.getLeft().getName())
+                                    .append(" (from long production)\n");
+                        }
+                    }
+                }
+
+                // Handle unit productions for the current cell
+                boolean changed = true;
+                while (changed) {
+                    changed = false;
+                    Set<NonTerminal> newSymbols = new HashSet<>();
+
+                    for (NonTerminal nt : table[i][j]) {
+                        for (Production p : productions) {
+                            if (p.getRight().size() == 1 &&
+                                    p.getRight().get(0) instanceof NonTerminal &&
+                                    p.getRight().get(0).equals(nt) &&
+                                    !table[i][j].contains(p.getLeft())) {
+
+                                newSymbols.add(p.getLeft());
+                                trace.append("      Added ").append(p.getLeft().getName())
+                                        .append(" (unit production: ").append(p.getLeft().getName())
+                                        .append(" -> ").append(nt.getName()).append(")\n");
+                                changed = true;
+                            }
+                        }
+                    }
+                    table[i][j].addAll(newSymbols);
+                }
+
+                if (table[i][j].isEmpty()) {
+                    trace.append("    No non-terminals can derive this substring\n");
+                }
+                trace.append("\n");
+            }
+        }
+
+        // Check if start symbol can derive the entire string
+        boolean result = table[0][n-1].contains(startSymbol);
+
+        trace.append("CYK Table Summary:\n");
+        for (int length = 1; length <= n; length++) {
+            for (int i = 0; i <= n - length; i++) {
+                int j = length - 1;
+                String substring = input.substring(i, i + length);
+                Set<NonTerminal> symbols = table[i][j];
+
+                if (!symbols.isEmpty()) {
+                    trace.append("  \"").append(substring).append("\" can be derived by: ")
+                            .append(symbols.stream()
+                                    .map(NonTerminal::getName)
+                                    .collect(Collectors.joining(", ")))
+                            .append("\n");
+                }
+            }
+        }
+
+        trace.append("\nStart symbol ").append(startSymbol.getName())
+                .append(result ? " CAN" : " CANNOT")
+                .append(" derive the entire input string\n");
+
+        return result;
     }
 
     @Override
@@ -732,18 +1359,7 @@ public class CFG extends Automaton {
         return true;
     }
 
-    /**
-     * Converts the grammar to Chomsky Normal Form (CNF).
-     * This method eliminates epsilon productions, unit productions, and ensures
-     * all productions are in the form A -> BC or A -> a.
-     *
-     * @return a new CFG in Chomsky Normal Form
-     * @throws UnsupportedOperationException as this method is not yet implemented
-     */
-    public CFG toChomskyNormalForm() {
-        // TODO: Implement CNF conversion (elimınate epsilon, unit productions, etc.)
-        throw new UnsupportedOperationException("toChomskyNormalForm not implemented yet");
-    }
+
 
     /**
      * Prints a formatted representation of the grammar to standard output.
