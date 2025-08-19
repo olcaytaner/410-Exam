@@ -1,0 +1,25 @@
+states: q0 qB1 qODD qB2 qEVEN qT qf
+alphabet: a b c
+stack_alphabet: Z A M
+start: q0
+stack_start: Z
+finals: qf
+transitions:
+q0 a Z -> q0 AZ
+q0 a A -> q0 AA
+q0 eps Z -> qT Z
+q0 eps A -> qT A
+q0 b Z -> qB1 Z
+q0 b A -> qB1 A
+qB1 c Z -> qODD Z
+qB1 c A -> qODD A
+qODD b Z -> qB2 Z
+qODD b A -> qB2 A
+qB2 c eps -> qEVEN M
+qEVEN b Z -> qB1 Z
+qEVEN b A -> qB1 A
+qEVEN eps Z -> qT Z
+qEVEN eps A -> qT A
+qT a A -> qT eps
+qT a M -> qT eps
+qT eps Z -> qf eps

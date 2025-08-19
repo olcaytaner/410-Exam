@@ -1,0 +1,14 @@
+states: q0 q1 qf
+alphabet: a b
+stack_alphabet: Z A X
+start: q0
+stack_start: Z
+finals: qf
+transitions:
+q0 a Z -> q0 AZ
+q0 a A -> q0 AA
+q0 b A -> q1 A
+q1 b A -> q1 X
+q1 b X -> q1 eps
+q1 b A -> q1 X
+q1 eps Z -> qf eps

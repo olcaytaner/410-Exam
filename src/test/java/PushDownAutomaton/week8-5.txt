@@ -1,0 +1,18 @@
+states: q0 qB qMoreB qMoreA qf
+alphabet: a b
+stack_alphabet: Z A
+start: q0
+stack_start: Z
+finals: qf
+transitions:
+q0 a Z -> q0 AZ
+q0 a A -> q0 AA
+q0 b A -> qB A
+q0 b Z -> qMoreB Z
+qB b A -> qB eps
+qB b Z -> qMoreB Z
+qMoreB b Z -> qMoreB Z
+qMoreB eps Z -> qf eps
+qB eps A -> qMoreA eps
+qMoreA eps Z -> qf eps
+qMoreA eps A -> qMoreA eps
