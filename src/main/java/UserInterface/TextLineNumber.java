@@ -171,7 +171,6 @@ public class TextLineNumber extends JPanel
      *  <li>UserInterface.TextLineNumber.CENTER
      *  <li>UserInterface.TextLineNumber.RIGHT (default)
      *	</ul>
-     *  @param currentLineForeground  the Color used to render the current line
      */
     public void setDigitAlignment(float digitAlignment)
     {
