@@ -11,7 +11,8 @@ manual-testing/
 │   ├── week2/          # Week 2 NFA exercises  
 │   ├── week3/          # Week 3 NFA exercises
 │   ├── week4/          # Week 4 NFA exercises
-|   ├── week6/          # Week 6 CFG exercises 
+|   ├── week6/          # Week 6 CFG exercises
+|   ├── week7/          # Week 7 CFG exercises 
 │   └── week10/         # Week 10 Turing Machine exercises
 ├── examples/           # Example automata by type
 │   ├── dfa/           # Deterministic Finite Automata examples
