@@ -33,6 +33,7 @@ public class SyntaxTree extends Automaton {
     // check for malformations
     private String sanitize(String regex) {
         // TODO check for other malformations like ** or * at the start
+        regex = regex.replaceAll("\\s+", ""); // delete whitespace from input
         StringBuilder sanitized = new StringBuilder();
         int parenthesisCount = 0;
         for (char c : regex.toCharArray()) {

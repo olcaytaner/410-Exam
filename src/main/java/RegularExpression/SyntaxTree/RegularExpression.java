@@ -71,9 +71,10 @@ public class RegularExpression {
     public void generateCorrectCasesExhaustive(int maxLen, String path) {
         Set<String> cases = st.root.generateCasesExhaustive(maxLen);
         System.out.println(cases);
-        try (BufferedWriter bw = new BufferedWriter(new FileWriter(path))) {
+        try (BufferedWriter bw = new BufferedWriter(new FileWriter(path, true))) {
             for (String case_ : cases) {
                 bw.write(case_);
+                bw.write(",1");
                 bw.newLine();
             }
         } catch (IOException e) {
@@ -86,9 +87,10 @@ public class RegularExpression {
         Set<String> cases = new HashSet<>();
         rec(maxLen, new StringBuilder(), cases);
         System.out.println(cases);
-        try (BufferedWriter bw = new BufferedWriter(new FileWriter(path))) {
+        try (BufferedWriter bw = new BufferedWriter(new FileWriter(path, true))) {
             for (String case_ : cases) {
                 bw.write(case_);
+                bw.write(",0");
                 bw.newLine();
             }
         } catch (IOException e) {
