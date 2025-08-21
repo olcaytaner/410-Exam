@@ -13,6 +13,7 @@ manual-testing/
 │   ├── week4/          # Week 4 NFA exercises
 |   ├── week6/          # Week 6 CFG exercises
 |   ├── week7/          # Week 7 CFG exercises
+|   ├── week8/          # Week 8 PDA exercises
 |   ├── week9/          # Week 9 CFG exercises  
 │   └── week10/         # Week 10 Turing Machine exercises
 ├── examples/           # Example automata by type
