@@ -1,0 +1,17 @@
+#week1-2
+Start: q1
+Finals: q1 q2 q3 q4
+Alphabet: 0 1
+States: q1 q2 q3 q4 q5
+Transitions:
+q1 -> q1 (0)
+q1 -> q2 (1)
+q2 -> q3 (1)
+q3 -> q4 (1)
+q4 -> q5 (1)
+
+q2 -> q1 (0)
+q3 -> q1 (0)
+q4 -> q1 (0)
+
+q5 -> q5 (0 1)
