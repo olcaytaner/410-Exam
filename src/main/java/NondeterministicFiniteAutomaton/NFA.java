@@ -38,6 +38,9 @@ public class NFA extends Automaton {
     private Set<State> finalStates;
     private Map<State, List<Transition>> transitions;
 
+    private static final boolean TIME = false;
+    private static final boolean VERBOSE = false;
+
     /**
      * Constructs an NFA with specified states, alphabet, start state, final states, and transitions.
      *
@@ -153,6 +156,9 @@ public class NFA extends Automaton {
             lineNumber = findLineNumberFromSectionLines(name, lineNum, stateLines);
             if (name.matches("^" + statePattern + "$")) {
                 this.states.put(name, new State(name));
+                if (VERBOSE) {
+                    System.out.println("State: " + name + " added to states");
+                }
             } else {
                 messages.add(new ValidationMessage("Invalid state name: " + name, lineNum.getOrDefault(name, lineNumber), ValidationMessageType.ERROR));
             }
@@ -182,6 +188,9 @@ public class NFA extends Automaton {
                 Symbol symbol = new Symbol(name.charAt(0));
                 if (!this.alphabet.contains(symbol)) {
                     this.alphabet.add(symbol);
+                    if (VERBOSE) {
+                        System.out.println("Symbol: " + symbol + " added to alphabet");
+                    }
                 }else {
                     messages.add(new ValidationMessage("Duplicate Symbol: " + name, lineNumber, ValidationMessageType.ERROR));
                 }
@@ -217,6 +226,9 @@ public class NFA extends Automaton {
             if (this.states.containsKey(startStateName)) {
                 this.states.get(startStateName).setStart(true);
                 this.startState = this.states.get(startStateName);
+                if (VERBOSE) {
+                    System.out.println("State " + startStateName + " added to start state");
+                }
             }else {
                 messages.add(new ValidationMessage("States does not contain start state",  lineNumber, ValidationMessageType.ERROR));
             }
@@ -249,6 +261,9 @@ public class NFA extends Automaton {
                     if (this.states.containsKey(name)) {
                         this.states.get(name).setAccept(true);
                         this.finalStates.add(this.states.get(name));
+                        if (VERBOSE) {
+                            System.out.println("State " + name + " added to final states");
+                        }
                     } else {
                         messages.add(new ValidationMessage("States does not contain final state: " + name, lineNumber, ValidationMessageType.ERROR));
                     }
@@ -290,6 +305,8 @@ public class NFA extends Automaton {
      * @return {@link ExecutionResult}
      */
     public ExecutionResult execute(String inputText) {
+
+        long time = System.nanoTime();
         List<ValidationMessage> runtimeMessages = new ArrayList<>();
         StringBuilder trace = new StringBuilder();
 
@@ -298,6 +315,10 @@ public class NFA extends Automaton {
 
         if (this.startState == null) {
             runtimeMessages.add(new ValidationMessage("Start state is not defined", -1, ValidationMessageType.ERROR));
+            if (TIME){
+                System.out.println("Failed");
+                System.out.println("Took " + (System.nanoTime() - time)/1_000_000.0 + " ms to execute NFA with " + inputText.length() + " character input.");
+            }
             return new ExecutionResult(false, runtimeMessages, "");
         }
 
@@ -315,6 +336,10 @@ public class NFA extends Automaton {
 
             if (!this.alphabet.contains(inputSymbol)) {
                 runtimeMessages.add(new ValidationMessage("Symbol not in alphabet: " + c, -1, ValidationMessageType.ERROR));
+                if (TIME){
+                    System.out.println("Failed");
+                    System.out.println("Took " + (System.nanoTime() - time)/1_000_000.0 + " ms to execute NFA with " + inputText.length() + " character input.");
+                }
                 return new ExecutionResult(false, runtimeMessages, trace.toString());
             }
 
@@ -344,10 +369,15 @@ public class NFA extends Automaton {
 
         for (State state : currentStates) {
             if (state.isAccept()) {
+                if (TIME) {
+                    System.out.println("Took " + (System.nanoTime() - time)/1_000_000.0 + " ms to execute NFA with " + inputText.length() + " character input.");
+                }
                 return new ExecutionResult(true, runtimeMessages, trace.toString());
             }
         }
-
+        if (TIME){
+            System.out.println("Took " + (System.nanoTime() - time)/1_000_000.0 + " ms to execute NFA with " + inputText.length() + " character input.");
+        }
         return new ExecutionResult(false, runtimeMessages, trace.toString());
     }
 
@@ -360,13 +390,16 @@ public class NFA extends Automaton {
      */
     private Set<State> getEpsilonClosure(Set<State> states) {
         Set<State> queue = new LinkedHashSet<>(states);
-        Set<State> visited = new HashSet<>();
         Set<State> returnQueue = new LinkedHashSet<>();
 
-        for (State state : queue){
+        while (!queue.isEmpty()){
+
+            Iterator<State> it = queue.iterator();
+            State state = it.next();
+            it.remove();
+
             for (Transition t : this.transitions.getOrDefault(state, Collections.emptyList())) {
-                if (t.getSymbol().isEpsilon() && !visited.contains(t.getTo())) {
-                    visited.add(t.getTo());
+                if (t.getSymbol().isEpsilon() && !queue.contains(t.getTo())) {
                     queue.add(t.getTo());
                     returnQueue.add(t.getTo());
                 }
@@ -398,7 +431,7 @@ public class NFA extends Automaton {
             }
         }
 
-        return lineMap.getOrDefault(s, -100);
+        return lineMap.getOrDefault(s, -1);
     }
 
     /**
@@ -515,7 +548,9 @@ public class NFA extends Automaton {
                         }else {
                             this.transitions.put(fromState,transitionList);
                         }
-                        System.out.println("Transition correct: " + line);
+                        if (VERBOSE){
+                            System.out.println("Transition correct: " + line);
+                        }
                         //correct
                     }
                 }else {
