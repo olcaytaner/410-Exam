@@ -68,9 +68,14 @@ public class RegularExpression {
         return st.root.generateCasesExhaustive(maxLen);
     }
 
-    public void generateCorrectCasesExhaustive(int maxLen, String path) {
+    /**
+     * Generate correct cases for the regex and return the number of cases generated.
+     * @param maxLen Max length of the case
+     * @param path Path where you wish to save the cases to
+     */
+    public int generateCorrectCasesExhaustive(int maxLen, String path) {
         Set<String> cases = st.root.generateCasesExhaustive(maxLen);
-        System.out.println(cases);
+        //System.out.println(cases);
         try (BufferedWriter bw = new BufferedWriter(new FileWriter(path, true))) {
             for (String case_ : cases) {
                 bw.write(case_);
@@ -81,12 +86,18 @@ public class RegularExpression {
             System.err.println("Write unsuccessful");
             e.printStackTrace();
         }
+        return cases.size();
     }
 
-    public void generateWrongCasesExhaustive(int maxLen, String path) {
+    /**
+     * Generate wrong cases for the regex and return the number of cases generated.
+     * @param maxLen Max length of the case
+     * @param path Path where you wish to save the cases to
+     */
+    public int generateWrongCasesExhaustive(int maxLen, String path) {
         Set<String> cases = new HashSet<>();
         rec(maxLen, new StringBuilder(), cases);
-        System.out.println(cases);
+        //System.out.println(cases);
         try (BufferedWriter bw = new BufferedWriter(new FileWriter(path, true))) {
             for (String case_ : cases) {
                 bw.write(case_);
@@ -97,6 +108,7 @@ public class RegularExpression {
             System.err.println("Write unsuccessful");
             e.printStackTrace();
         }
+        return cases.size();
     }
 
     private void rec(int maxLen, StringBuilder curCase, Set<String> cases) {

@@ -122,4 +122,5 @@ public class Check {
         for (Character ch : set) alphabet[idx++] = ch;
         return alphabet;
     }
+
 }
