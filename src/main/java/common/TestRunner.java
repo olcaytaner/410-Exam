@@ -18,10 +18,18 @@ public class TestRunner {
         private int passedTests;
         private List<String> failures;
         private List<TestCaseResult> detailedResults;
+        private int truePositives;
+        private int trueNegatives;
+        private int falsePositives;
+        private int falseNegatives;
 
         public TestResult() {
             this.failures = new ArrayList<>();
             this.detailedResults = new ArrayList<>();
+            this.truePositives = 0;
+            this.trueNegatives = 0;
+            this.falsePositives = 0;
+            this.falseNegatives = 0;
         }
 
         public int getTotalTests() { return totalTests; }
@@ -29,11 +37,50 @@ public class TestRunner {
         public int getFailedTests() { return totalTests - passedTests; }
         public List<String> getFailures() { return failures; }
         public List<TestCaseResult> getDetailedResults() { return detailedResults; }
+        
+        // Classification metrics getters
+        public int getTruePositives() { return truePositives; }
+        public int getTrueNegatives() { return trueNegatives; }
+        public int getFalsePositives() { return falsePositives; }
+        public int getFalseNegatives() { return falseNegatives; }
 
         public void setTotalTests(int total) { this.totalTests = total; }
         public void setPassedTests(int passed) { this.passedTests = passed; }
         public void addFailure(String failure) { this.failures.add(failure); }
         public void addResult(TestCaseResult result) { this.detailedResults.add(result); }
+        
+        // Classification metrics setters
+        public void incrementTruePositives() { this.truePositives++; }
+        public void incrementTrueNegatives() { this.trueNegatives++; }
+        public void incrementFalsePositives() { this.falsePositives++; }
+        public void incrementFalseNegatives() { this.falseNegatives++; }
+        
+        // Score calculation methods
+        public double getAccuracy() {
+            int total = truePositives + trueNegatives + falsePositives + falseNegatives;
+            return total == 0 ? 0.0 : (double)(truePositives + trueNegatives) / total * 100.0;
+        }
+        
+        public double getPrecision() {
+            int positiveResults = truePositives + falsePositives;
+            return positiveResults == 0 ? 0.0 : (double)truePositives / positiveResults * 100.0;
+        }
+        
+        public double getRecall() {
+            int actualPositives = truePositives + falseNegatives;
+            return actualPositives == 0 ? 0.0 : (double)truePositives / actualPositives * 100.0;
+        }
+        
+        public double getSpecificity() {
+            int actualNegatives = trueNegatives + falsePositives;
+            return actualNegatives == 0 ? 0.0 : (double)trueNegatives / actualNegatives * 100.0;
+        }
+        
+        public double getF1Score() {
+            double precision = getPrecision() / 100.0; // Convert to decimal
+            double recall = getRecall() / 100.0; // Convert to decimal
+            return (precision + recall == 0) ? 0.0 : 2.0 * (precision * recall) / (precision + recall) * 100.0;
+        }
 
         @Override
         public String toString() {
@@ -42,10 +89,35 @@ public class TestRunner {
 
         public String getDetailedReport() {
             StringBuilder sb = new StringBuilder();
-            sb.append(toString()).append("\n");
             
-            for (TestCaseResult result : detailedResults) {
-                sb.append(result.toString()).append("\n");
+            // Classification Statistics Header
+            sb.append("Classification Statistics:\n");
+            sb.append(String.format("True Positives (TP): %-4d    False Positives (FP): %d\n", 
+                                  truePositives, falsePositives));
+            sb.append(String.format("True Negatives (TN): %-4d    False Negatives (FN): %d\n", 
+                                  trueNegatives, falseNegatives));
+            sb.append(String.format("Total Tests: %d\n\n", getTotalTests()));
+            
+            // Calculated Scores
+            sb.append("Calculated Scores:\n");
+            sb.append(String.format("Accuracy:    %6.2f%% (%d/%d)\n", 
+                                  getAccuracy(), truePositives + trueNegatives, getTotalTests()));
+            sb.append(String.format("Precision:   %6.2f%% (%d/%d)\n", 
+                                  getPrecision(), truePositives, truePositives + falsePositives));
+            sb.append(String.format("Recall:      %6.2f%% (%d/%d)\n", 
+                                  getRecall(), truePositives, truePositives + falseNegatives));
+            sb.append(String.format("Specificity: %6.2f%% (%d/%d)\n", 
+                                  getSpecificity(), trueNegatives, trueNegatives + falsePositives));
+            sb.append(String.format("F1 Score:    %6.2f%%\n\n", getF1Score()));
+            
+            // Show failures if any
+            if (!getFailures().isEmpty()) {
+                sb.append("Failure Details:\n");
+                for (String failure : getFailures()) {
+                    sb.append("• ").append(failure).append("\n");
+                }
+            } else {
+                sb.append("No errors - all test cases classified correctly!\n");
             }
             
             return sb.toString();
@@ -78,16 +150,17 @@ public class TestRunner {
 
         @Override
         public String toString() {
-            String status = passed ? "✓" : "✗";
+            // Hide correct results (TP and TN cases)
+            if (passed) {
+                return ""; // Return empty string to hide correct results
+            }
+            
+            // Show only errors with FP/FN classification
             String inputDisplay = input.isEmpty() ? "ε" : "\"" + input + "\"";
             String expected = expectedAccept ? "ACCEPT" : "REJECT";
             String actual = actualAccept ? "ACCEPT" : "REJECT";
             
-            if (passed) {
-                return String.format("%s %s → %s", status, inputDisplay, expected);
-            } else {
-                return String.format("%s %s → %s (Expected: %s)", status, inputDisplay, actual, expected);
-            }
+            return String.format("%s → %s (Expected: %s)", inputDisplay, actual, expected);
         }
     }
 
@@ -128,6 +201,17 @@ public class TestRunner {
                     );
                     
                     result.addResult(testResult);
+                    
+                    // Count classification metrics
+                    if (expectedAccept && actualAccept) {
+                        result.incrementTruePositives(); // TP: Expected ACCEPT, Got ACCEPT
+                    } else if (!expectedAccept && !actualAccept) {
+                        result.incrementTrueNegatives(); // TN: Expected REJECT, Got REJECT
+                    } else if (!expectedAccept && actualAccept) {
+                        result.incrementFalsePositives(); // FP: Expected REJECT, Got ACCEPT
+                    } else if (expectedAccept && !actualAccept) {
+                        result.incrementFalseNegatives(); // FN: Expected ACCEPT, Got REJECT
+                    }
                     
                     if (testResult.isPassed()) {
                         passed++;

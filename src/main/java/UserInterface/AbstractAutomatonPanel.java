@@ -573,22 +573,9 @@ public abstract class AbstractAutomatonPanel extends JPanel implements Automaton
      */
     private void showTestResults(TestRunner.TestResult result) {
         StringBuilder message = new StringBuilder();
-        message.append("Test Results:\n");
-        message.append(String.format("Passed: %d/%d tests\n\n", 
-                                    result.getPassedTests(), result.getTotalTests()));
         
-        // Show detailed results
-        for (TestRunner.TestCaseResult testResult : result.getDetailedResults()) {
-            message.append(testResult.toString()).append("\n");
-        }
-        
-        // Show failures if any
-        if (!result.getFailures().isEmpty()) {
-            message.append("\nFailure Details:\n");
-            for (String failure : result.getFailures()) {
-                message.append("• ").append(failure).append("\n");
-            }
-        }
+        // Use the new classification-based detailed report
+        message.append(result.getDetailedReport());
         
         // Determine dialog type based on results
         int messageType;
