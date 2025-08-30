@@ -215,4 +215,19 @@ public class TM extends Automaton {
         }
         return TMFileValidator.validateFromString(inputText);
     }
+
+    @Override
+    public String getDefaultTemplate() {
+        return "Start: q0\n" +
+               "Accept: qAccept\n" +
+               "Reject: qReject\n" +
+               "Alphabet: a b\n" +
+               "Tape_alphabet: a b _\n" +
+               "States: q0 qAccept qReject\n" +
+               "\n" +
+               "Transitions:\n" +
+               "q0 a -> qAccept a R\n" +
+               "q0 b -> qAccept b R\n" +
+               "q0 _ -> qAccept _ R\n";
+    }
 }

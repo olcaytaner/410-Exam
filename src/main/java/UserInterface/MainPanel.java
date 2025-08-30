@@ -767,6 +767,11 @@ public class MainPanel extends JPanel {
                 return;
         }
         
+        // Apply template to new automaton panels
+        if (automaton != null && panel instanceof AbstractAutomatonPanel) {
+            ((AbstractAutomatonPanel) panel).setInitialContent(automaton.getDefaultTemplate());
+        }
+        
         if (panel != null && panel instanceof AutomatonPanel) {
             String tabTitle = "New " + type;
             AutomatonTab newTab = new AutomatonTab(tabTitle, (AutomatonPanel) panel, null);

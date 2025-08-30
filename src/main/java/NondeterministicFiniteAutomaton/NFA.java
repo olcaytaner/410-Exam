@@ -927,4 +927,16 @@ public class NFA extends Automaton {
     public Map<State, List<Transition>> getTransitions() {
         return transitions;
     }
+
+    @Override
+    public String getDefaultTemplate() {
+        return "Start: q1\n" +
+               "Finals: q2\n" +
+               "Alphabet: a b\n" +
+               "States: q1 q2\n" +
+               "\n" +
+               "Transitions:\n" +
+               "q1 -> q2 (a b eps)\n" +
+               "q2 -> q2 (a b)\n";
+    }
 }

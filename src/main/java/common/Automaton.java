@@ -219,7 +219,10 @@ public String getFileExtension(){
   public abstract List<ValidationMessage> validate();
 
   public abstract String toDotCode(String inputText);
- 
+
+  public String getDefaultTemplate() {
+    return "";
+  }
   
 
 }

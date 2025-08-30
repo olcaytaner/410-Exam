@@ -586,4 +586,15 @@ public class DFA extends Automaton {
     sb.append("}");
     return sb.toString();
   }
+
+  @Override
+  public String getDefaultTemplate() {
+    return "Start: q0\n" +
+           "Finals: q0\n" +
+           "Alphabet: a b\n" +
+           "States: q0\n" +
+           "\n" +
+           "Transitions:\n" +
+           "q0 -> q0 (a b)\n";
+  }
 }

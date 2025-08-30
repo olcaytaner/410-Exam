@@ -674,6 +674,16 @@ public abstract class AbstractAutomatonPanel extends JPanel implements Automaton
             }
         });
     }
+    
+    /**
+     * Sets the initial content of the text area (used for templates)
+     */
+    public void setInitialContent(String content) {
+        if (content != null && textArea != null) {
+            textArea.setText(content);
+            textArea.setCaretPosition(0);
+        }
+    }
 
     /**
      * Generate DOT code for the given input text

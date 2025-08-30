@@ -515,4 +515,18 @@ public class PDA extends Automaton {
             }
         }
     }
+
+    @Override
+    public String getDefaultTemplate() {
+        return "Start: q0\n" +
+               "Finals: q1\n" +
+               "Alphabet: a b\n" +
+               "Stack_alphabet: Z X\n" +
+               "States: q0 q1\n" +
+               "\n" +
+               "Transitions:\n" +
+               "q0 a Z -> q1 Z\n" +
+               "q0 b Z -> q1 Z\n" +
+               "q1 eps Z -> q1 eps\n";
+    }
 }
