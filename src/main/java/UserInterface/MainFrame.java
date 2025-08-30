@@ -1,5 +1,6 @@
 package UserInterface;
 
+import java.awt.Toolkit;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
@@ -18,6 +19,7 @@ public class MainFrame extends JFrame {
     private MainPanel mainPanel;
     private boolean isFullscreen = false;
     private JMenu recentFilesMenu;
+    private int menuShortcutKeyMask;
     
     public MainFrame() {
         setTitle("CS.410 Graph System");
@@ -46,6 +48,7 @@ public class MainFrame extends JFrame {
     }
     
     private void createMenuBar() {
+        menuShortcutKeyMask = Toolkit.getDefaultToolkit().getMenuShortcutKeyMask();
         JMenuBar menuBar = new JMenuBar();
         
         JMenu fileMenu = new JMenu("File");
@@ -71,7 +74,7 @@ public class MainFrame extends JFrame {
         newMenu.add(rexItem);
         
         JMenuItem openItem = new JMenuItem("Open From Computer");
-        openItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O, InputEvent.CTRL_DOWN_MASK));
+        openItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O, menuShortcutKeyMask));
         
         nfaItem.addActionListener(e -> {
             if (mainPanel != null) mainPanel.createNewAutomaton("NFA");
@@ -106,19 +109,19 @@ public class MainFrame extends JFrame {
         JMenu actionsMenu = new JMenu("Actions");
         
         JMenuItem runItem = new JMenuItem("Run");
-        runItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_R, InputEvent.CTRL_DOWN_MASK));
+        runItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_R, menuShortcutKeyMask));
         
         JMenuItem compileItem = new JMenuItem("Compile");
-        compileItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_B, InputEvent.CTRL_DOWN_MASK));
+        compileItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_B, menuShortcutKeyMask));
         
         JMenuItem saveItem = new JMenuItem("Save");
-        saveItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, InputEvent.CTRL_DOWN_MASK));
+        saveItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, menuShortcutKeyMask));
         
         JMenuItem testItem = new JMenuItem("Test");
-        testItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_T, InputEvent.CTRL_DOWN_MASK));
+        testItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_T, menuShortcutKeyMask));
         
         JMenuItem testWithFileItem = new JMenuItem("Test with File...");
-        testWithFileItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_T, InputEvent.CTRL_DOWN_MASK | InputEvent.SHIFT_DOWN_MASK));
+        testWithFileItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_T, menuShortcutKeyMask | InputEvent.SHIFT_DOWN_MASK));
         
         
         // Add action listeners that delegate to the current active panel
@@ -154,12 +157,12 @@ public class MainFrame extends JFrame {
         menuBar.add(actionsMenu);
         
         // Add View menu
-        createViewMenu(menuBar);
+        createViewMenu(menuBar, menuShortcutKeyMask);
         
         setJMenuBar(menuBar);
     }
     
-    private void createViewMenu(JMenuBar menuBar) {
+    private void createViewMenu(JMenuBar menuBar, int menuShortcutKeyMask) {
         JMenu viewMenu = new JMenu("View");
         
         // Fullscreen toggle
@@ -169,18 +172,18 @@ public class MainFrame extends JFrame {
         
         // Toggle sidebar
         JMenuItem toggleSidebarItem = new JMenuItem("Toggle Sidebar");
-        toggleSidebarItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_BACK_SLASH, InputEvent.CTRL_DOWN_MASK));
+        toggleSidebarItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_BACK_SLASH, menuShortcutKeyMask));
         toggleSidebarItem.addActionListener(e -> toggleSidebar());
         
         // Tab navigation
         JMenuItem nextTabItem = new JMenuItem("Next Tab");
-        nextTabItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_TAB, InputEvent.CTRL_DOWN_MASK));
+        nextTabItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_TAB, menuShortcutKeyMask));
         nextTabItem.addActionListener(e -> {
             if (mainPanel != null) mainPanel.switchToNextTab();
         });
         
         JMenuItem prevTabItem = new JMenuItem("Previous Tab");
-        prevTabItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_TAB, InputEvent.CTRL_DOWN_MASK | InputEvent.SHIFT_DOWN_MASK));
+        prevTabItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_TAB, menuShortcutKeyMask | InputEvent.SHIFT_DOWN_MASK));
         prevTabItem.addActionListener(e -> {
             if (mainPanel != null) mainPanel.switchToPreviousTab();
         });
@@ -226,7 +229,7 @@ public class MainFrame extends JFrame {
                 
                 // Add keyboard shortcut Ctrl+(i+1)
                 fileItem.setAccelerator(KeyStroke.getKeyStroke(
-                    KeyEvent.VK_1 + i, InputEvent.CTRL_DOWN_MASK));
+                    KeyEvent.VK_1 + i, menuShortcutKeyMask));
                 
                 final String finalFilePath = filePath;
                 fileItem.addActionListener(e -> mainPanel.openRecentFile(finalFilePath));
