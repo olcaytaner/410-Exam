@@ -390,6 +390,7 @@ public class NFA extends Automaton {
      */
     private Set<State> getEpsilonClosure(Set<State> states) {
         Set<State> queue = new LinkedHashSet<>(states);
+        Set<State> visited = new HashSet<>();
         Set<State> returnQueue = new LinkedHashSet<>();
 
         while (!queue.isEmpty()){
@@ -399,7 +400,8 @@ public class NFA extends Automaton {
             it.remove();
 
             for (Transition t : this.transitions.getOrDefault(state, Collections.emptyList())) {
-                if (t.getSymbol().isEpsilon() && !queue.contains(t.getTo())) {
+                if (t.getSymbol().isEpsilon() && !visited.contains(t.getTo())) {
+                    visited.add(t.getFrom());
                     queue.add(t.getTo());
                     returnQueue.add(t.getTo());
                 }
