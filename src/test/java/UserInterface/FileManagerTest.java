@@ -16,6 +16,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import ContextFreeGrammar.CFG;
 import DeterministicFiniteAutomaton.DFA;
 import NondeterministicFiniteAutomaton.NFA;
 import PushDownAutomaton.PDA;
@@ -78,16 +79,13 @@ public class FileManagerTest {
                 "TM should return .tm extension");
         }
         
-        // TODO: Uncomment when CFGAutomaton is implemented
-        /*
         @Test
-        @DisplayName("CFGAutomaton should return .cfg extension")
+        @DisplayName("CFG should return .cfg extension")
         void testCFGExtension() {
-            CFGAutomaton cfg = new CFGAutomaton();
+            CFG cfg = new CFG();
             assertEquals(".cfg", fileManager.getExtensionForAutomaton(cfg),
-                "CFGAutomaton should return .cfg extension");
+                "CFG should return .cfg extension");
         }
-        */
         
         // TODO: Uncomment when RegularExpressionAutomaton is implemented
         /*
@@ -220,28 +218,6 @@ public class FileManagerTest {
                 assertNotNull(panel, "Created panel should not be null");
                 assertTrue(panel instanceof DFAPanel, "Panel should be DFAPanel instance");
             }, "Creating DFA panel should not throw exception");
-        }
-        
-        @Test
-        @DisplayName("Creating panel from .cfg file should throw not implemented exception")
-        void testCreateCFGPanelNotImplemented() throws IOException {
-            // Create a temporary CFG file
-            File cfgFile = tempDir.resolve("test.cfg").toFile();
-            String cfgContent = "Variables: S A\n" +
-                               "Terminals: a b\n" +
-                               "Start: S\n" +
-                               "Productions:\n" +
-                               "S -> aA\n" +
-                               "A -> b\n";
-            
-            Files.write(cfgFile.toPath(), cfgContent.getBytes());
-            
-            // Should throw IllegalArgumentException with "not yet implemented" message
-            Exception exception = assertThrows(IllegalArgumentException.class, () -> {
-                fileManager.createPanelForFile(cfgFile);
-            });
-            assertTrue(exception.getMessage().contains("not yet implemented"),
-                "Exception message should indicate CFG is not yet implemented");
         }
         
         @Test

@@ -55,7 +55,8 @@ public class MainPanel extends JPanel {
             if (automaton instanceof DFA) return ".dfa"; 
             if (automaton instanceof PDA) return ".pda";
             if (automaton instanceof TM) return ".tm";
-                // TODO: Add CFG and REX;
+            if (automaton instanceof CFG) return ".cfg";
+            // TODO: Add REX;
             return ".txt";
         }
         

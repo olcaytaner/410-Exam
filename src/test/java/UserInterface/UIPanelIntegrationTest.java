@@ -19,11 +19,11 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import ContextFreeGrammar.CFG;
 import DeterministicFiniteAutomaton.DFA;
 import NondeterministicFiniteAutomaton.NFA;
 import PushDownAutomaton.PDA;
 import TuringMachine.TM;
-// import ContextFreeGrammar.CFGAutomaton; // TODO: Uncomment when implemented
 // import RegularExpression.RegularExpressionAutomaton; // TODO: Uncomment when implemented
 
 /**
@@ -99,20 +99,17 @@ public class UIPanelIntegrationTest {
             }, "TM panel creation should not throw exceptions");
         }
         
-        // TODO: Uncomment when CFGAutomaton is implemented
-        /*
         @Test
         @DisplayName("Should create CFG panel correctly")
         void testCreateCFGPanel() {
             assertDoesNotThrow(() -> {
-                CFGAutomaton cfg = new CFGAutomaton();
+                CFG cfg = new CFG();
                 CFGPanel panel = new CFGPanel(mainPanel, cfg);
                 
                 assertNotNull(panel, "CFG panel should be created");
                 assertTrue(panel instanceof Component, "Panel should be a Swing component");
             }, "CFG panel creation should not throw exceptions");
         }
-        */
         
         // TODO: Uncomment when RegularExpressionAutomaton is implemented
         /*
