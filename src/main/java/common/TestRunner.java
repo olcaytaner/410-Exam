@@ -3,12 +3,75 @@ package common;
 import java.io.IOException;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.concurrent.*;
 
 /**
  * Executes test cases against automaton implementations.
  * Compares actual results with expected results and generates test reports.
  */
 public class TestRunner {
+    
+    /**
+     * Callback interface for reporting test execution progress
+     */
+    public interface TestProgressCallback {
+        /**
+         * Called when a test is about to start
+         */
+        void onTestStarted(int currentTest, int totalTests, String input);
+        
+        /**
+         * Called when a test has completed
+         */
+        void onTestCompleted(int currentTest, int totalTests, String input, boolean passed);
+    }
+    
+    /**
+     * Progress information for a single test
+     */
+    public static class TestProgress {
+        private final int currentTest;
+        private final int totalTests;
+        private final String currentInput;
+        private final boolean isCompleted;
+        private final boolean passed;
+        
+        private TestProgress(int currentTest, int totalTests, String currentInput, boolean isCompleted, boolean passed) {
+            this.currentTest = currentTest;
+            this.totalTests = totalTests;
+            this.currentInput = currentInput;
+            this.isCompleted = isCompleted;
+            this.passed = passed;
+        }
+        
+        public static TestProgress started(int currentTest, int totalTests, String input) {
+            return new TestProgress(currentTest, totalTests, input, false, false);
+        }
+        
+        public static TestProgress completed(int currentTest, int totalTests, String input, boolean passed) {
+            return new TestProgress(currentTest, totalTests, input, true, passed);
+        }
+        
+        public int getCurrentTest() { return currentTest; }
+        public int getTotalTests() { return totalTests; }
+        public String getCurrentInput() { return currentInput; }
+        public boolean isCompleted() { return isCompleted; }
+        public boolean isPassed() { return passed; }
+        public int getProgressPercentage() {
+            if (totalTests == 0) return 0;
+            return (int) ((double) currentTest / totalTests * 100);
+        }
+    }
+    
+    /**
+     * Default timeout for entire test suite execution in milliseconds (5 seconds)
+     */
+    public static final long DEFAULT_TIMEOUT_MS = 5000;
+    
+    /**
+     * Thread pool for executing tests with timeout
+     */
+    private static final ExecutorService executor = Executors.newCachedThreadPool();
 
     /**
      * Result of running a test suite against an automaton.
@@ -22,6 +85,7 @@ public class TestRunner {
         private int trueNegatives;
         private int falsePositives;
         private int falseNegatives;
+        private int timeoutCount;
 
         public TestResult() {
             this.failures = new ArrayList<>();
@@ -30,6 +94,7 @@ public class TestRunner {
             this.trueNegatives = 0;
             this.falsePositives = 0;
             this.falseNegatives = 0;
+            this.timeoutCount = 0;
         }
 
         public int getTotalTests() { return totalTests; }
@@ -37,6 +102,7 @@ public class TestRunner {
         public int getFailedTests() { return totalTests - passedTests; }
         public List<String> getFailures() { return failures; }
         public List<TestCaseResult> getDetailedResults() { return detailedResults; }
+        public int getTimeoutCount() { return timeoutCount; }
         
         // Classification metrics getters
         public int getTruePositives() { return truePositives; }
@@ -54,6 +120,7 @@ public class TestRunner {
         public void incrementTrueNegatives() { this.trueNegatives++; }
         public void incrementFalsePositives() { this.falsePositives++; }
         public void incrementFalseNegatives() { this.falseNegatives++; }
+        public void incrementTimeoutCount() { this.timeoutCount++; }
         
         // Score calculation methods
         public double getAccuracy() {
@@ -96,6 +163,9 @@ public class TestRunner {
                                   truePositives, falsePositives));
             sb.append(String.format("True Negatives (TN): %-4d    False Negatives (FN): %d\n", 
                                   trueNegatives, falseNegatives));
+            if (timeoutCount > 0) {
+                sb.append(String.format("Timeouts: %d\n", timeoutCount));
+            }
             sb.append(String.format("Total Tests: %d\n\n", getTotalTests()));
             
             // Calculated Scores
@@ -133,12 +203,14 @@ public class TestRunner {
         private boolean actualAccept;
         private boolean passed;
         private String trace;
+        private boolean timedOut;
 
         public TestCaseResult(String input, boolean expectedAccept, boolean actualAccept, String trace) {
             this.input = input;
             this.expectedAccept = expectedAccept;
             this.actualAccept = actualAccept;
-            this.passed = (expectedAccept == actualAccept);
+            this.timedOut = trace != null && trace.startsWith("TIMEOUT:");
+            this.passed = !timedOut && (expectedAccept == actualAccept);
             this.trace = trace;
         }
 
@@ -147,6 +219,7 @@ public class TestRunner {
         public boolean getExpectedAccept() { return expectedAccept; }
         public boolean getActualAccept() { return actualAccept; }
         public String getTrace() { return trace; }
+        public boolean isTimedOut() { return timedOut; }
 
         @Override
         public String toString() {
@@ -155,8 +228,15 @@ public class TestRunner {
                 return ""; // Return empty string to hide correct results
             }
             
-            // Show only errors with FP/FN classification
             String inputDisplay = input.isEmpty() ? "ε" : "\"" + input + "\"";
+            
+            // Handle timeout cases specially
+            if (timedOut) {
+                String expected = expectedAccept ? "ACCEPT" : "REJECT";
+                return String.format("%s → TIMEOUT (Expected: %s)", inputDisplay, expected);
+            }
+            
+            // Show only errors with FP/FN classification
             String expected = expectedAccept ? "ACCEPT" : "REJECT";
             String actual = actualAccept ? "ACCEPT" : "REJECT";
             
@@ -165,13 +245,102 @@ public class TestRunner {
     }
 
     /**
-     * Runs test cases from a file against the given automaton.
+     * Runs test cases from a file against the given automaton with default timeout.
      * 
      * @param automaton the automaton to test
      * @param testFilePath path to the CSV test file
      * @return test results
      */
     public static TestResult runTests(Automaton automaton, String testFilePath) {
+        return runTests(automaton, testFilePath, DEFAULT_TIMEOUT_MS);
+    }
+    
+    /**
+     * Runs test cases from a file against the given automaton with default timeout and progress callback.
+     * 
+     * @param automaton the automaton to test
+     * @param testFilePath path to the CSV test file
+     * @param progressCallback callback to report progress (can be null)
+     * @return test results
+     */
+    public static TestResult runTests(Automaton automaton, String testFilePath, TestProgressCallback progressCallback) {
+        return runTests(automaton, testFilePath, DEFAULT_TIMEOUT_MS, progressCallback);
+    }
+    
+    /**
+     * Runs test cases from a file against the given automaton with specified timeout for entire test suite.
+     * 
+     * @param automaton the automaton to test
+     * @param testFilePath path to the CSV test file
+     * @param totalTimeoutMs timeout in milliseconds for the entire test suite
+     * @return test results
+     */
+    public static TestResult runTests(Automaton automaton, String testFilePath, long totalTimeoutMs) {
+        return runTests(automaton, testFilePath, totalTimeoutMs, null);
+    }
+    
+    /**
+     * Runs test cases from a file against the given automaton with specified timeout and progress callback.
+     * 
+     * @param automaton the automaton to test
+     * @param testFilePath path to the CSV test file
+     * @param totalTimeoutMs timeout in milliseconds for the entire test suite
+     * @param progressCallback callback to report progress (can be null)
+     * @return test results
+     */
+    public static TestResult runTests(Automaton automaton, String testFilePath, long totalTimeoutMs, TestProgressCallback progressCallback) {
+        // Execute entire test suite with timeout
+        Future<TestResult> future = executor.submit(() -> runTestsWithoutTimeout(automaton, testFilePath, progressCallback));
+        
+        try {
+            return future.get(totalTimeoutMs, TimeUnit.MILLISECONDS);
+        } catch (TimeoutException e) {
+            future.cancel(true);
+            // Create a result indicating the entire test suite timed out
+            TestResult result = new TestResult();
+            try {
+                List<TestCase> testCases = TestFileParser.parseTestFile(testFilePath);
+                result.setTotalTests(testCases.size());
+                result.incrementTimeoutCount();
+                result.addFailure("TIMEOUT: Entire test suite exceeded " + totalTimeoutMs + "ms");
+                
+                // Add a timeout result for each test case
+                for (TestCase testCase : testCases) {
+                    TestCaseResult testResult = new TestCaseResult(
+                        testCase.getInput(), 
+                        testCase.shouldAccept(), 
+                        false, 
+                        "TIMEOUT: Test suite execution exceeded " + totalTimeoutMs + "ms"
+                    );
+                    result.addResult(testResult);
+                }
+            } catch (Exception ex) {
+                result.addFailure("Error parsing test file during timeout: " + ex.getMessage());
+            }
+            return result;
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            TestResult result = new TestResult();
+            result.addFailure("Test execution was interrupted");
+            return result;
+        } catch (ExecutionException e) {
+            TestResult result = new TestResult();
+            result.addFailure("Test execution error: " + e.getCause().getMessage());
+            return result;
+        }
+    }
+    
+    /**
+     * Runs tests without timeout (used internally by the timeout wrapper)
+     */
+    private static TestResult runTestsWithoutTimeout(Automaton automaton, String testFilePath) {
+        return runTestsWithoutTimeout(automaton, testFilePath, null);
+    }
+    
+    /**
+     * Runs tests without timeout with progress callback (used internally by the timeout wrapper)
+     */
+    private static TestResult runTestsWithoutTimeout(Automaton automaton, String testFilePath, TestProgressCallback progressCallback) {
         TestResult result = new TestResult();
         
         try {
@@ -187,6 +356,11 @@ public class TestRunner {
             
             for (int i = 0; i < testCases.size(); i++) {
                 TestCase testCase = testCases.get(i);
+                
+                // Report test started
+                if (progressCallback != null) {
+                    progressCallback.onTestStarted(i + 1, testCases.size(), testCase.getInput());
+                }
                 
                 try {
                     Automaton.ExecutionResult execResult = automaton.execute(testCase.getInput());
@@ -219,6 +393,11 @@ public class TestRunner {
                         result.addFailure(String.format("Test %d failed: %s", i + 1, testResult.toString()));
                     }
                     
+                    // Report test completed
+                    if (progressCallback != null) {
+                        progressCallback.onTestCompleted(i + 1, testCases.size(), testCase.getInput(), testResult.isPassed());
+                    }
+                    
                 } catch (Exception e) {
                     String failure = String.format("Test %d error: %s with input '%s': %s", 
                                                  i + 1, e.getClass().getSimpleName(), testCase.getInput(), e.getMessage());
@@ -231,6 +410,11 @@ public class TestRunner {
                         "Error: " + e.getMessage()
                     );
                     result.addResult(testResult);
+                    
+                    // Report test completed with error
+                    if (progressCallback != null) {
+                        progressCallback.onTestCompleted(i + 1, testCases.size(), testCase.getInput(), false);
+                    }
                 }
             }
             
@@ -246,7 +430,7 @@ public class TestRunner {
     }
 
     /**
-     * Runs a single test case against an automaton.
+     * Runs a single test case against an automaton with default timeout.
      * 
      * @param automaton the automaton to test
      * @param input the input string
@@ -254,8 +438,33 @@ public class TestRunner {
      * @return test case result
      */
     public static TestCaseResult runSingleTest(Automaton automaton, String input, boolean expectedAccept) {
+        return runSingleTest(automaton, input, expectedAccept, DEFAULT_TIMEOUT_MS);
+    }
+    
+    /**
+     * Runs a single test case against an automaton with specified timeout.
+     * 
+     * @param automaton the automaton to test
+     * @param input the input string
+     * @param expectedAccept whether the string should be accepted
+     * @param timeoutMs timeout in milliseconds
+     * @return test case result
+     */
+    public static TestCaseResult runSingleTest(Automaton automaton, String input, boolean expectedAccept, long timeoutMs) {
         try {
-            Automaton.ExecutionResult execResult = automaton.execute(input);
+            Future<Automaton.ExecutionResult> future = executor.submit(() -> 
+                automaton.execute(input)
+            );
+            
+            Automaton.ExecutionResult execResult;
+            try {
+                execResult = future.get(timeoutMs, TimeUnit.MILLISECONDS);
+            } catch (TimeoutException e) {
+                future.cancel(true);
+                return new TestCaseResult(input, expectedAccept, false, 
+                    "TIMEOUT: Execution exceeded " + timeoutMs + "ms");
+            }
+            
             return new TestCaseResult(input, expectedAccept, execResult.isAccepted(), execResult.getTrace());
         } catch (Exception e) {
             return new TestCaseResult(input, expectedAccept, false, "Error: " + e.getMessage());

@@ -472,19 +472,8 @@ public abstract class AbstractAutomatonPanel extends JPanel implements Automaton
             return;
         }
         
-        // Run tests
-        try {
-            Automaton testAutomaton = parseResult.getAutomaton();
-            TestRunner.TestResult result = TestRunner.runTests(testAutomaton, testFilePath);
-            
-            // Display results
-            showTestResults(result);
-            
-        } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, 
-                "Error running tests: " + e.getMessage(), 
-                "Test Execution Error", JOptionPane.ERROR_MESSAGE);
-        }
+        // Run tests in background
+        runTestsInBackground(parseResult.getAutomaton(), testFilePath);
     }
 
     /**
@@ -527,22 +516,147 @@ public abstract class AbstractAutomatonPanel extends JPanel implements Automaton
         if (result == JFileChooser.APPROVE_OPTION) {
             File selectedTestFile = fileChooser.getSelectedFile();
             
-            // Run tests with selected file
-            try {
-                Automaton testAutomaton = parseResult.getAutomaton();
-                TestRunner.TestResult testResult = TestRunner.runTests(testAutomaton, selectedTestFile.getAbsolutePath());
-                
-                // Display results
-                showTestResults(testResult);
-                
-            } catch (Exception e) {
-                JOptionPane.showMessageDialog(this, 
-                    "Error running tests with selected file: " + e.getMessage(), 
-                    "Test Execution Error", JOptionPane.ERROR_MESSAGE);
-            }
+            // Run tests with selected file in background
+            runTestsInBackground(parseResult.getAutomaton(), selectedTestFile.getAbsolutePath());
         }
     }
 
+    /**
+     * Run tests in background with progress dialog
+     */
+    private void runTestsInBackground(Automaton testAutomaton, String testFilePath) {
+        // Create progress dialog
+        javax.swing.JDialog progressDialog = new javax.swing.JDialog(
+            javax.swing.SwingUtilities.getWindowAncestor(this), 
+            "Running Tests...", 
+            javax.swing.JDialog.ModalityType.APPLICATION_MODAL
+        );
+        
+        javax.swing.JPanel progressPanel = new javax.swing.JPanel();
+        progressPanel.setLayout(new BoxLayout(progressPanel, BoxLayout.Y_AXIS));
+        progressPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+        
+        javax.swing.JLabel statusLabel = new javax.swing.JLabel("Initializing...");
+        statusLabel.setAlignmentX(CENTER_ALIGNMENT);
+        
+        javax.swing.JProgressBar progressBar = new javax.swing.JProgressBar(0, 100);
+        progressBar.setValue(0);
+        progressBar.setStringPainted(false); // Remove text from progress bar itself
+        progressBar.setAlignmentX(CENTER_ALIGNMENT);
+        
+        javax.swing.JLabel progressLabel = new javax.swing.JLabel("0% - Preparing tests...");
+        progressLabel.setAlignmentX(CENTER_ALIGNMENT);
+        progressLabel.setFont(new Font("Arial", Font.PLAIN, 12));
+        
+        javax.swing.JLabel timeoutLabel = new javax.swing.JLabel("Total timeout: " + (TestRunner.DEFAULT_TIMEOUT_MS / 1000) + " seconds for all tests");
+        timeoutLabel.setAlignmentX(CENTER_ALIGNMENT);
+        timeoutLabel.setFont(new Font("Arial", Font.PLAIN, 10));
+        
+        javax.swing.JButton cancelButton = new javax.swing.JButton("Cancel");
+        cancelButton.setAlignmentX(CENTER_ALIGNMENT);
+        
+        progressPanel.add(statusLabel);
+        progressPanel.add(Box.createVerticalStrut(8));
+        progressPanel.add(progressBar);
+        progressPanel.add(Box.createVerticalStrut(5));
+        progressPanel.add(progressLabel);
+        progressPanel.add(Box.createVerticalStrut(8));
+        progressPanel.add(timeoutLabel);
+        progressPanel.add(Box.createVerticalStrut(15));
+        progressPanel.add(cancelButton);
+        
+        progressDialog.setContentPane(progressPanel);
+        progressDialog.setSize(350, 180);
+        progressDialog.setLocationRelativeTo(this);
+        progressDialog.setDefaultCloseOperation(javax.swing.JDialog.DO_NOTHING_ON_CLOSE);
+        
+        // Create SwingWorker for background execution
+        SwingWorker<TestRunner.TestResult, TestRunner.TestProgress> worker = new SwingWorker<TestRunner.TestResult, TestRunner.TestProgress>() {
+            @Override
+            protected TestRunner.TestResult doInBackground() throws Exception {
+                // Create progress callback that publishes updates
+                TestRunner.TestProgressCallback progressCallback = new TestRunner.TestProgressCallback() {
+                    @Override
+                    public void onTestStarted(int currentTest, int totalTests, String input) {
+                        publish(TestRunner.TestProgress.started(currentTest, totalTests, input));
+                    }
+                    
+                    @Override
+                    public void onTestCompleted(int currentTest, int totalTests, String input, boolean passed) {
+                        publish(TestRunner.TestProgress.completed(currentTest, totalTests, input, passed));
+                    }
+                };
+                
+                // Run tests with timeout and progress callback
+                return TestRunner.runTests(testAutomaton, testFilePath, TestRunner.DEFAULT_TIMEOUT_MS, progressCallback);
+            }
+            
+            @Override
+            protected void process(java.util.List<TestRunner.TestProgress> chunks) {
+                // Update UI with progress information
+                if (!chunks.isEmpty()) {
+                    TestRunner.TestProgress latest = chunks.get(chunks.size() - 1);
+                    
+                    // Update progress bar
+                    int percentage = latest.getProgressPercentage();
+                    progressBar.setValue(percentage);
+                    
+                    // Update status and progress bar string
+                    String inputDisplay = latest.getCurrentInput().isEmpty() ? "ε" : latest.getCurrentInput();
+                    if (inputDisplay.length() > 20) {
+                        inputDisplay = inputDisplay.substring(0, 17) + "...";
+                    }
+                    
+                    if (latest.isCompleted()) {
+                        String result = latest.isPassed() ? "✓" : "✗";
+                        statusLabel.setText(String.format("Test %d/%d: %s %s", 
+                            latest.getCurrentTest(), latest.getTotalTests(), inputDisplay, result));
+                        progressLabel.setText(String.format("%d%% - Test %d of %d completed", 
+                            percentage, latest.getCurrentTest(), latest.getTotalTests()));
+                    } else {
+                        statusLabel.setText(String.format("Running test %d/%d: %s", 
+                            latest.getCurrentTest(), latest.getTotalTests(), inputDisplay));
+                        progressLabel.setText(String.format("%d%% - Running test %d of %d", 
+                            percentage, latest.getCurrentTest(), latest.getTotalTests()));
+                    }
+                }
+            }
+            
+            @Override
+            protected void done() {
+                progressDialog.dispose();
+                
+                try {
+                    TestRunner.TestResult result = get();
+                    showTestResults(result);
+                } catch (InterruptedException e) {
+                    // Test was cancelled
+                    JOptionPane.showMessageDialog(AbstractAutomatonPanel.this, 
+                        "Test execution was cancelled.", 
+                        "Test Cancelled", 
+                        JOptionPane.INFORMATION_MESSAGE);
+                } catch (Exception e) {
+                    JOptionPane.showMessageDialog(AbstractAutomatonPanel.this, 
+                        "Error running tests: " + e.getMessage(), 
+                        "Test Execution Error", 
+                        JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        };
+        
+        // Handle cancel button
+        cancelButton.addActionListener(e -> {
+            worker.cancel(true);
+            progressDialog.dispose();
+        });
+        
+        // Start the worker
+        worker.execute();
+        
+        // Show progress dialog (blocks until disposed)
+        progressDialog.setVisible(true);
+    }
+    
     /**
      * Find the corresponding test file for the current automaton
      */
@@ -574,13 +688,24 @@ public abstract class AbstractAutomatonPanel extends JPanel implements Automaton
     private void showTestResults(TestRunner.TestResult result) {
         StringBuilder message = new StringBuilder();
         
+        // Add timeout warning if any tests timed out
+        if (result.getTimeoutCount() > 0) {
+            message.append("⚠️ WARNING: Test suite timed out after ")
+                   .append(TestRunner.DEFAULT_TIMEOUT_MS / 1000)
+                   .append(" seconds total.\n")
+                   .append("This may indicate infinite loops or very long computations.\n\n");
+        }
+        
         // Use the new classification-based detailed report
         message.append(result.getDetailedReport());
         
         // Determine dialog type based on results
         int messageType;
         String title;
-        if (result.getFailedTests() == 0) {
+        if (result.getTimeoutCount() > 0) {
+            messageType = JOptionPane.WARNING_MESSAGE;
+            title = "Tests Completed with Timeouts";
+        } else if (result.getFailedTests() == 0) {
             messageType = JOptionPane.INFORMATION_MESSAGE;
             title = "All Tests Passed!";
         } else if (result.getPassedTests() > 0) {
@@ -597,7 +722,7 @@ public abstract class AbstractAutomatonPanel extends JPanel implements Automaton
         resultArea.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
         
         JScrollPane resultScrollPane = new JScrollPane(resultArea);
-        resultScrollPane.setPreferredSize(new Dimension(500, 300));
+        resultScrollPane.setPreferredSize(new Dimension(500, 350));
         
         JOptionPane.showMessageDialog(this, resultScrollPane, title, messageType);
     }
