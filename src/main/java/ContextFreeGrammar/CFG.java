@@ -1455,4 +1455,15 @@ public class CFG extends Automaton {
 
         return sb.toString();
     }
+
+    @Override
+    public String getDefaultTemplate() {
+        return "Variables = S A B\n" +
+               "Terminals = a b\n" +
+               "Start = S\n" +
+               "\n" +
+               "S -> A B\n" +
+               "A -> a\n" +
+               "B -> b\n";
+    }
 }

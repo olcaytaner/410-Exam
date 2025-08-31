@@ -1,6 +1,9 @@
 package ContextFreeGrammar;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import common.Automaton;
 
 /**
  * Main class for the Context-Free Grammar parser application.
@@ -23,20 +26,40 @@ public class CFGTest {
         String filePath = "src/test/java/ContextFreeGrammar/test.txt";
 
         try {
-            // Parse the grammar file
-            System.out.println("Parsing grammar from file: " + filePath);
-            CFG grammar = CFGParser.parse(filePath);
+            // Read the grammar file
+            System.out.println("Reading grammar from file: " + filePath);
+            String content = new String(Files.readAllBytes(Paths.get(filePath)));
+            
+            // Create CFG and parse using integrated method
+            CFG grammar = new CFG();
+            Automaton.ParseResult parseResult = grammar.parse(content);
+            
+            if (parseResult.isSuccess()) {
+                System.out.println("Parsing successful!");
+                
+                // Validate the grammar
+                System.out.println("\nValidating grammar...");
+                boolean isValid = grammar.validateGrammar();
+                System.out.println("Grammar is " + (isValid ? "valid" : "invalid"));
 
-            // Validate the grammar
-            System.out.println("\nValidating grammar...");
-            boolean isValid = grammar.validateGrammar();
-            System.out.println("Grammar is " + (isValid ? "valid" : "invalid"));
+                // Pretty print the grammar
+                System.out.println("\nGrammar in readable format:");
+                grammar.prettyPrint();
 
-            // Pretty print the grammar
-            System.out.println("\nGrammar in readable format:");
-            grammar.prettyPrint();
-
-            System.out.println(grammar);
+                System.out.println("\nGrammar toString:");
+                System.out.println(grammar);
+                
+                // Test execution with a simple string
+                System.out.println("\nTesting execution with '01':");
+                Automaton.ExecutionResult execResult = grammar.execute("01");
+                System.out.println("Result: " + (execResult.isAccepted() ? "ACCEPTED" : "REJECTED"));
+                System.out.println("Trace:\n" + execResult.getTrace());
+            } else {
+                System.err.println("Parsing failed:");
+                for (Automaton.ValidationMessage msg : parseResult.getValidationMessages()) {
+                    System.err.println(msg);
+                }
+            }
 
         } catch (IOException e) {
             System.err.println("Error reading file: " + e.getMessage());

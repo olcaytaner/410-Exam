@@ -23,6 +23,7 @@ import javax.swing.JPopupMenu;
 import javax.swing.JSplitPane;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
+import ContextFreeGrammar.CFG;
 import DeterministicFiniteAutomaton.DFA;
 import NondeterministicFiniteAutomaton.NFA;
 import PushDownAutomaton.PDA;
@@ -108,13 +109,11 @@ public class MainPanel extends JPanel {
                     ((TMPanel)panel).loadFile(file);
                     break;
                 case ".cfg":
-                    // TODO: Uncomment when CFGAutomaton is implemented
-                    // automaton = new CFGAutomaton();
-                    // automaton.setInputText(content);
-                    // panel = new CFGPanel(MainPanel.this, automaton);
-                    // ((CFGPanel)panel).loadFile(file);
-                    throw new IllegalArgumentException("CFG support not yet implemented");
-                    // break;
+                    automaton = new CFG();
+                    automaton.setInputText(content);
+                    panel = new CFGPanel(MainPanel.this, automaton);
+                    ((CFGPanel)panel).loadFile(file);
+                    break;
                 case ".rex":
                     // TODO: Uncomment when RegularExpressionAutomaton is implemented
                     // automaton = new RegularExpressionAutomaton();
@@ -749,12 +748,9 @@ public class MainPanel extends JPanel {
                 panel = new TMPanel(this, automaton);
                 break;
             case "CFG":
-                // TODO: Uncomment when CFGAutomaton is implemented
-                // automaton = new CFGAutomaton();
-                // panel = new CFGPanel(this, automaton);
-                JOptionPane.showMessageDialog(this, "CFG support not yet implemented", "Not Implemented", JOptionPane.INFORMATION_MESSAGE);
-                return;
-                // break;
+                automaton = new CFG();
+                panel = new CFGPanel(this, automaton);
+                break;
             case "REX":
                 // TODO: Uncomment when RegularExpressionAutomaton is implemented  
                 // automaton = new RegularExpressionAutomaton();
