@@ -16,8 +16,13 @@ public class SyntaxTree extends Automaton {
         precedence.put(CONCAT, 2);
         precedence.put(OR, 1);
     }
+
     public char[] alphabet;
     public SyntaxTreeNode root;
+
+    public SyntaxTree() {
+        super(MachineType.REGEX);
+    }
 
     public SyntaxTree(String regex, char[] alphabet) {
         super(MachineType.REGEX);
@@ -28,7 +33,6 @@ public class SyntaxTree extends Automaton {
         //System.out.println("Postfix: " + postfix);
         compile(postfix);
     }
-
 
     // check for malformations
     private String sanitize(String regex) {

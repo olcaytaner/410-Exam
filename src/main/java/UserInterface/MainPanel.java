@@ -27,6 +27,7 @@ import ContextFreeGrammar.CFG;
 import DeterministicFiniteAutomaton.DFA;
 import NondeterministicFiniteAutomaton.NFA;
 import PushDownAutomaton.PDA;
+import RegularExpression.SyntaxTree.SyntaxTree;
 import TuringMachine.TM;
 import common.Automaton;
 
@@ -56,10 +57,9 @@ public class MainPanel extends JPanel {
             if (automaton instanceof PDA) return ".pda";
             if (automaton instanceof TM) return ".tm";
             if (automaton instanceof CFG) return ".cfg";
-            // TODO: Add REX;
+            if (automaton instanceof SyntaxTree) return ".rex";
             return ".txt";
         }
-        
      
         public Color getColorForExtension(String extension) {
             switch(extension.toLowerCase()) {
@@ -116,13 +116,11 @@ public class MainPanel extends JPanel {
                     ((CFGPanel)panel).loadFile(file);
                     break;
                 case ".rex":
-                    // TODO: Uncomment when RegularExpressionAutomaton is implemented
-                    // automaton = new RegularExpressionAutomaton();
-                    // automaton.setInputText(content);
-                    // panel = new REXPanel(MainPanel.this, automaton);
-                    // ((REXPanel)panel).loadFile(file);
-                    throw new IllegalArgumentException("REX support not yet implemented");
-                    // break;
+                    automaton = new SyntaxTree();
+                    automaton.setInputText(content);
+                    panel = new REXPanel(MainPanel.this, automaton);
+                    ((REXPanel)panel).loadFile(file);
+                    break;
                 default:
                     throw new IllegalArgumentException("Unsupported file type: " + extension);
             }
@@ -753,12 +751,9 @@ public class MainPanel extends JPanel {
                 panel = new CFGPanel(this, automaton);
                 break;
             case "REX":
-                // TODO: Uncomment when RegularExpressionAutomaton is implemented  
-                // automaton = new RegularExpressionAutomaton();
-                // panel = new REXPanel(this, automaton);
-                JOptionPane.showMessageDialog(this, "REX support not yet implemented", "Not Implemented", JOptionPane.INFORMATION_MESSAGE);
-                return;
-                // break;
+                automaton = new SyntaxTree();
+                panel = new REXPanel(this, automaton);
+                break;
             default:
                 JOptionPane.showMessageDialog(this, "Unknown automaton type: " + type, "Error", JOptionPane.ERROR_MESSAGE);
                 return;
