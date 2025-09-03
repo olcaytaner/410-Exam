@@ -28,13 +28,13 @@ public class SyntaxTree extends Automaton {
         super(MachineType.REGEX);
         this.alphabet = alphabet;
         String sanitizedReg = sanitize(regex);
-        //System.out.println("Sanitized: " + sanitizedReg);
         String postfix = shunting_yard(sanitizedReg);
-        //System.out.println("Postfix: " + postfix);
         compile(postfix);
     }
 
-    // check for malformations
+    /**
+     * Checks for malformations that may occur in the regular expression text.
+     */
     private String sanitize(String regex) {
         // TODO check for other malformations like ** or * at the start
         regex = regex.replaceAll("\\s+", ""); // delete whitespace from input
@@ -63,7 +63,9 @@ public class SyntaxTree extends Automaton {
         return new String(sanitized);
     }
 
-    // shunting yard algorithm to convert to postfix
+    /**
+     * Applies the shunting yard algorithm to convert the regex into its postfix representation.
+     */
     private String shunting_yard(String regex) {
         StringBuilder postfix = new StringBuilder();
         Deque<Character> stk = new ArrayDeque<>();
@@ -209,12 +211,17 @@ public class SyntaxTree extends Automaton {
         return validationWarnings;
     }
 
+    /**
+     * There is no need to display the AST of a regular expression.
+     */
     @Override
     public String toDotCode(String inputText) {
         return "";
     }
 
-    // build AST
+    /**
+     * Builds the AST of the regular expression using its postfix representation.
+     */
     private void compile(String postfix) {
         Deque<SyntaxTreeNode> stk = new ArrayDeque<>();
         SyntaxTreeNode r, l;
@@ -245,6 +252,9 @@ public class SyntaxTree extends Automaton {
         root = stk.pop();
     }
 
+    /**
+     * Utility method to check whether the alphabet has a certain char.
+     */
     public boolean alphabetHas(char c) {
         for (char ch : alphabet)
             if (ch == c)
