@@ -23,8 +23,8 @@ import ContextFreeGrammar.CFG;
 import DeterministicFiniteAutomaton.DFA;
 import NondeterministicFiniteAutomaton.NFA;
 import PushDownAutomaton.PDA;
+import RegularExpression.SyntaxTree.SyntaxTree;
 import TuringMachine.TM;
-// import RegularExpression.RegularExpressionAutomaton; // TODO: Uncomment when implemented
 
 /**
  * JUnit 5 integration test class for UI panel functionality.
@@ -111,20 +111,18 @@ public class UIPanelIntegrationTest {
             }, "CFG panel creation should not throw exceptions");
         }
         
-        // TODO: Uncomment when RegularExpressionAutomaton is implemented
-        /*
         @Test
         @DisplayName("Should create REX panel correctly")
         void testCreateREXPanel() {
             assertDoesNotThrow(() -> {
-                RegularExpressionAutomaton rex = new RegularExpressionAutomaton();
+                SyntaxTree rex = new SyntaxTree();
                 REXPanel panel = new REXPanel(mainPanel, rex);
                 
                 assertNotNull(panel, "REX panel should be created");
                 assertTrue(panel instanceof Component, "Panel should be a Swing component");
             }, "REX panel creation should not throw exceptions");
         }
-        */
+        
     }
 
     @Nested

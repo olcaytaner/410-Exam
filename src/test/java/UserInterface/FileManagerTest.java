@@ -20,6 +20,7 @@ import ContextFreeGrammar.CFG;
 import DeterministicFiniteAutomaton.DFA;
 import NondeterministicFiniteAutomaton.NFA;
 import PushDownAutomaton.PDA;
+import RegularExpression.SyntaxTree.SyntaxTree;
 import TuringMachine.TM;
 import common.Automaton;
 
@@ -87,16 +88,15 @@ public class FileManagerTest {
                 "CFG should return .cfg extension");
         }
         
-        // TODO: Uncomment when RegularExpressionAutomaton is implemented
-        /*
+        
         @Test
-        @DisplayName("RegularExpressionAutomaton should return .rex extension")
+        @DisplayName("SyntaxTree should return .rex extension")
         void testREXExtension() {
-            RegularExpressionAutomaton rex = new RegularExpressionAutomaton();
+            SyntaxTree rex = new SyntaxTree();
             assertEquals(".rex", fileManager.getExtensionForAutomaton(rex),
-                "RegularExpressionAutomaton should return .rex extension");
+                "SyntaxTree should return .rex extension");
         }
-        */
+    
         
         @Test
         @DisplayName("Unknown automaton should return .txt extension")
@@ -221,22 +221,22 @@ public class FileManagerTest {
         }
         
         @Test
-        @DisplayName("Creating panel from .rex file should throw not implemented exception")
-        void testCreateREXPanelNotImplemented() throws IOException {
-            // Create a temporary REX file
+        @DisplayName("Creating REX panel from .rex file should succeed")
+        void testCreateREXPanel() throws IOException {
+            // Create a temporary REX file with correct format
             File rexFile = tempDir.resolve("test.rex").toFile();
             String rexContent = "(a|b)*abb\n" +
-                               "a, b\n";
+                               "a b\n";  // Use correct space-separated format
             
             Files.write(rexFile.toPath(), rexContent.getBytes());
             
-            // Should throw IllegalArgumentException with "not yet implemented" message
-            Exception exception = assertThrows(IllegalArgumentException.class, () -> {
-                fileManager.createPanelForFile(rexFile);
-            });
-            assertTrue(exception.getMessage().contains("not yet implemented"),
-                "Exception message should indicate REX is not yet implemented");
+            assertDoesNotThrow(() -> {
+                javax.swing.JPanel panel = fileManager.createPanelForFile(rexFile);
+                assertNotNull(panel, "Created panel should not be null");
+                assertTrue(panel instanceof REXPanel, "Panel should be REXPanel instance");
+            }, "Creating REX panel should not throw exception");
         }
+        
         
         @Test
         @DisplayName("Creating panel from unsupported file should throw exception")
