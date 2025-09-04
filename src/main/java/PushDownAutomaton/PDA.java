@@ -10,10 +10,40 @@ import common.Symbol;
 import java.util.*;
 
 /**
- * Represents a Push-down Automaton (PDA).
- * Parsing ve DOT üretimi common yapıyla uyumlu; execution BFS + visited ile optimize edilmiştir.
+ * Push-down Automaton (PDA) implementation.
+ *
+ * <p>Responsibilities:
+ * <ul>
+ *   <li>Parse a PDA definition from text (states, alphabets, start/final states, transitions)</li>
+ *   <li>Execute the (possibly non-deterministic) PDA on a given input string</li>
+ *   <li>Produce Graphviz DOT code for visualization</li>
+ * </ul>
+ *
+ * <p><strong>Execution model</strong>: BFS on configurations {@code (state, inputPos, stackString)}.
+ * Top of stack is kept at {@code stackString.charAt(0)}. Acceptance is by final state (all input consumed
+ * and current state ∈ finals).</p>
+ *
+ * <p><strong>Safety controls</strong>:
+ * <ul>
+ *   <li>Expansion cap (number of explored configurations) is configurable via
+ *       {@code -Dpda.maxExpansions=<int>} (default: 500_000).</li>
+ *   <li>Optional wall-clock timeout is configurable via {@code -Dpda.timeoutMs=<long>} (default: disabled / 0).</li>
+ * </ul>
+ * If either cap/timeout is hit, execution stops with a WARNING log and returns rejection.</p>
  */
 public class PDA extends Automaton {
+
+    /* ---------------- Configuration knobs (system properties) ---------------- */
+
+    /** Max number of configurations to explore before aborting (default 500k). */
+    private static final int MAX_EXPANSIONS_CAP =
+            Integer.getInteger("pda.maxExpansions", 500_000);
+
+    /** Optional wall-clock timeout in nanoseconds (0 = disabled). */
+    private static final long TIMEOUT_NS =
+            Long.getLong("pda.timeoutMs", 0L) * 1_000_000L;
+
+    /* ---------------- Parsed PDA components ---------------- */
 
     private Set<State> states;
     private Set<Symbol> inputAlphabet;
@@ -27,6 +57,20 @@ public class PDA extends Automaton {
         super(MachineType.PDA);
     }
 
+    /**
+     * Parse a PDA definition text into internal structures.
+     *
+     * <p>Expected sections: {@code states, alphabet, stack_alphabet, start, stack_start, finals, transitions}.
+     * Transitions use the format:
+     * <pre>
+     *   fromState inputOrEps stackPopOrEps -> toState stackPushOrEps
+     * </pre>
+     * where {@code eps} denotes epsilon; {@code stackPushOrEps} may be a multi-character string or {@code eps}.</p>
+     *
+     * @param inputText PDA definition text (not null)
+     * @return {@link ParseResult} with success flag, validation messages, and reference to this PDA instance
+     * @throws NullPointerException if {@code inputText} is null
+     */
     @Override
     public ParseResult parse(String inputText) {
         if (inputText == null) {
@@ -72,9 +116,18 @@ public class PDA extends Automaton {
     }
 
     /**
-     * Non-deterministic PDA execution with BFS over configurations (state, input position, stackString).
-     * Stack top is kept at stackString.charAt(0) (leftmost).
-     * Accept by final state (consistent with "finals" requirement in input spec).
+     * Execute the PDA on the given input string.
+     *
+     * <p>Performs a BFS over configurations. Acceptance occurs if we reach a final state after consuming
+     * the whole input. To prevent pathological blow-ups, execution respects:
+     * <ul>
+     *   <li>{@code pda.maxExpansions} (expansion cap)</li>
+     *   <li>{@code pda.timeoutMs} (wall-clock timeout), if set</li>
+     * </ul>
+     * On abort, a WARNING is logged and the result is rejection with a best-effort trace.</p>
+     *
+     * @param inputText input string (may be null → treated as empty)
+     * @return {@link ExecutionResult} with acceptance flag, info/warning logs, and a transition trace
      */
     @Override
     public ExecutionResult execute(String inputText) {
@@ -103,9 +156,25 @@ public class PDA extends Automaton {
         visited.add(start);
 
         int expansions = 0;
-        final int MAX_EXPANSIONS = 1_000_000; // safety cap
+        final long t0 = System.nanoTime();
 
         while (!queue.isEmpty()) {
+            // Timeout check
+            if (TIMEOUT_NS > 0 && System.nanoTime() - t0 > TIMEOUT_NS) {
+                logs.add(new ValidationMessage(
+                        "Search aborted due to timeout (" + (TIMEOUT_NS / 1_000_000) + " ms).",
+                        0, ValidationMessageType.WARNING));
+                break;
+            }
+            // Expansion cap check
+            if (expansions++ > MAX_EXPANSIONS_CAP) {
+                logs.add(new ValidationMessage(
+                        "Search aborted after exploring " + expansions +
+                                " configurations (cap via pda.maxExpansions).",
+                        0, ValidationMessageType.WARNING));
+                break;
+            }
+
             Conf cur = queue.poll();
 
             // Accept when input fully consumed & in a final state
@@ -153,13 +222,6 @@ public class PDA extends Automaton {
                     queue.add(nxt);
                 }
             }
-
-            if (++expansions > MAX_EXPANSIONS) {
-                logs.add(new ValidationMessage(
-                        "Search aborted after exploring " + expansions + " configurations (safety cap).",
-                        0, ValidationMessageType.WARNING));
-                break;
-            }
         }
 
         // Not accepted: produce a best-effort trace from the farthest progressed configuration
@@ -168,13 +230,13 @@ public class PDA extends Automaton {
                 .orElse(null);
 
         String trace = (farthest != null) ? reconstructTrace(parent, farthest) : "No steps taken.";
-        logs.add(new ValidationMessage("No accepting configuration found.",
-                0, ValidationMessageType.INFO));
+        logs.add(new ValidationMessage("No accepting configuration found.", 0, ValidationMessageType.INFO));
         return new ExecutionResult(false, logs, trace);
     }
 
     /* ----------------- Helpers for BFS trace & conf identity ----------------- */
 
+    /** Immutable configuration for BFS search. */
     private static final class Conf {
         final State state;
         final int pos;        // input index
@@ -202,6 +264,7 @@ public class PDA extends Automaton {
         }
     }
 
+    /** Edge used to reconstruct a successful path. */
     private static final class Step {
         final Conf prev;
         final PDATransition tr;
@@ -216,6 +279,7 @@ public class PDA extends Automaton {
         return (s == null || s.isEpsilon()) ? "eps" : Character.toString(s.getValue());
     }
 
+    /** Reconstruct a human-readable transition trace from parents map. */
     private String reconstructTrace(Map<Conf, Step> parent, Conf end) {
         List<String> lines = new ArrayList<>();
         Conf cur = end;
@@ -239,8 +303,14 @@ public class PDA extends Automaton {
         return String.join(" | ", lines);
     }
 
-    /* ----------------- DOT ve parse yardımcıları (senin kodunla aynı mantık) ----------------- */
+    /* ----------------- DOT generation ----------------- */
 
+    /**
+     * Produce Graphviz DOT code for the current PDA.
+     *
+     * @param inputText unused for DOT generation (kept for interface compatibility)
+     * @return DOT string ready to render
+     */
     @Override
     public String toDotCode(String inputText) {
         if (this.states == null || this.states.isEmpty()) {
@@ -295,8 +365,14 @@ public class PDA extends Automaton {
         return dot.toString();
     }
 
+    /* ----------------- Validation hooks ----------------- */
+
     @Override
-    public List<ValidationMessage> validate() { return new ArrayList<>(); }
+    public List<ValidationMessage> validate() {
+        return new ArrayList<>();
+    }
+
+    /* ----------------- Parsing helpers ----------------- */
 
     private void processStates(List<String> stateLines, int lineNum, Set<State> states,
                                Map<String, State> stateMap, List<ValidationMessage> messages) {
@@ -516,17 +592,21 @@ public class PDA extends Automaton {
         }
     }
 
+    /**
+     * Default template content for a new PDA file in the editor.
+     * <p><strong>Note:</strong> Kept as-is on purpose (UI relies on this exact text/shape).</p>
+     */
     @Override
     public String getDefaultTemplate() {
         return "Start: q0\n" +
-               "Finals: q1\n" +
-               "Alphabet: a b\n" +
-               "Stack_alphabet: Z X\n" +
-               "States: q0 q1\n" +
-               "\n" +
-               "Transitions:\n" +
-               "q0 a Z -> q1 Z\n" +
-               "q0 b Z -> q1 Z\n" +
-               "q1 eps Z -> q1 eps\n";
+                "Finals: q1\n" +
+                "Alphabet: a b\n" +
+                "Stack_alphabet: Z X\n" +
+                "States: q0 q1\n" +
+                "\n" +
+                "Transitions:\n" +
+                "q0 a Z -> q1 Z\n" +
+                "q0 b Z -> q1 Z\n" +
+                "q1 eps Z -> q1 eps\n";
     }
 }

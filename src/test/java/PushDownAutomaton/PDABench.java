@@ -9,15 +9,15 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
 
-public class PDABench{
+public class PDABench {
     private static final double THRESHOLD_SECONDS = 1.0;
-    private static final int    MAX_REPEATS       = 1 << 14; // güvenlik
+    private static final int    MAX_REPEATS       = 1 << 14; // safety
 
-    // Senaryolar: {name, pdaPath, testPath}
+    // {name, pdaPath, testPath}
     private static final String[][] CASES = new String[][]{
-            {"eps-case",
-                    "src/test/manual-testing/examples/pda/eps-case.pda",
-                    "src/test/manual-testing/examples/pda/eps-case.test"},
+            {"palindrome",
+                    "src/test/manual-testing/examples/pda/palindrome.pda",
+                    "src/test/manual-testing/examples/pda/palindrome.test"},
     };
 
     public static void main(String[] args) throws Exception {
@@ -25,6 +25,7 @@ public class PDABench{
         System.out.println("-----------------------------------------------");
         for (String[] sc : CASES) runScenario(sc[0], sc[1], sc[2]);
     }
+
     private static void runScenario(String name, String pdaPath, String testPath) throws Exception {
         String pdaText = new String(Files.readAllBytes(Paths.get(pdaPath)), StandardCharsets.UTF_8);
         PDA pda = new PDA();
@@ -33,7 +34,10 @@ public class PDABench{
 
         List<TestCase> tests = TestFileParser.parseTestFile(testPath);
         if (tests.isEmpty()) throw new IllegalStateException("Empty test file: " + testPath);
+
+        // warm-up
         for (int i = 0; i < Math.min(50, tests.size()); i++) pda.execute(tests.get(i).getInput());
+
         int repeats = 1;
         while (true) {
             long t0 = System.nanoTime();
