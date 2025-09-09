@@ -6,7 +6,7 @@ A Nondeterministic Finite Automaton (NFA) is a finite state machine that, unlike
 NFAs can also include ε-transitions (epsilon transitions), which allow the automaton to move between states without consuming an input symbol.
 NFAs also recognize regular languages, just like DFAs. Every NFA has an equivalent DFA (though the DFA may have exponentially more states).
 
-**Formal Definition**: A DFA can be given as a 5-tuple `(Q, Σ, δ, q₀, F)` where:
+**Formal Definition**: A NFA can be given as a 5-tuple `(Q, Σ, δ, q₀, F)` where:
 - `Q` : finite set of states
 - `q₀ ∈ Q` : start state
 - `F ⊆ Q` : set of accepting (final) states
@@ -57,7 +57,7 @@ q2 -> q0 (b eps)
 ```
 
 ## 4. Components
-- **`NFA.java`** – Main DFA class that handles parsing, execution, and visualization. The execution processes input strings and determines acceptance based on the final state.
+- **`NFA.java`** – Main NFA class that handles parsing, execution, and visualization. The execution processes input strings and determines acceptance based on the final state.
 
 - **`Transition.java`** – Represents a transition in the NFA with `fromState`, `inputSymbol`, and `toState`.
 

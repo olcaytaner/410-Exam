@@ -10,8 +10,10 @@ import java.util.*;
 public class ManualTest {
 
     public static void main(String[] args) throws IOException {
+        //2 symbol - 16
+        //3 symbol - 10
 
-        String week = "week3-5";
+        String week = "week3-2";
 
         NFA nfa = new NFA();
         ParseResult parseResult = nfa.parse(readFile(getExercisePath(week)));
@@ -33,7 +35,7 @@ public class ManualTest {
         double maxTestTime = Integer.MIN_VALUE;
         double minTestTime = Integer.MAX_VALUE;
 
-        generateTotalMs += generateTests(nfa, 10, testFile, false);
+        generateTotalMs += generateTests(nfa, 16, testFile, true);
 
         for (int i = 0; i < testCount; i++) {
             System.out.println("Test: " + i);
@@ -238,15 +240,16 @@ public class ManualTest {
             throw new RuntimeException(e);
         }
 
+        long elapsed = System.nanoTime() - t;
         System.out.println("Line Count: " + lineCount);
         System.out.println("True Accepted: " + accepted);
         System.out.println("False Accepted: " + falsePos);
         System.out.println("True Rejected: " + rejected);
         System.out.println("False Rejected: " + falseNeg);
         System.out.println("Success Rate: %" + (double)(accepted + rejected)*100 / lineCount);
-        System.out.println("Took " + (System.nanoTime() - t)/1_000_000_000.0 + " second to execute file");
+        System.out.println("Took " + elapsed/1_000_000_000.0 + " second to execute file");
 
-        return (System.nanoTime() - t)/1_000_000.0;
+        return elapsed/1_000_000.0;
     }
 
 }
