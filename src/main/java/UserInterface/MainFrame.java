@@ -159,6 +159,9 @@ public class MainFrame extends JFrame {
         // Add View menu
         createViewMenu(menuBar, menuShortcutKeyMask);
         
+        // Add Help menu
+        createHelpMenu(menuBar);
+        
         setJMenuBar(menuBar);
     }
     
@@ -277,6 +280,38 @@ public class MainFrame extends JFrame {
         if (mainPanel != null) {
             mainPanel.toggleSidebar();
         }
+    }
+    
+    private void createHelpMenu(JMenuBar menuBar) {
+        JMenu helpMenu = new JMenu("Help");
+        
+        JMenuItem aboutItem = new JMenuItem("About");
+        aboutItem.addActionListener(e -> showAboutDialog());
+        
+        helpMenu.add(aboutItem);
+        menuBar.add(helpMenu);
+    }
+    
+    private String getVersionFromManifest() {
+        String version = getClass().getPackage().getImplementationVersion();
+        return version != null ? version : "1.0.0"; // Fallback version for development
+    }
+    
+    private void showAboutDialog() {
+        String aboutText = 
+            "<html><center>" +
+            "<h2>CS.410 Graph System</h2>" +
+            "<p>Version " + getVersionFromManifest() + "</p><br>" +
+            "<p>An educational tool for teaching and learning:<br>" +
+            "DFA, NFA, PDA, Turing Machines, CFG, and Regular Expressions</p><br>" +
+            "<p><b>Development Team:</b><br>" +
+            "Ege Yenen • Bora Baran • Berre Delikara<br>" +
+            "Eren Yemşen • Berra Eğcin • Hakan Akbıyık<br>" +
+            "Hakan Çildaş • Selim Özyılmaz • Olcay Taner Yıldız</p><br>" +
+            "<p>© 2024 CS.410 Graph System</p>" +
+            "</center></html>";
+        
+        javax.swing.JOptionPane.showMessageDialog(this, aboutText, "About", javax.swing.JOptionPane.INFORMATION_MESSAGE);
     }
     
 
