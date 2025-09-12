@@ -1,20 +1,21 @@
 package UserInterface;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
-import static org.junit.jupiter.api.Assertions.*;
-
-import javax.swing.*;
-import java.awt.*;
-import java.io.File;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 
-import DeterministicFiniteAutomaton.DFA;
-import NondeterministicFiniteAutomaton.NFA;
+import javax.swing.JFrame;
+import javax.swing.JPanel;
+
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
 
 /**
  * JUnit 5 test class for MainPanel tab management functionality.
@@ -245,7 +246,7 @@ public class MainPanelTabTest {
             
             // Should not throw when compiling
             assertDoesNotThrow(() -> {
-                mainPanel.compileCurrentAutomaton();
+                mainPanel.compileWithFigureCurrentAutomaton();
             });
         }
         
