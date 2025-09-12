@@ -99,7 +99,7 @@ public class SplashScreen extends JWindow {
         String[] contributors = {
             "Ege Yenen • Bora Baran • Berre Delikara",
             "Eren Yemşen • Berra Eğcin • Hakan Akbıyık",
-            "Hakan Çildaş • Selim Özyılmaz"
+            "Hakan Çildaş • Selim Özyılmaz • Olcay Taner Yıldız"
         };
         
         for (String line : contributors) {
@@ -137,7 +137,7 @@ public class SplashScreen extends JWindow {
         copyrightPanel.setBackground(new Color(43, 43, 43));
         copyrightPanel.setBorder(BorderFactory.createEmptyBorder(0, 20, 10, 20));
         
-        JLabel copyrightLabel = new JLabel("© 2024 CS.410 Course Project", JLabel.CENTER);
+        JLabel copyrightLabel = new JLabel("© 2024 CS.410 Graph System", JLabel.CENTER);
         copyrightLabel.setFont(new Font("Segoe UI", Font.PLAIN, 9));
         copyrightLabel.setForeground(new Color(120, 120, 120));
         copyrightPanel.add(copyrightLabel);

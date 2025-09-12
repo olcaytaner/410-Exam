@@ -108,36 +108,28 @@ public class MainFrame extends JFrame {
         
         JMenu actionsMenu = new JMenu("Actions");
         
+        JMenuItem compileWithFigureItem = new JMenuItem("Compile with Figure");
+        compileWithFigureItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_B, menuShortcutKeyMask));
+        
         JMenuItem runItem = new JMenuItem("Run");
         runItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_R, menuShortcutKeyMask));
         
-        JMenuItem compileItem = new JMenuItem("Compile");
-        compileItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_B, menuShortcutKeyMask));
+        JMenuItem runWithFileItem = new JMenuItem("Run with File");
+        runWithFileItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_R, menuShortcutKeyMask | InputEvent.SHIFT_DOWN_MASK));
         
         JMenuItem saveItem = new JMenuItem("Save");
         saveItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, menuShortcutKeyMask));
         
-        JMenuItem testItem = new JMenuItem("Test");
-        testItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_T, menuShortcutKeyMask));
-        
-        JMenuItem testWithFileItem = new JMenuItem("Test with File...");
-        testWithFileItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_T, menuShortcutKeyMask | InputEvent.SHIFT_DOWN_MASK));
-        
-        
         // Add action listeners that delegate to the current active panel
-        runItem.addActionListener(e -> {
+        compileWithFigureItem.addActionListener(e -> {
             if (mainPanel != null) mainPanel.runCurrentAutomaton();
         });
         
-        compileItem.addActionListener(e -> {
-            if (mainPanel != null) mainPanel.compileCurrentAutomaton();
-        });
-        
-        testItem.addActionListener(e -> {
+        runItem.addActionListener(e -> {
             if (mainPanel != null) mainPanel.testCurrentAutomaton();
         });
         
-        testWithFileItem.addActionListener(e -> {
+        runWithFileItem.addActionListener(e -> {
             if (mainPanel != null) mainPanel.testCurrentAutomatonWithFile();
         });
         
@@ -145,12 +137,9 @@ public class MainFrame extends JFrame {
             if (mainPanel != null) mainPanel.saveCurrentAutomaton();
         });
         
+        actionsMenu.add(compileWithFigureItem);
         actionsMenu.add(runItem);
-        actionsMenu.addSeparator();
-        actionsMenu.add(compileItem);
-        actionsMenu.addSeparator();
-        actionsMenu.add(testItem);
-        actionsMenu.add(testWithFileItem);
+        actionsMenu.add(runWithFileItem);
         actionsMenu.addSeparator();
         actionsMenu.add(saveItem);
         
