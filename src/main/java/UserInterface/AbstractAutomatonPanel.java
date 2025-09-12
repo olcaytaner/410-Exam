@@ -132,17 +132,17 @@ public abstract class AbstractAutomatonPanel extends JPanel implements Automaton
         tabLabel.setFont(new Font("Arial", Font.BOLD, 14));
         tabLabel.setForeground(new Color(102, 133, 102));
         
-        JButton testButton = new JButton("Test");
-        testButton.setPreferredSize(new Dimension(80, 30));
-        testButton.addActionListener(new ActionListener() {
+        JButton runButton = new JButton("Run");
+        runButton.setPreferredSize(new Dimension(80, 30));
+        runButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                runTests();
+                runTestFile();
             }
         });
         
         topPanel.add(tabLabel, BorderLayout.WEST);
-        topPanel.add(testButton, BorderLayout.EAST);
+        topPanel.add(runButton, BorderLayout.EAST);
     }
 
     /**
@@ -294,7 +294,7 @@ public abstract class AbstractAutomatonPanel extends JPanel implements Automaton
         warningLabel.setFont(new Font("Arial", Font.BOLD, 12));
         warningLabel.setBorder(BorderFactory.createEmptyBorder(0, 0, 10, 0));
         
-        warningField = new JTextArea("Warnings will be displayed here after using Compile or Run from the main Actions menu");
+        warningField = new JTextArea("Warnings will be displayed here after using 'Compile with Figure' or 'Run' from the main Actions menu");
         warningField.setEditable(false);
         warningField.setBackground(new Color(255, 255, 255));
         warningField.setLineWrap(true);
@@ -332,7 +332,7 @@ public abstract class AbstractAutomatonPanel extends JPanel implements Automaton
 
     // AutomatonPanel interface implementations
     @Override
-    public void runAutomaton() {
+    public void compileWithFigure() {
         final String inputText = textArea.getText();
         
         // Show loading indicator immediately
@@ -430,15 +430,12 @@ public abstract class AbstractAutomatonPanel extends JPanel implements Automaton
         worker.execute();
     }
     
-    @Override
-    public void compileAutomaton() {
-        updateWarningDisplay();
-    }
+    // Deprecated compileAutomaton - no longer needed as validation happens in compileWithFigure
 
     /**
      * Run tests for the current automaton using a corresponding test file
      */
-    protected void runTests() {
+    protected void runTestFile() {
         // First compile/parse the current automaton
         String inputText = textArea.getText();
         automaton.setInputText(inputText);
@@ -477,18 +474,18 @@ public abstract class AbstractAutomatonPanel extends JPanel implements Automaton
     }
 
     /**
-     * Tests the automaton with matching .test file (interface implementation)
+     * Runs tests from the matching .test file (interface implementation)
      */
     @Override
-    public void testAutomaton() {
-        runTests();
+    public void run() {
+        runTestFile();
     }
 
     /**
-     * Tests the automaton with user-selected test file (interface implementation)
+     * Runs tests from a user-selected test file (interface implementation)
      */
     @Override
-    public void testAutomatonWithFile() {
+    public void runWithFile() {
         // First compile/parse the current automaton
         String inputText = textArea.getText();
         automaton.setInputText(inputText);

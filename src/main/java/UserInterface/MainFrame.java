@@ -122,15 +122,15 @@ public class MainFrame extends JFrame {
         
         // Add action listeners that delegate to the current active panel
         compileWithFigureItem.addActionListener(e -> {
-            if (mainPanel != null) mainPanel.runCurrentAutomaton();
+            if (mainPanel != null) mainPanel.compileWithFigureCurrentAutomaton();
         });
         
         runItem.addActionListener(e -> {
-            if (mainPanel != null) mainPanel.testCurrentAutomaton();
+            if (mainPanel != null) mainPanel.runCurrentAutomaton();
         });
         
         runWithFileItem.addActionListener(e -> {
-            if (mainPanel != null) mainPanel.testCurrentAutomatonWithFile();
+            if (mainPanel != null) mainPanel.runCurrentAutomatonWithFile();
         });
         
         saveItem.addActionListener(e -> {

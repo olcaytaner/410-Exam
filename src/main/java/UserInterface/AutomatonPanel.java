@@ -9,14 +9,19 @@ import java.io.File;
 public interface AutomatonPanel {
     
     /**
-     * Runs the automaton with current text input and displays the graph
+     * Compiles the automaton and generates a GraphViz visualization
      */
-    void runAutomaton();
+    void compileWithFigure();
     
     /**
-     * Compiles/validates the automaton and displays warnings
+     * Runs tests from the matching .test file
      */
-    void compileAutomaton();
+    void run();
+    
+    /**
+     * Runs tests from a user-selected test file
+     */
+    void runWithFile();
     
     /**
      * Saves the current content to a file (quick save if file exists, save as if new)
@@ -31,18 +36,25 @@ public interface AutomatonPanel {
         saveAutomaton();
     }
     
-    /**
-     * Tests the automaton with matching .test file
-     */
-    default void testAutomaton() {
-        // Default implementation - no operation
+    // Deprecated methods for backward compatibility
+    @Deprecated
+    default void runAutomaton() {
+        compileWithFigure();
     }
     
-    /**
-     * Tests the automaton with user-selected test file
-     */
+    @Deprecated
+    default void compileAutomaton() {
+        // No longer needed - validation happens during compileWithFigure
+    }
+    
+    @Deprecated
+    default void testAutomaton() {
+        run();
+    }
+    
+    @Deprecated
     default void testAutomatonWithFile() {
-        // Default implementation - no operation
+        runWithFile();
     }
     
     /**

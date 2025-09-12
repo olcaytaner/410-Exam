@@ -779,22 +779,11 @@ public class MainPanel extends JPanel {
     }
     
     /**
-     * Runs the currently active automaton
+     * Compiles the automaton and generates GraphViz visualization
      */
-    public void runCurrentAutomaton() {
+    public void compileWithFigureCurrentAutomaton() {
         if (currentActivePanel != null) {
-            currentActivePanel.runAutomaton();
-        } else {
-            JOptionPane.showMessageDialog(this, "No active automaton panel found.", "Error", JOptionPane.ERROR_MESSAGE);
-        }
-    }
-    
-    /**
-     * Compiles/validates the currently active automaton
-     */
-    public void compileCurrentAutomaton() {
-        if (currentActivePanel != null) {
-            currentActivePanel.compileAutomaton();
+            currentActivePanel.compileWithFigure();
         } else {
             JOptionPane.showMessageDialog(this, "No active automaton panel found.", "Error", JOptionPane.ERROR_MESSAGE);
         }
@@ -823,22 +812,22 @@ public class MainPanel extends JPanel {
     }
     
     /**
-     * Tests the currently active automaton with matching .test file
+     * Runs tests from the matching .test file
      */
-    public void testCurrentAutomaton() {
+    public void runCurrentAutomaton() {
         if (currentActivePanel != null) {
-            currentActivePanel.testAutomaton();
+            currentActivePanel.run();
         } else {
             JOptionPane.showMessageDialog(this, "No active automaton panel found.", "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
     
     /**
-     * Tests the currently active automaton with user-selected test file
+     * Runs tests from a user-selected test file
      */
-    public void testCurrentAutomatonWithFile() {
+    public void runCurrentAutomatonWithFile() {
         if (currentActivePanel != null) {
-            currentActivePanel.testAutomatonWithFile();
+            currentActivePanel.runWithFile();
         } else {
             JOptionPane.showMessageDialog(this, "No active automaton panel found.", "Error", JOptionPane.ERROR_MESSAGE);
         }
