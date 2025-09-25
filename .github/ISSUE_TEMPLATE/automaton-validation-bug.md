@@ -31,18 +31,6 @@ Transitions:
 
 ```
 
-### Example (Your case):
-```
-Start: q0
-Finals: q0
-Alphabet: a
-States: q0 q1
-
-Transitions:
-q0 -> q0 (a)
-q0 -> q1 (a)
-```
-
 ## Expected Behavior
 <!-- What should happen when this automaton is validated? -->
 <!-- For example: "This should be rejected as invalid because a DFA cannot have multiple transitions from the same state on the same symbol" -->
