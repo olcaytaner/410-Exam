@@ -282,8 +282,26 @@ public class MainFrame extends JFrame {
     }
     
     private String getVersionFromManifest() {
+        // Try to get version from package (works when running from JAR)
         String version = getClass().getPackage().getImplementationVersion();
-        return version != null ? version : "1.0.0"; // Fallback version for development
+
+        // If not available, try to read from Maven properties
+        if (version == null) {
+            try {
+                java.io.InputStream is = getClass().getResourceAsStream(
+                    "/META-INF/maven/org.example/CS410-Exam/pom.properties");
+                if (is != null) {
+                    java.util.Properties props = new java.util.Properties();
+                    props.load(is);
+                    version = props.getProperty("version");
+                    is.close();
+                }
+            } catch (Exception e) {
+                // Ignore and use fallback
+            }
+        }
+
+        return version != null ? version : "1.0.1"; // Fallback version matching pom.xml
     }
     
     private void showAboutDialog() {
