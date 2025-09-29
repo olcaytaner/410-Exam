@@ -376,10 +376,13 @@ public class DFA extends Automaton {
    * @return A set of Transition objects representing the DFA's transitions
    */
   private Set<Transition> processTransitions(List<String> lines, int startLine,
-                                                                       Map<String, State> stateMap,
-                                                                       List<ValidationMessage> messages) {
+                                             Map<String, State> stateMap,
+                                             List<ValidationMessage> messages) {
     Set<Transition> transitionSet = new HashSet<>();
     if (lines == null) return transitionSet;
+
+    // Map to track transitions by fromState and symbol
+    Map<State, Map<Symbol, State>> transitionMap = new HashMap<>();
 
     for (int i = 0; i < lines.size(); i++) {
       int currentLine = startLine + i + 1;
@@ -404,13 +407,34 @@ public class DFA extends Automaton {
 
         State from = validateState(fromName, stateMap, currentLine, messages);
         State to = validateState(toName, stateMap, currentLine, messages);
+        if (from == null || to == null) {
+          continue; // Skip if state validation failed
+        }
 
         for (String symStr : symbols) {
           Symbol sym = validateSymbol(new Symbol(symStr.charAt(0)), this.alphabet, currentLine, messages);
+          if (sym == null) {
+            continue; // Skip if symbol validation failed
+          }
 
+          // Check for duplicate transitions
+          if (transitionMap.containsKey(from) && transitionMap.get(from).containsKey(sym)) {
+            State existingToState = transitionMap.get(from).get(sym);
+            messages.add(new ValidationMessage(
+              String.format("Multiple transitions from state '%s' with symbol '%s' (to '%s' and '%s'). A DFA must have exactly one transition per symbol per state.",
+                from.getName(), sym, existingToState.getName(), to.getName()),
+              currentLine,
+              ValidationMessage.ValidationMessageType.ERROR
+            ));
+            continue;
+          }
+
+          // Add to transition map for duplicate checking
+          transitionMap.computeIfAbsent(from, k -> new HashMap<>()).put(sym, to);
+
+          // Add to the final transition set
           transitionSet.add(new Transition(from, sym, to));
         }
-
       } else {
         messages.add(new ValidationMessage("Invalid transition format.", currentLine, ValidationMessage.ValidationMessageType.ERROR));
       }
