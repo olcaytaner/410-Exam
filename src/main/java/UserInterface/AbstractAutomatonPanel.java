@@ -20,11 +20,15 @@ import java.util.List;
 
 import javax.swing.Timer;
 
+import javax.swing.AbstractAction;
+import javax.swing.ActionMap;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.ImageIcon;
+import javax.swing.InputMap;
 import javax.swing.JButton;
+import javax.swing.JComponent;
 import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -32,8 +36,10 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.KeyStroke;
 import javax.swing.SwingWorker;
 import javax.swing.filechooser.FileNameExtensionFilter;
+import javax.swing.undo.UndoManager;
 
 import common.Automaton;
 import common.TestRunner;
@@ -54,6 +60,7 @@ public abstract class AbstractAutomatonPanel extends JPanel implements Automaton
     protected File file;
     protected MainPanel mainPanel;
     protected Automaton automaton;
+    protected UndoManager undoManager;
     
     // Inline testing components
     protected JPanel inlineTestPanel;
@@ -253,6 +260,113 @@ public abstract class AbstractAutomatonPanel extends JPanel implements Automaton
         scrollPane.setRowHeaderView(lineNumbering);
 
         textEditorPanel.add(scrollPane, BorderLayout.CENTER);
+
+        // Set up undo/redo functionality
+        setupUndoRedo();
+    }
+
+    /**
+     * Set up undo/redo functionality for the text area
+     */
+    private void setupUndoRedo() {
+        // Create and configure UndoManager
+        undoManager = new UndoManager();
+        undoManager.setLimit(1000); // Limit undo history to prevent memory issues
+
+        // Add UndoManager directly as the listener (it implements UndoableEditListener)
+        textArea.getDocument().addUndoableEditListener(undoManager);
+
+        // Get the platform-specific menu shortcut key mask (Command on Mac, Control on Windows/Linux)
+        int menuShortcutKeyMask = java.awt.Toolkit.getDefaultToolkit().getMenuShortcutKeyMask();
+
+        // Define unique action key names to avoid conflicts with parent component action maps
+        final String UNDO_ACTION_KEY = "cs410-text-undo";
+        final String REDO_ACTION_KEY = "cs410-text-redo";
+        final String REDO_ALT_ACTION_KEY = "cs410-text-redo-alt";
+
+        // Get both WHEN_FOCUSED and WHEN_ANCESTOR_OF_FOCUSED_COMPONENT input maps
+        // We register in both to handle all focus scenarios (direct focus and wrapped in JScrollPane)
+        InputMap inputMapFocused = textArea.getInputMap(JComponent.WHEN_FOCUSED);
+        InputMap inputMapAncestor = textArea.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
+        ActionMap actionMap = textArea.getActionMap();
+
+        // Remove any existing conflicting actions from ActionMap
+        actionMap.remove("undo");
+        actionMap.remove("redo");
+        actionMap.remove("redo-alt");
+
+        // Create KeyStroke objects (reuse for consistency)
+        KeyStroke undoKeyStroke = KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_Z, menuShortcutKeyMask);
+        KeyStroke redoKeyStroke = KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_Y, menuShortcutKeyMask);
+        KeyStroke redoAltKeyStroke = KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_Z,
+            menuShortcutKeyMask | java.awt.event.InputEvent.SHIFT_DOWN_MASK);
+
+        // Remove any existing bindings for these keystrokes in both InputMaps
+        inputMapFocused.remove(undoKeyStroke);
+        inputMapFocused.remove(redoKeyStroke);
+        inputMapFocused.remove(redoAltKeyStroke);
+        inputMapAncestor.remove(undoKeyStroke);
+        inputMapAncestor.remove(redoKeyStroke);
+        inputMapAncestor.remove(redoAltKeyStroke);
+
+        // Install new bindings in BOTH InputMaps for redundancy
+        // WHEN_FOCUSED - when textArea has direct focus
+        inputMapFocused.put(undoKeyStroke, UNDO_ACTION_KEY);
+        inputMapFocused.put(redoKeyStroke, REDO_ACTION_KEY);
+        inputMapFocused.put(redoAltKeyStroke, REDO_ALT_ACTION_KEY);
+
+        // WHEN_ANCESTOR_OF_FOCUSED_COMPONENT - when wrapped in JScrollPane
+        inputMapAncestor.put(undoKeyStroke, UNDO_ACTION_KEY);
+        inputMapAncestor.put(redoKeyStroke, REDO_ACTION_KEY);
+        inputMapAncestor.put(redoAltKeyStroke, REDO_ALT_ACTION_KEY);
+
+        // Undo: Ctrl+Z (or Cmd+Z on Mac)
+        actionMap.put(UNDO_ACTION_KEY, new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (undoManager.canUndo()) {
+                    try {
+                        undoManager.undo();
+                    } catch (Exception ex) {
+                        // Silently handle undo errors to prevent disrupting user workflow
+                        System.err.println("Error during undo: " + ex.getMessage());
+                    }
+                }
+            }
+        });
+
+        // Redo: Ctrl+Y (or Cmd+Y on Mac)
+        actionMap.put(REDO_ACTION_KEY, new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (undoManager.canRedo()) {
+                    try {
+                        undoManager.redo();
+                    } catch (Exception ex) {
+                        // Silently handle redo errors to prevent disrupting user workflow
+                        System.err.println("Error during redo: " + ex.getMessage());
+                    }
+                }
+            }
+        });
+
+        // Alternative redo: Ctrl+Shift+Z (or Cmd+Shift+Z on Mac)
+        actionMap.put(REDO_ALT_ACTION_KEY, new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (undoManager.canRedo()) {
+                    try {
+                        undoManager.redo();
+                    } catch (Exception ex) {
+                        // Silently handle redo errors to prevent disrupting user workflow
+                        System.err.println("Error during redo: " + ex.getMessage());
+                    }
+                }
+            }
+        });
+
+        // Clear any initialization edits from the undo stack
+        undoManager.discardAllEdits();
     }
 
     /**
@@ -938,8 +1052,18 @@ public abstract class AbstractAutomatonPanel extends JPanel implements Automaton
      * Loads content from a file into the text area
      */
     public void loadFile(File file) {
-        try (FileReader reader = new FileReader(file)) {
-            textArea.read(reader, null);
+        try {
+            // Read file content as string
+            // Using setText() instead of read() to preserve the document and UndoManager connection
+            String content = new String(java.nio.file.Files.readAllBytes(file.toPath()),
+                                      java.nio.charset.StandardCharsets.UTF_8);
+            textArea.setText(content);
+
+            // Clear the setText edit from undo history (we don't want to undo file loading)
+            if (undoManager != null) {
+                undoManager.discardAllEdits();
+            }
+
             // Set the current file so test discovery works
             this.file = file;
         } catch (IOException e) {
