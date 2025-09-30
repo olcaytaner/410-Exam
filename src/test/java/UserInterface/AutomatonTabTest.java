@@ -23,44 +23,47 @@ public class AutomatonTabTest {
     private static class MockAutomatonPanel implements AutomatonPanel {
         private String content;
         private File currentFile;
-        
+
         public MockAutomatonPanel(String initialContent) {
             this.content = initialContent;
         }
-        
+
         public void setContent(String content) {
             this.content = content;
         }
-        
+
         @Override
-        public void runAutomaton() {}
-        
+        public void compileWithFigure() {}
+
         @Override
-        public void compileAutomaton() {}
-        
+        public void run() {}
+
+        @Override
+        public void runWithFile() {}
+
         @Override
         public void saveAutomaton() {}
-        
+
         @Override
         public String getTextAreaContent() {
             return content;
         }
-        
+
         @Override
         public common.Automaton getAutomaton() {
             return null;
         }
-        
+
         @Override
         public File getCurrentFile() {
             return currentFile;
         }
-        
+
         @Override
         public void setCurrentFile(File file) {
             this.currentFile = file;
         }
-        
+
         @Override
         public void addTextChangeListener(Runnable onChange) {}
     }
