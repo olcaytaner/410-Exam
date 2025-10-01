@@ -82,7 +82,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: jar-java${{ matrix.java }}
-          path: target/CS410-Exam-*.jar
+          path: target/CS410-Exam-*-java${{ matrix.java }}.jar
           retention-days: 1
 
   create-release:
@@ -156,17 +156,18 @@ jobs:
         run: |
           VERSION=${{ needs.update-version.outputs.version }}
 
-          # Remove old JAR files
+          # Remove old JAR files from repo root
           rm -f CS410-Exam-*.jar
 
-          # Find and rename the Java 8 JAR to standard name
-          JAR_FILE=$(find . -maxdepth 1 -name "CS410-Exam-*-java8.jar" | head -1)
-          if [ -z "$JAR_FILE" ]; then
-            echo "Error: Could not find Java 8 JAR file"
+          # The artifact download extracts files directly to the path
+          # So the JAR should be in target/ subdirectory
+          if [ -f "target/CS410-Exam-${VERSION}-java8.jar" ]; then
+            mv "target/CS410-Exam-${VERSION}-java8.jar" "CS410-Exam-${VERSION}.jar"
+          else
+            echo "Error: Could not find target/CS410-Exam-${VERSION}-java8.jar"
+            ls -R
             exit 1
           fi
-
-          mv "$JAR_FILE" "CS410-Exam-${VERSION}.jar"
 
           # Configure git
           git config user.name "github-actions[bot]"
