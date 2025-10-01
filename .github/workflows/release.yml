@@ -7,9 +7,51 @@ on:
   workflow_dispatch:
 
 jobs:
+  update-version:
+    name: Update pom.xml Version
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      version: ${{ steps.extract_version.outputs.version }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Set up Java 8
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: 8
+          cache: 'maven'
+
+      - name: Extract version from tag
+        id: extract_version
+        run: |
+          VERSION=${GITHUB_REF_NAME#v}
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Update pom.xml version
+        run: |
+          VERSION=${{ steps.extract_version.outputs.version }}
+          mvn versions:set -DnewVersion=${VERSION} -DgenerateBackupPoms=false
+
+      - name: Commit pom.xml version update
+        run: |
+          VERSION=${{ steps.extract_version.outputs.version }}
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add pom.xml
+          git diff --staged --quiet || git commit -m "Update version to ${VERSION}"
+          git push origin main
+
   build-multi-java:
     name: Build JAR for Java ${{ matrix.java }}
     runs-on: ubuntu-latest
+    needs: update-version
 
     strategy:
       matrix:
@@ -18,6 +60,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          ref: main
 
       - name: Set up Java ${{ matrix.java }}
         uses: actions/setup-java@v4
@@ -29,15 +73,9 @@ jobs:
       - name: Build with Maven
         run: mvn clean package -DskipTests
 
-      - name: Get version from pom.xml
-        id: get_version
-        run: |
-          VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-
       - name: Rename JAR with Java version
         run: |
-          VERSION=${{ steps.get_version.outputs.version }}
+          VERSION=${{ needs.update-version.outputs.version }}
           mv target/CS410-Exam-${VERSION}.jar target/CS410-Exam-${VERSION}-java${{ matrix.java }}.jar
 
       - name: Upload JAR artifact
@@ -49,7 +87,7 @@ jobs:
 
   create-release:
     name: Create GitHub Release
-    needs: build-multi-java
+    needs: [update-version, build-multi-java]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -60,43 +98,26 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Set up Java 8
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: 8
-          cache: 'maven'
-
-      - name: Get version from pom.xml
-        id: get_version
-        run: |
-          VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-
       - name: Download all JAR artifacts
         uses: actions/download-artifact@v4
         with:
           path: release-jars
 
-      - name: List downloaded artifacts
-        run: |
-          ls -R release-jars/
-
       - name: Create Release
         id: create_release
         uses: softprops/action-gh-release@v1
         with:
-          name: Release ${{ steps.get_version.outputs.version }}
+          name: Release ${{ needs.update-version.outputs.version }}
           body: |
-            ## CS410-Exam Release ${{ steps.get_version.outputs.version }}
+            ## CS410-Exam Release ${{ needs.update-version.outputs.version }}
 
             ### Download Options
             Choose the JAR compiled for your Java version:
 
-            - **CS410-Exam-${{ steps.get_version.outputs.version }}-java8.jar** - Java 8+
-            - **CS410-Exam-${{ steps.get_version.outputs.version }}-java11.jar** - Java 11+
-            - **CS410-Exam-${{ steps.get_version.outputs.version }}-java17.jar** - Java 17+
-            - **CS410-Exam-${{ steps.get_version.outputs.version }}-java21.jar** - Java 21+
+            - **CS410-Exam-${{ needs.update-version.outputs.version }}-java8.jar** - Java 8+
+            - **CS410-Exam-${{ needs.update-version.outputs.version }}-java11.jar** - Java 11+
+            - **CS410-Exam-${{ needs.update-version.outputs.version }}-java17.jar** - Java 17+
+            - **CS410-Exam-${{ needs.update-version.outputs.version }}-java21.jar** - Java 21+
 
             **Recommended:** Use the Java 8 version for maximum compatibility.
 
@@ -114,7 +135,7 @@ jobs:
 
   commit-jar-to-repo:
     name: Commit Java 8 JAR to Repository
-    needs: create-release
+    needs: [update-version, create-release]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -131,29 +152,31 @@ jobs:
           name: jar-java8
           path: .
 
-      - name: Get version from pom.xml
-        id: get_version
-        run: |
-          VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-
       - name: Rename and commit JAR
         run: |
-          VERSION=${{ steps.get_version.outputs.version }}
+          VERSION=${{ needs.update-version.outputs.version }}
 
           # Remove old JAR files
           rm -f CS410-Exam-*.jar
 
-          # Rename the Java 8 JAR to standard name
-          mv CS410-Exam-${VERSION}-java8.jar CS410-Exam-${VERSION}.jar
+          # Find and rename the Java 8 JAR to standard name
+          JAR_FILE=$(find . -maxdepth 1 -name "CS410-Exam-*-java8.jar" | head -1)
+          if [ -z "$JAR_FILE" ]; then
+            echo "Error: Could not find Java 8 JAR file"
+            exit 1
+          fi
+
+          mv "$JAR_FILE" "CS410-Exam-${VERSION}.jar"
 
           # Configure git
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
           # Add and commit the JAR
-          git add CS410-Exam-${VERSION}.jar
-          git commit -m "Release: Add CS410-Exam-${VERSION}.jar (Java 8)"
+          git add "CS410-Exam-${VERSION}.jar"
 
-          # Push to main
-          git push origin main
+          # Only commit if there are changes
+          if ! git diff --staged --quiet; then
+            git commit -m "Release: Add CS410-Exam-${VERSION}.jar (Java 8)"
+            git push origin main
+          fi
