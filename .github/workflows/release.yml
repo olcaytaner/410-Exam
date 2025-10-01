@@ -159,13 +159,16 @@ jobs:
           # Remove old JAR files from repo root
           rm -f CS410-Exam-*.jar
 
-          # The artifact download extracts files directly to the path
-          # So the JAR should be in target/ subdirectory
-          if [ -f "target/CS410-Exam-${VERSION}-java8.jar" ]; then
-            mv "target/CS410-Exam-${VERSION}-java8.jar" "CS410-Exam-${VERSION}.jar"
+          # The artifact contains just the JAR file (no subdirectories)
+          # It's extracted directly to the specified path
+          JAR_NAME="CS410-Exam-${VERSION}-java8.jar"
+
+          if [ -f "$JAR_NAME" ]; then
+            mv "$JAR_NAME" "CS410-Exam-${VERSION}.jar"
           else
-            echo "Error: Could not find target/CS410-Exam-${VERSION}-java8.jar"
-            ls -R
+            echo "Error: Could not find $JAR_NAME"
+            echo "Files in current directory:"
+            ls -la
             exit 1
           fi
 
