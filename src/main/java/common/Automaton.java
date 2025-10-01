@@ -166,13 +166,22 @@ public String getFileExtension(){
         }
         
         String dotCode = parsedAutomaton.toDotCode(inputText);
-        
+
         try {
-            // Configure to use pure Java engine (no GraphViz installation required)
-            // GraphvizJdkEngine uses GraalVM or Nashorn JavaScript engine for rendering
-            // This works on all platforms including ARM64 macOS
-            Graphviz.useEngine(new GraphvizJdkEngine());
-            
+            // Log Java and GraalVM version info
+            String javaVersion = System.getProperty("java.version");
+            String javaVendor = System.getProperty("java.vendor");
+            System.out.println("[GraphViz] Java Version: " + javaVersion + " (" + javaVendor + ")");
+
+            try {
+                GraphvizJdkEngine jdkEngine = new GraphvizJdkEngine();
+                Graphviz.useEngine(jdkEngine);
+                System.out.println("[GraphViz] Forced GraalVM JDK engine initialization");
+            } catch (Exception engineError) {
+                System.err.println("[GraphViz] Failed to force JDK engine: " + engineError.getMessage());
+                engineError.printStackTrace();
+            }
+
             // Generate graph image directly in memory - no files created
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             Graphviz.fromString(dotCode)
@@ -181,21 +190,41 @@ public String getFileExtension(){
             
             byte[] imageData = baos.toByteArray();
             baos.close();
-            
+
+            System.out.println("[GraphViz] Graph rendered successfully using GraalVM JDK engine");
+
             // Create ImageIcon directly from byte array
             ImageIcon imageIcon = new ImageIcon(imageData);
             JLabel imageLabel = new JLabel(imageIcon);
             return imageLabel;
-            
+
         } catch (Exception e) {
-            System.err.println("Error generating graph: " + e.getMessage());
+            System.err.println("[GraphViz] Error generating graph: " + e.getMessage());
             e.printStackTrace();
-            
+
+            String errorDetails = e.getMessage();
+            if (errorDetails == null) {
+                errorDetails = e.getClass().getSimpleName();
+            }
+
+            String helpMessage;
+            if (errorDetails.contains("None of the provided engines could be initialized")) {
+                helpMessage = "<p>No JavaScript engine could be initialized.</p>"
+                    + "<p>Please ensure GraalVM JS dependencies are in your classpath.</p>"
+                    + "<p>Check that org.graalvm.js:js and org.graalvm.js:js-scriptengine are installed.</p>";
+            } else if (errorDetails.contains("native library")) {
+                helpMessage = "<p>Native library loading failed.</p>"
+                    + "<p>This is expected on Apple Silicon (ARM64) - GraalVM fallback should work.</p>";
+            } else {
+                helpMessage = "<p>An unexpected error occurred during graph generation.</p>"
+                    + "<p>Check console output for details.</p>";
+            }
+
             // Return a more informative error label
-            JLabel errorLabel = new JLabel("<html><body style='text-align: center;'>"
+            JLabel errorLabel = new JLabel("<html><body style='text-align: center; padding: 20px;'>"
                 + "<h2>Graph Generation Failed</h2>"
-                + "<p>Error: " + e.getMessage() + "</p>"
-                + "<p>Make sure GraalVM JS dependencies are installed</p>"
+                + "<p><b>Error:</b> " + errorDetails + "</p>"
+                + helpMessage
                 + "</body></html>");
             errorLabel.setHorizontalAlignment(SwingConstants.CENTER);
             return errorLabel;
