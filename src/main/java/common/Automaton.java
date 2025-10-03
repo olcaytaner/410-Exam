@@ -1,12 +1,9 @@
 package common;
 
-import java.io.ByteArrayOutputStream;
+import java.io.*;
 import java.util.List;
-
-import javax.swing.ImageIcon;
 import javax.swing.JLabel;
 import javax.swing.SwingConstants;
-
 import guru.nidi.graphviz.engine.Format;
 import guru.nidi.graphviz.engine.Graphviz;
 import guru.nidi.graphviz.engine.GraphvizJdkEngine;
@@ -185,18 +182,14 @@ public String getFileExtension(){
             // Generate graph image directly in memory - no files created
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             Graphviz.fromString(dotCode)
-                .render(Format.PNG)
+                .render(Format.SVG)
                 .toOutputStream(baos);
-            
-            byte[] imageData = baos.toByteArray();
+
             baos.close();
 
             System.out.println("[GraphViz] Graph rendered successfully using GraalVM JDK engine");
 
-            // Create ImageIcon directly from byte array
-            ImageIcon imageIcon = new ImageIcon(imageData);
-            JLabel imageLabel = new JLabel(imageIcon);
-            return imageLabel;
+            return new JLabel(baos.toString());
 
         } catch (Exception e) {
             System.err.println("[GraphViz] Error generating graph: " + e.getMessage());

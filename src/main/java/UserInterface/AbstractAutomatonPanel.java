@@ -12,10 +12,9 @@ import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.awt.image.BufferedImage;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 import javax.swing.Timer;
@@ -43,6 +42,9 @@ import javax.swing.undo.UndoManager;
 
 import common.Automaton;
 import common.TestRunner;
+import org.apache.batik.transcoder.TranscoderInput;
+import org.apache.batik.transcoder.TranscoderOutput;
+import org.apache.batik.transcoder.image.PNGTranscoder;
 
 /**
  * Abstract base class for all automaton panels to eliminate code duplication.
@@ -70,9 +72,9 @@ public abstract class AbstractAutomatonPanel extends JPanel implements Automaton
     
     // Graph visualization caching and resizing
     private String cachedDotCode;
-    private ImageIcon originalImage;
     private Timer resizeTimer;
     private static final int RESIZE_DELAY = 300; // milliseconds
+    private String svgText;
     
     // Loading indicator components
     private JPanel loadingPanel;
@@ -391,7 +393,13 @@ public abstract class AbstractAutomatonPanel extends JPanel implements Automaton
         });
         
         // Initialize resize timer
-        resizeTimer = new Timer(RESIZE_DELAY, e -> regenerateGraphForCurrentSize());
+        resizeTimer = new Timer(RESIZE_DELAY, e -> {
+            try {
+                regenerateGraphForCurrentSize();
+            } catch (Exception ex) {
+                throw new RuntimeException(ex);
+            }
+        });
         resizeTimer.setRepeats(false);
     }
 
@@ -479,20 +487,22 @@ public abstract class AbstractAutomatonPanel extends JPanel implements Automaton
                     // Always update warnings first to show parsing errors
                     updateWarningDisplayWithParseResult(result.parseResult, result.inputText);
                     
-                    if (result.parseResult.isSuccess() && result.imageLabel != null && result.imageLabel.getIcon() != null) {
+                    if (result.parseResult.isSuccess()
+                            && result.imageLabel != null && !result.imageLabel.getText().isEmpty()) {
+
                         // Parsing succeeded and we have a valid image
-                        originalImage = (ImageIcon) result.imageLabel.getIcon();
+                        svgText = result.imageLabel.getText();
                         cachedDotCode = generateDotCodeForInput(result.inputText);
                         
                         // Use the new scaling method to fit current panel size
                         int availableWidth = Math.max(graphPanel.getWidth() - 60, 500);
                         int availableHeight = Math.max(graphPanel.getHeight() - 80, 400);
-                        
-                        ImageIcon scaledImage = scaleImageToFit(originalImage, availableWidth, availableHeight);
-                        updateGraphPanelWithImage(scaledImage);
+
+                        ImageIcon svgImage = svgStringToIcon(svgText, availableWidth, availableHeight);
+
+                        updateGraphPanelWithImage(svgImage);
                     } else {
                         // Parsing failed or no image generated - clear cached data and show error
-                        originalImage = null;
                         cachedDotCode = null;
                         
                         String errorMessage;
@@ -514,10 +524,10 @@ public abstract class AbstractAutomatonPanel extends JPanel implements Automaton
                     }
                 } catch (Exception e) {
                     // Handle any exceptions that occurred during processing
+                    e.printStackTrace();
                     hideLoadingIndicator();
                     
                     // Clear cached data
-                    originalImage = null;
                     cachedDotCode = null;
                     
                     // Show error message
@@ -542,6 +552,35 @@ public abstract class AbstractAutomatonPanel extends JPanel implements Automaton
         
         // Start the background work
         worker.execute();
+    }
+
+    ImageIcon svgStringToIcon(String svg, int width, int height) throws Exception {
+        System.out.println("svgStringToIcon");
+        System.out.println(svg);
+        ByteArrayInputStream bais = new ByteArrayInputStream(svg.getBytes(StandardCharsets.UTF_8));
+        TranscoderInput input = new TranscoderInput(bais);
+
+        BufferedImageTranscoder t = new BufferedImageTranscoder();
+        t.addTranscodingHint(PNGTranscoder.KEY_WIDTH, (float) width);
+        t.addTranscodingHint(PNGTranscoder.KEY_HEIGHT, (float) height);
+
+        t.transcode(input, null);
+
+        return new ImageIcon(t.getBufferedImage());
+    }
+
+    //To write svg output to memory
+    static class BufferedImageTranscoder extends PNGTranscoder {
+        BufferedImage image;
+
+        @Override
+        public void writeImage(BufferedImage image, TranscoderOutput output) {
+            this.image = image;
+        }
+
+        public BufferedImage getBufferedImage() {
+            return image;
+        }
     }
     
     // Deprecated compileAutomaton - no longer needed as validation happens in compileWithFigure
@@ -1083,15 +1122,15 @@ public abstract class AbstractAutomatonPanel extends JPanel implements Automaton
     /**
      * Regenerate the graph visualization for the current panel size
      */
-    private void regenerateGraphForCurrentSize() {
-        if (originalImage != null && cachedDotCode != null && graphPanel.getWidth() > 0 && graphPanel.getHeight() > 0) {
+    private void regenerateGraphForCurrentSize() throws Exception {
+        if (svgText != null && cachedDotCode != null && graphPanel.getWidth() > 0 && graphPanel.getHeight() > 0) {
             // Calculate available space (subtract border space)
             int availableWidth = graphPanel.getWidth() - 60; // account for borders and padding
             int availableHeight = graphPanel.getHeight() - 80; // account for title border and padding
             
             if (availableWidth > 50 && availableHeight > 50) {
-                ImageIcon scaledImage = scaleImageToFit(originalImage, availableWidth, availableHeight);
-                updateGraphPanelWithImage(scaledImage);
+                ImageIcon svgImage = svgStringToIcon(svgText, availableWidth, availableHeight);
+                updateGraphPanelWithImage(svgImage);
             }
         }
     }
