@@ -1,14 +1,6 @@
 package DeterministicFiniteAutomaton;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Queue;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -248,7 +240,12 @@ public class DFA extends Automaton {
       messages.addAll(result.getValidationMessages());
       
       if (result.isSuccess()) {
-        messages.add(new ValidationMessage("DFA is valid", 0, ValidationMessage.ValidationMessageType.INFO));
+        // Add check for missing transitions
+        checkMissingTransitions(this.states, this.alphabet, this.transitions, messages);
+        
+        if (messages.stream().noneMatch(m -> m.getType() == ValidationMessage.ValidationMessageType.ERROR)) {
+          messages.add(new ValidationMessage("DFA is valid", 0, ValidationMessage.ValidationMessageType.INFO));
+        }
       }
     } catch (Exception e) {
       messages.add(new ValidationMessage("Validation error: " + e.getMessage(), 0, ValidationMessage.ValidationMessageType.ERROR));
@@ -257,6 +254,52 @@ public class DFA extends Automaton {
     return messages;
   }
 
+  /**
+   * Checks if all states have transitions for every symbol in the alphabet.
+   * Adds error messages for any missing transitions.
+   * 
+   * @param states All states in the DFA
+   * @param alphabet The alphabet of the DFA
+   * @param transitions The set of transitions
+   * @param messages List to collect validation messages
+   */
+  private void checkMissingTransitions(Set<State> states, 
+                                     Set<Symbol> alphabet,
+                                     Set<Transition> transitions,
+                                     List<ValidationMessage> messages) {
+    if (states == null || alphabet == null || transitions == null) {
+      return;
+    }
+
+    // Create a map of state -> symbol -> target state
+    Map<State, Map<Symbol, State>> transitionMap = new HashMap<>();
+    
+    // Initialize the transition map
+    for (State state : states) {
+      transitionMap.put(state, new HashMap<>());
+    }
+    
+    // Populate the transition map with existing transitions
+    for (Transition t : transitions) {
+      transitionMap.get(t.getFrom()).put(t.getSymbol(), t.getTo());
+    }
+    
+    // Check for missing transitions
+    for (State state : states) {
+      Map<Symbol, State> stateTransitions = transitionMap.get(state);
+      
+      for (Symbol symbol : alphabet) {
+        if (!stateTransitions.containsKey(symbol)) {
+          messages.add(new ValidationMessage(
+            String.format("Missing transition from state '%s' for symbol '%s'", 
+                         state.getName(), symbol),
+            0, // Line number is 0 as this is a general validation
+            ValidationMessage.ValidationMessageType.ERROR
+          ));
+        }
+      }
+    }
+  }
 
   /**
    * Processes the states section of the DFA definition.
@@ -563,52 +606,81 @@ public class DFA extends Automaton {
   }
 
   /**
+   * Checks if the DFA has all required transitions.
+   * @return true if all states have transitions for every symbol, false otherwise
+   */
+  private boolean hasAllTransitions() {
+    if (states == null || alphabet == null || transitions == null) {
+      return false;
+    }
+
+    // Check if any state is missing a transition for any symbol
+    for (State state : states) {
+      Set<Symbol> symbolsForState = transitions.stream()
+        .filter(t -> t.getFrom().equals(state))
+        .map(Transition::getSymbol)
+        .collect(Collectors.toSet());
+
+      if (!symbolsForState.containsAll(alphabet)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  /**
    * Generates a Graphviz DOT representation of the DFA.
    *
    * @param inputText Unused parameter, maintained for interface compatibility
-   * @return A string containing the DOT representation of the DFA
+   * @return A string containing the DOT representation of the DFA, or null if there are missing transitions
    */
   @Override
   public String toDotCode(String inputText) {
-    StringBuilder sb = new StringBuilder();
-    sb.append("digraph DFA {\n");
-    sb.append("    rankdir=LR;\n");
-    sb.append("    node [shape = doublecircle]; ");
-
-    for (State state : finalStates) {
-      sb.append(state.getName()).append(" ");
+    // Check for missing transitions before generating DOT code
+    if (!hasAllTransitions()) {
+      return null; // Return null to indicate no visualization should be shown
     }
-    sb.append(";\n");
 
-    sb.append("    node [shape = circle];\n");
-    sb.append("    __start [shape=point];\n");
-    sb.append("    __start -> ").append(startState.getName()).append(";\n");
+    StringBuilder dot = new StringBuilder();
+    dot.append("digraph DFA {\n");
+    dot.append("  rankdir=LR;\n");
+    dot.append("  node [shape = point]; start;\n");
 
-    Map<String, List<String>> grouped = new HashMap<>();
+    // Add nodes
+    for (State state : states) {
+      String shape = finalStates.contains(state) ? "doublecircle" : "circle";
+      dot.append(String.format("  %s [shape=%s];\n", state.getName(), shape));
+    }
 
+    // Add start arrow
+    if (startState != null) {
+      dot.append(String.format("  start -> %s;\n", startState.getName()));
+    }
+
+    // Group transitions by from-state and symbol to create a single edge with multiple labels
+    Map<State, Map<State, Set<Symbol>>> transitionMap = new HashMap<>();
     for (Transition t : transitions) {
-      String key = t.getFrom().getName() + "->" + t.getTo().getName();
-      grouped.computeIfAbsent(key, k -> new ArrayList<>())
-        .add(String.valueOf(t.getSymbol().getValue()));
+      transitionMap
+        .computeIfAbsent(t.getFrom(), k -> new HashMap<>())
+        .computeIfAbsent(t.getTo(), k -> new TreeSet<>(Comparator.comparing(Symbol::toString)))
+        .add(t.getSymbol());
     }
 
-    for (Map.Entry<String, List<String>> entry : grouped.entrySet()) {
-      String[] nodes = entry.getKey().split("->");
-      String from = nodes[0];
-      String to = nodes[1];
-      String label = String.join(", ", entry.getValue());
-
-      sb.append("    ")
-        .append(from)
-        .append(" -> ")
-        .append(to)
-        .append(" [label=\"")
-        .append(label)
-        .append("\"];\n");
+    // Add edges
+    for (Map.Entry<State, Map<State, Set<Symbol>>> fromEntry : transitionMap.entrySet()) {
+      State from = fromEntry.getKey();
+      for (Map.Entry<State, Set<Symbol>> toEntry : fromEntry.getValue().entrySet()) {
+        State to = toEntry.getKey();
+        String symbols = toEntry.getValue().stream()
+          .map(Symbol::toString)
+          .collect(Collectors.joining(","));
+        dot.append(String.format("  %s -> %s [label=\"%s\"];\n",
+          from.getName(), to.getName(), symbols));
+      }
     }
 
-    sb.append("}");
-    return sb.toString();
+    dot.append("}\n");
+    return dot.toString();
   }
 
   @Override
