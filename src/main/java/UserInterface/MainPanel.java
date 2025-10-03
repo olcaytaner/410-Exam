@@ -674,7 +674,7 @@ public class MainPanel extends JPanel {
             if (result == JOptionPane.YES_OPTION) {
                 tab.getPanel().saveAutomaton();
                 tab.markAsSaved();
-            } else if (result == JOptionPane.CANCEL_OPTION) {
+            } else if (result == JOptionPane.CANCEL_OPTION || result == JOptionPane.CLOSED_OPTION) {
                 return;
             }
         }
