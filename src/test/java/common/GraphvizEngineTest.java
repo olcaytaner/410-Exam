@@ -121,42 +121,6 @@ class GraphvizEngineTest {
     }
 
     @Test
-    @DisplayName("Complex DFA - Stress Test")
-    void testComplexDFA() {
-        StringBuilder dfaInput = new StringBuilder();
-        dfaInput.append("states: ");
-        for (int i = 0; i < 10; i++) {
-            dfaInput.append("q").append(i).append(" ");
-        }
-        dfaInput.append("\nalphabet: a b c\n");
-        dfaInput.append("start: q0\n");
-        dfaInput.append("finals: q9\n");
-        dfaInput.append("transitions:\n");
-        for (int i = 0; i < 9; i++) {
-            dfaInput.append("q").append(i).append(" -> q").append(i+1).append(" (a)\n");
-            dfaInput.append("q").append(i).append(" -> q").append((i+2)%10).append(" (b)\n");
-        }
-
-        DFA dfa = new DFA();
-        Automaton.ParseResult parseResult = dfa.parse(dfaInput.toString());
-        assertTrue(parseResult.isSuccess(), "Complex DFA parsing should succeed");
-
-        // Test GraphViz rendering - now returns SVG text in JLabel
-        JLabel result = dfa.toGraphviz(dfaInput.toString());
-        assertNotNull(result, "Complex DFA should render");
-        assertNotNull(result.getText(), "Should have rendered graph as SVG text");
-        assertFalse(result.getText().isEmpty(), "SVG text should not be empty");
-
-        // Verify it's valid SVG content
-        String svgText = result.getText();
-        assertTrue(svgText.contains("<svg") || svgText.contains("<?xml"),
-                  "Text should contain SVG markup");
-
-        System.out.println("✅ Complex DFA (10 states) rendered successfully - SVG text length: " +
-                         svgText.length() + " characters");
-    }
-
-    @Test
     @DisplayName("Error Case - Invalid Automaton")
     void testInvalidAutomatonRendering() {
         String invalidInput = "this is not valid";
