@@ -554,9 +554,7 @@ public abstract class AbstractAutomatonPanel extends JPanel implements Automaton
         worker.execute();
     }
 
-    ImageIcon svgStringToIcon(String svg, int width, int height) throws Exception {
-        System.out.println("svgStringToIcon");
-        System.out.println(svg);
+    private ImageIcon svgStringToIcon(String svg, int width, int height) throws Exception {
         ByteArrayInputStream bais = new ByteArrayInputStream(svg.getBytes(StandardCharsets.UTF_8));
         TranscoderInput input = new TranscoderInput(bais);
 
