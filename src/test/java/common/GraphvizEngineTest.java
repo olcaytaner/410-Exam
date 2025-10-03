@@ -1,13 +1,17 @@
 package common;
 
+import javax.swing.JLabel;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
 import DeterministicFiniteAutomaton.DFA;
 import NondeterministicFiniteAutomaton.NFA;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.BeforeAll;
-import static org.junit.jupiter.api.Assertions.*;
-
-import javax.swing.JLabel;
 
 /**
  * Tests GraphViz rendering across different Java versions.
@@ -27,7 +31,7 @@ class GraphvizEngineTest {
         System.out.println("Java Vendor: " + System.getProperty("java.vendor"));
         System.out.println("Java Home: " + System.getProperty("java.home"));
         System.out.println("OS: " + System.getProperty("os.name") +
-                         " (" + System.getProperty("os.arch") + ")");
+                " (" + System.getProperty("os.arch") + ")");
         System.out.println(separator + "\n");
     }
 
@@ -47,25 +51,28 @@ class GraphvizEngineTest {
     @DisplayName("DFA GraphViz Rendering - Simple Automaton")
     void testDFASimpleRendering() {
         String dfaInput =
-            "states: q0 q1 q2\n" +
-            "alphabet: a b\n" +
-            "start: q0\n" +
-            "finals: q2\n" +
-            "transitions:\n" +
-            "q0 -> q1 (a)\n" +
-            "q1 -> q2 (b)\n" +
-            "q2 -> q0 (a)\n";
+                "states: q0 q1 q2\n" +
+                        "alphabet: a b\n" +
+                        "start: q0\n" +
+                        "finals: q2\n" +
+                        "transitions:\n" +
+                        "q0 -> q1 (a)\n" +
+                        "q0 -> q1 (b)\n" +
+                        "q1 -> q2 (b)\n" +
+                        "q1 -> q1 (a)\n" +
+                        "q2 -> q0 (a)\n" +
+                        "q2 -> q2 (b)\n";
 
         DFA dfa = new DFA();
 
         // Test parsing
         Automaton.ParseResult parseResult = dfa.parse(dfaInput);
         assertTrue(parseResult.isSuccess(),
-                  "DFA parsing should succeed");
+                "DFA parsing should succeed");
         assertEquals(0, parseResult.getValidationMessages().stream()
-                      .filter(m -> m.getType() == Automaton.ValidationMessage.ValidationMessageType.ERROR)
-                      .count(),
-                  "Should have no parse errors");
+                        .filter(m -> m.getType() == Automaton.ValidationMessage.ValidationMessageType.ERROR)
+                        .count(),
+                "Should have no parse errors");
 
         // Test GraphViz rendering - now returns SVG text in JLabel
         JLabel result = dfa.toGraphviz(dfaInput);
@@ -76,33 +83,33 @@ class GraphvizEngineTest {
         // Verify it's valid SVG content
         String svgText = result.getText();
         assertTrue(svgText.contains("<svg") || svgText.contains("<?xml"),
-                  "Text should contain SVG markup");
+                "Text should contain SVG markup");
         assertTrue(svgText.contains("</svg>"), "SVG should be properly closed");
 
         System.out.println("✅ DFA rendering successful - SVG text length: " +
-                         svgText.length() + " characters");
+                svgText.length() + " characters");
     }
 
     @Test
     @DisplayName("NFA GraphViz Rendering - With Epsilon Transitions")
     void testNFAEpsilonRendering() {
         String nfaInput =
-            "states: q0 q1 q2 q3\n" +
-            "alphabet: a b\n" +
-            "start: q0\n" +
-            "finals: q3\n" +
-            "transitions:\n" +
-            "q0 -> q1 (a eps)\n" +
-            "q1 -> q2 (b)\n" +
-            "q2 -> q3 (eps)\n" +
-            "q0 -> q3 (a b)\n";
+                "states: q0 q1 q2 q3\n" +
+                        "alphabet: a b\n" +
+                        "start: q0\n" +
+                        "finals: q3\n" +
+                        "transitions:\n" +
+                        "q0 -> q1 (a eps)\n" +
+                        "q1 -> q2 (b)\n" +
+                        "q2 -> q3 (eps)\n" +
+                        "q0 -> q3 (a b)\n";
 
         NFA nfa = new NFA();
 
         // Test parsing
         Automaton.ParseResult parseResult = nfa.parse(nfaInput);
         assertTrue(parseResult.isSuccess(),
-                  "NFA parsing should succeed");
+                "NFA parsing should succeed");
 
         // Test GraphViz rendering - now returns SVG text in JLabel
         JLabel result = nfa.toGraphviz(nfaInput);
@@ -113,11 +120,11 @@ class GraphvizEngineTest {
         // Verify it's valid SVG content
         String svgText = result.getText();
         assertTrue(svgText.contains("<svg") || svgText.contains("<?xml"),
-                  "Text should contain SVG markup");
+                "Text should contain SVG markup");
         assertTrue(svgText.contains("</svg>"), "SVG should be properly closed");
 
         System.out.println("✅ NFA rendering successful - SVG text length: " +
-                         svgText.length() + " characters");
+                svgText.length() + " characters");
     }
 
     @Test
@@ -130,7 +137,7 @@ class GraphvizEngineTest {
 
         // Parsing should fail
         assertFalse(parseResult.isSuccess(),
-                   "Invalid input should fail parsing");
+                "Invalid input should fail parsing");
 
         // GraphViz should still return a label (with error message)
         JLabel result = dfa.toGraphviz(invalidInput);
