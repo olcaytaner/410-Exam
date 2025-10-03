@@ -7,7 +7,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.BeforeAll;
 import static org.junit.jupiter.api.Assertions.*;
 
-import javax.swing.ImageIcon;
 import javax.swing.JLabel;
 
 /**
@@ -68,20 +67,20 @@ class GraphvizEngineTest {
                       .count(),
                   "Should have no parse errors");
 
-        // Test GraphViz rendering
+        // Test GraphViz rendering - now returns SVG text in JLabel
         JLabel result = dfa.toGraphviz(dfaInput);
         assertNotNull(result, "GraphViz should return a JLabel");
-        assertNotNull(result.getIcon(), "JLabel should contain an icon");
-        assertTrue(result.getIcon() instanceof ImageIcon,
-                  "Icon should be an ImageIcon");
+        assertNotNull(result.getText(), "JLabel should contain SVG text");
+        assertFalse(result.getText().isEmpty(), "SVG text should not be empty");
 
-        // Verify image data
-        ImageIcon icon = (ImageIcon) result.getIcon();
-        assertTrue(icon.getIconWidth() > 0, "Image should have width");
-        assertTrue(icon.getIconHeight() > 0, "Image should have height");
+        // Verify it's valid SVG content
+        String svgText = result.getText();
+        assertTrue(svgText.contains("<svg") || svgText.contains("<?xml"),
+                  "Text should contain SVG markup");
+        assertTrue(svgText.contains("</svg>"), "SVG should be properly closed");
 
-        System.out.println("✅ DFA rendering successful - " +
-                         icon.getIconWidth() + "x" + icon.getIconHeight() + " pixels");
+        System.out.println("✅ DFA rendering successful - SVG text length: " +
+                         svgText.length() + " characters");
     }
 
     @Test
@@ -105,17 +104,20 @@ class GraphvizEngineTest {
         assertTrue(parseResult.isSuccess(),
                   "NFA parsing should succeed");
 
-        // Test GraphViz rendering
+        // Test GraphViz rendering - now returns SVG text in JLabel
         JLabel result = nfa.toGraphviz(nfaInput);
         assertNotNull(result, "GraphViz should return a JLabel");
-        assertNotNull(result.getIcon(), "JLabel should contain an icon");
+        assertNotNull(result.getText(), "JLabel should contain SVG text");
+        assertFalse(result.getText().isEmpty(), "SVG text should not be empty");
 
-        ImageIcon icon = (ImageIcon) result.getIcon();
-        assertTrue(icon.getIconWidth() > 0, "Image should have width");
-        assertTrue(icon.getIconHeight() > 0, "Image should have height");
+        // Verify it's valid SVG content
+        String svgText = result.getText();
+        assertTrue(svgText.contains("<svg") || svgText.contains("<?xml"),
+                  "Text should contain SVG markup");
+        assertTrue(svgText.contains("</svg>"), "SVG should be properly closed");
 
-        System.out.println("✅ NFA rendering successful - " +
-                         icon.getIconWidth() + "x" + icon.getIconHeight() + " pixels");
+        System.out.println("✅ NFA rendering successful - SVG text length: " +
+                         svgText.length() + " characters");
     }
 
     @Test
@@ -139,11 +141,19 @@ class GraphvizEngineTest {
         Automaton.ParseResult parseResult = dfa.parse(dfaInput.toString());
         assertTrue(parseResult.isSuccess(), "Complex DFA parsing should succeed");
 
+        // Test GraphViz rendering - now returns SVG text in JLabel
         JLabel result = dfa.toGraphviz(dfaInput.toString());
         assertNotNull(result, "Complex DFA should render");
-        assertNotNull(result.getIcon(), "Should have rendered graph");
+        assertNotNull(result.getText(), "Should have rendered graph as SVG text");
+        assertFalse(result.getText().isEmpty(), "SVG text should not be empty");
 
-        System.out.println("✅ Complex DFA (10 states) rendered successfully");
+        // Verify it's valid SVG content
+        String svgText = result.getText();
+        assertTrue(svgText.contains("<svg") || svgText.contains("<?xml"),
+                  "Text should contain SVG markup");
+
+        System.out.println("✅ Complex DFA (10 states) rendered successfully - SVG text length: " +
+                         svgText.length() + " characters");
     }
 
     @Test
