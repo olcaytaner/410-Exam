@@ -397,7 +397,23 @@ public abstract class AbstractAutomatonPanel extends JPanel implements Automaton
             try {
                 regenerateGraphForCurrentSize();
             } catch (Exception ex) {
-                throw new RuntimeException(ex);
+                ex.printStackTrace();
+
+                JLabel errorLabel = new JLabel("<html><body style='text-align: center;'>" +
+                        "<h3>Error Generating Figure</h3>" +
+                        "<p>Error: " + ex.getMessage() + "</p>" +
+                        "</body></html>");
+
+                errorLabel.setHorizontalAlignment(JLabel.CENTER);
+                errorLabel.setVerticalAlignment(JLabel.CENTER);
+                errorLabel.setForeground(new Color(150, 50, 50));
+
+                graphPanel.removeAll();
+                graphPanel.add(errorLabel, BorderLayout.CENTER);
+                graphPanel.revalidate();
+                graphPanel.repaint();
+
+                updateWarningDisplay();
             }
         });
         resizeTimer.setRepeats(false);
