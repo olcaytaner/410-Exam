@@ -13,6 +13,17 @@ import org.junit.jupiter.api.Test;
 import DeterministicFiniteAutomaton.DFA;
 import NondeterministicFiniteAutomaton.NFA;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import DeterministicFiniteAutomaton.DFA;
+import NondeterministicFiniteAutomaton.NFA;
+
 /**
  * Tests GraphViz rendering across different Java versions.
  * This test verifies that the GraphvizJdkEngine (GraalVM) works
