@@ -157,7 +157,7 @@ jobs:
           VERSION=${{ needs.update-version.outputs.version }}
 
           # Remove old JAR files from repo root
-          rm -f CS410-Exam-*.jar
+          git rm -f CS410-Exam-*.jar || true
 
           # Find the JAR file in the downloaded artifact
           JAR_FILE=$(find downloaded-jar -name "CS410-Exam-*-java8.jar" -type f)
