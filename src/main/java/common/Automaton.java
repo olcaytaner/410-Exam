@@ -1,6 +1,7 @@
 package common;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import javax.swing.JLabel;
 import javax.swing.SwingConstants;
@@ -187,9 +188,14 @@ public String getFileExtension(){
 
             baos.close();
 
+            String svgText = new String(baos.toByteArray(), StandardCharsets.UTF_8);
+
+            // Batik cannot parse "transparent"
+            svgText = svgText.replaceAll("stroke=\"transparent\"", "stroke=\"none\"");
+
             System.out.println("[GraphViz] Graph rendered successfully using GraalVM JDK engine");
 
-            return new JLabel(baos.toString());
+            return new JLabel(svgText);
 
         } catch (Exception e) {
             System.err.println("[GraphViz] Error generating graph: " + e.getMessage());

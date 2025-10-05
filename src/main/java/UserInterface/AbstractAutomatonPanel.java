@@ -1,50 +1,19 @@
 package UserInterface;
 
-import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Dimension;
-import java.awt.Font;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.Image;
-import java.awt.RenderingHints;
-import java.awt.event.ComponentAdapter;
-import java.awt.event.ComponentEvent;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.image.BufferedImage;
+import java.awt.*;
+import java.awt.event.*;
+import java.awt.geom.AffineTransform;
 import java.io.*;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
-
-import javax.swing.Timer;
-
-import javax.swing.AbstractAction;
-import javax.swing.ActionMap;
-import javax.swing.BorderFactory;
-import javax.swing.Box;
-import javax.swing.BoxLayout;
-import javax.swing.ImageIcon;
-import javax.swing.InputMap;
-import javax.swing.JButton;
-import javax.swing.JComponent;
-import javax.swing.JFileChooser;
-import javax.swing.JLabel;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.JTextArea;
-import javax.swing.JTextField;
-import javax.swing.KeyStroke;
-import javax.swing.SwingWorker;
+import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.undo.UndoManager;
-
 import common.Automaton;
 import common.TestRunner;
-import org.apache.batik.transcoder.TranscoderInput;
-import org.apache.batik.transcoder.TranscoderOutput;
-import org.apache.batik.transcoder.image.PNGTranscoder;
+import org.apache.batik.anim.dom.SAXSVGDocumentFactory;
+import org.apache.batik.swing.JSVGCanvas;
+import org.apache.batik.util.XMLResourceDescriptor;
+import org.w3c.dom.svg.SVGDocument;
 
 /**
  * Abstract base class for all automaton panels to eliminate code duplication.
@@ -70,12 +39,6 @@ public abstract class AbstractAutomatonPanel extends JPanel implements Automaton
     protected JLabel inlineTestResult;
     protected JButton inlineTestButton;
     
-    // Graph visualization caching and resizing
-    private String cachedDotCode;
-    private Timer resizeTimer;
-    private static final int RESIZE_DELAY = 300; // milliseconds
-    private String svgText;
-    
     // Loading indicator components
     private JPanel loadingPanel;
     private JLabel loadingSpinner;
@@ -88,12 +51,12 @@ public abstract class AbstractAutomatonPanel extends JPanel implements Automaton
      */
     private static class GraphGenerationResult {
         public final Automaton.ParseResult parseResult;
-        public final JLabel imageLabel;
+        public final JSVGCanvas imageCanvas;
         public final String inputText;
         
-        public GraphGenerationResult(Automaton.ParseResult parseResult, JLabel imageLabel, String inputText) {
+        public GraphGenerationResult(Automaton.ParseResult parseResult, JSVGCanvas imageCanvas, String inputText) {
             this.parseResult = parseResult;
-            this.imageLabel = imageLabel;
+            this.imageCanvas = imageCanvas;
             this.inputText = inputText;
         }
     }
@@ -383,40 +346,6 @@ public abstract class AbstractAutomatonPanel extends JPanel implements Automaton
             BorderFactory.createEmptyBorder(20, 20, 20, 20)
         ));
         graphPanel.setBackground(Color.WHITE);
-        
-        // Add component listener for dynamic resizing
-        graphPanel.addComponentListener(new ComponentAdapter() {
-            @Override
-            public void componentResized(ComponentEvent e) {
-                handleGraphPanelResize();
-            }
-        });
-        
-        // Initialize resize timer
-        resizeTimer = new Timer(RESIZE_DELAY, e -> {
-            try {
-                regenerateGraphForCurrentSize();
-            } catch (Exception ex) {
-                ex.printStackTrace();
-
-                JLabel errorLabel = new JLabel("<html><body style='text-align: center;'>" +
-                        "<h3>Error Generating Figure</h3>" +
-                        "<p>Error: " + ex.getMessage() + "</p>" +
-                        "</body></html>");
-
-                errorLabel.setHorizontalAlignment(JLabel.CENTER);
-                errorLabel.setVerticalAlignment(JLabel.CENTER);
-                errorLabel.setForeground(new Color(150, 50, 50));
-
-                graphPanel.removeAll();
-                graphPanel.add(errorLabel, BorderLayout.CENTER);
-                graphPanel.revalidate();
-                graphPanel.repaint();
-
-                updateWarningDisplay();
-            }
-        });
-        resizeTimer.setRepeats(false);
     }
 
     /**
@@ -482,14 +411,27 @@ public abstract class AbstractAutomatonPanel extends JPanel implements Automaton
             protected GraphGenerationResult doInBackground() throws Exception {
                 // This runs on background thread - First parse, then generate if successful
                 Automaton.ParseResult parseResult = automaton.parse(inputText);
-                
-                JLabel imageLabel = null;
+
+                JSVGCanvas imageCanvas = null;
                 if (parseResult.isSuccess()) {
                     // Only generate image if parsing succeeded
-                    imageLabel = automaton.toGraphviz(inputText);
+                    JLabel imageLabel = automaton.toGraphviz(inputText);
+                    StringReader svgTextReader = new StringReader(imageLabel.getText());
+
+
+                    String parser = XMLResourceDescriptor.getXMLParserClassName();
+                    SAXSVGDocumentFactory factory = new SAXSVGDocumentFactory(parser);
+                    SVGDocument svgDocument = factory.createSVGDocument(null, svgTextReader);
+
+                    imageCanvas = new JSVGCanvas();
+                    imageCanvas.setSVGDocument(svgDocument);
+
+                    JSVGCanvas svgCanvas = createJSVGCanvas(imageCanvas);
+
+                    updateGraphPanelWithImage(svgCanvas);
                 }
                 
-                return new GraphGenerationResult(parseResult, imageLabel, inputText);
+                return new GraphGenerationResult(parseResult, imageCanvas, inputText);
             }
             
             @Override
@@ -503,48 +445,31 @@ public abstract class AbstractAutomatonPanel extends JPanel implements Automaton
                     // Always update warnings first to show parsing errors
                     updateWarningDisplayWithParseResult(result.parseResult, result.inputText);
                     
-                    if (result.parseResult.isSuccess()
-                            && result.imageLabel != null && !result.imageLabel.getText().isEmpty()) {
+                    if (!result.parseResult.isSuccess() || result.imageCanvas == null) {
 
-                        // Parsing succeeded and we have a valid image
-                        svgText = result.imageLabel.getText();
-                        cachedDotCode = generateDotCodeForInput(result.inputText);
-                        
-                        // Use the new scaling method to fit current panel size
-                        int availableWidth = Math.max(graphPanel.getWidth() - 60, 500);
-                        int availableHeight = Math.max(graphPanel.getHeight() - 80, 400);
-
-                        ImageIcon svgImage = svgStringToIcon(svgText, availableWidth, availableHeight);
-
-                        updateGraphPanelWithImage(svgImage);
-                    } else {
-                        // Parsing failed or no image generated - clear cached data and show error
-                        cachedDotCode = null;
-                        
+                        // Parsing failed or no image generated
                         String errorMessage;
                         if (!result.parseResult.isSuccess()) {
                             errorMessage = "<h3>Parsing Failed</h3><p>Check the warnings panel for syntax errors</p>";
                         } else {
                             errorMessage = "<h3>Graph generation failed</h3><p>Check the warnings panel for details</p>";
                         }
-                        
+
                         JLabel errorLabel = new JLabel("<html><body style='text-align: center;'>" + errorMessage + "</body></html>");
                         errorLabel.setHorizontalAlignment(JLabel.CENTER);
                         errorLabel.setVerticalAlignment(JLabel.CENTER);
                         errorLabel.setForeground(new Color(150, 50, 50));
-                        
+
                         graphPanel.removeAll();
                         graphPanel.add(errorLabel, BorderLayout.CENTER);
                         graphPanel.revalidate();
                         graphPanel.repaint();
+
                     }
                 } catch (Exception e) {
                     // Handle any exceptions that occurred during processing
                     e.printStackTrace();
                     hideLoadingIndicator();
-                    
-                    // Clear cached data
-                    cachedDotCode = null;
                     
                     // Show error message
                     JLabel errorLabel = new JLabel("<html><body style='text-align: center;'>" +
@@ -570,33 +495,115 @@ public abstract class AbstractAutomatonPanel extends JPanel implements Automaton
         worker.execute();
     }
 
-    private ImageIcon svgStringToIcon(String svg, int width, int height) throws Exception {
-        ByteArrayInputStream bais = new ByteArrayInputStream(svg.getBytes(StandardCharsets.UTF_8));
-        TranscoderInput input = new TranscoderInput(bais);
+    /**
+     * Creates and configures a {@link JSVGCanvas} component that supports zooming and panning
+     * interactions for displaying SVG-based automaton graphs.
+     *
+     * <p>This method enables users to zoom in and out with the mouse wheel and pan
+     * the view by dragging with the mouse. The zooming behavior centers around
+     * the mouse pointer for intuitive navigation. The transformation is constrained
+     * using {@link #boundTransform(AffineTransform, JSVGCanvas, double)} to ensure
+     * the image stays within reasonable view bounds.</p>
+     *
+     * @param imageCanvas the JSVGCanvas instance to configure for interactive zooming and panning
+     * @return the configured JSVGCanvas ready for display in the graph panel
+     */
+    private JSVGCanvas createJSVGCanvas(JSVGCanvas imageCanvas) {
 
-        BufferedImageTranscoder t = new BufferedImageTranscoder();
-        t.addTranscodingHint(PNGTranscoder.KEY_WIDTH, (float) width);
-        t.addTranscodingHint(PNGTranscoder.KEY_HEIGHT, (float) height);
+        final AffineTransform[] at = {new AffineTransform()};
+        final double[] scale = {1.0};
+        final double minScale = 0.5;
+        final double maxScale = 3.0;
 
-        t.transcode(input, null);
+        imageCanvas.addMouseWheelListener(e -> {
+            double zoomFactor = 0.1;
+            double newScale = scale[0] * (e.getPreciseWheelRotation() < 0 ? 1 + zoomFactor : 1 - zoomFactor);
 
-        return new ImageIcon(t.getBufferedImage());
+            newScale = Math.max(minScale, Math.min(maxScale, newScale));
+
+            double scaleChange = newScale / scale[0];
+            scale[0] = newScale;
+
+            Point mouse = e.getPoint();
+            at[0].translate(mouse.x, mouse.y);
+            at[0].scale(scaleChange, scaleChange);
+            at[0].translate(-mouse.x, -mouse.y);
+
+            imageCanvas.setRenderingTransform(at[0], true);
+        });
+
+        final Point[] lastPoint = {null};
+        imageCanvas.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent e) {
+                lastPoint[0] = e.getPoint();
+            }
+
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                lastPoint[0] = null;
+            }
+        });
+
+        imageCanvas.addMouseMotionListener(new MouseMotionAdapter() {
+            @Override
+            public void mouseDragged(MouseEvent e) {
+                if (lastPoint[0] != null) {
+                    double dx = e.getX() - lastPoint[0].x;
+                    double dy = e.getY() - lastPoint[0].y;
+                    at[0].translate(dx, dy);
+
+                    at[0] = boundTransform(at[0], imageCanvas, scale[0]);
+                    imageCanvas.setRenderingTransform(at[0], true);
+
+                    imageCanvas.setRenderingTransform(at[0], true);
+                    lastPoint[0] = e.getPoint();
+                }
+            }
+        });
+
+        return imageCanvas;
     }
 
-    //To write svg output to memory
-    static class BufferedImageTranscoder extends PNGTranscoder {
-        BufferedImage image;
+    /**
+     * Constrains the given {@link AffineTransform} to ensure the SVG visualization
+     * remains within reasonable view boundaries inside the {@link JSVGCanvas}.
+     *
+     * <p>This method prevents the user from panning the automaton graph completely
+     * out of view during interactive navigation (zooming and dragging). It calculates
+     * minimum and maximum translation values based on the current scale and the size
+     * of both the SVG and canvas, clamping the transform's translation components
+     * accordingly.</p>
+     *
+     * @param at the current transformation matrix (scale and translation) applied to the canvas
+     * @param canvas the {@link JSVGCanvas} currently displaying the SVG visualization
+     * @param scale the current zoom scale factor
+     * @return a new {@link AffineTransform} adjusted so that the view remains within valid bounds
+     */
+    private AffineTransform boundTransform(AffineTransform at, JSVGCanvas canvas, double scale) {
 
-        @Override
-        public void writeImage(BufferedImage image, TranscoderOutput output) {
-            this.image = image;
-        }
+        int svgWidth = graphPanel.getWidth();
+        int svgHeight = graphPanel.getHeight();
 
-        public BufferedImage getBufferedImage() {
-            return image;
-        }
+        double tx = at.getTranslateX();
+        double ty = at.getTranslateY();
+
+        double canvasWidth = canvas.getWidth();
+        double canvasHeight = canvas.getHeight();
+
+        double minTx = Math.min(0, canvasWidth - svgWidth * scale);
+        double maxTx = Math.max(0, canvasWidth - svgWidth * scale);
+        double minTy = Math.min(0, canvasHeight - svgHeight * scale);
+        double maxTy = Math.max(0, canvasHeight - svgHeight * scale);
+
+        tx = Math.min(Math.max(tx, minTx), maxTx);
+        ty = Math.min(Math.max(ty, minTy), maxTy);
+
+        AffineTransform bounded = new AffineTransform(at);
+        bounded.setTransform(at.getScaleX(), at.getShearY(), at.getShearX(), at.getScaleY(), tx, ty);
+        return bounded;
     }
-    
+
     // Deprecated compileAutomaton - no longer needed as validation happens in compileWithFigure
 
     /**
@@ -1125,76 +1132,11 @@ public abstract class AbstractAutomatonPanel extends JPanel implements Automaton
     }
     
     /**
-     * Handle resize events with debouncing to prevent excessive regeneration
-     */
-    private void handleGraphPanelResize() {
-        if (resizeTimer != null) {
-            resizeTimer.restart();
-        }
-    }
-    
-    /**
-     * Regenerate the graph visualization for the current panel size
-     */
-    private void regenerateGraphForCurrentSize() throws Exception {
-        if (svgText != null && cachedDotCode != null && graphPanel.getWidth() > 0 && graphPanel.getHeight() > 0) {
-            // Calculate available space (subtract border space)
-            int availableWidth = graphPanel.getWidth() - 60; // account for borders and padding
-            int availableHeight = graphPanel.getHeight() - 80; // account for title border and padding
-            
-            if (availableWidth > 50 && availableHeight > 50) {
-                ImageIcon svgImage = svgStringToIcon(svgText, availableWidth, availableHeight);
-                updateGraphPanelWithImage(svgImage);
-            }
-        }
-    }
-    
-    /**
-     * Scale an image to fit within the given dimensions while maintaining aspect ratio
-     */
-    private ImageIcon scaleImageToFit(ImageIcon originalImage, int maxWidth, int maxHeight) {
-        int originalWidth = originalImage.getIconWidth();
-        int originalHeight = originalImage.getIconHeight();
-        
-        // Calculate scaling factors
-        double widthScale = (double) maxWidth / originalWidth;
-        double heightScale = (double) maxHeight / originalHeight;
-        double scale = Math.min(widthScale, heightScale); // Maintain aspect ratio
-        
-        // For small graphs, allow upscaling up to a reasonable limit to better fill space
-        // For large graphs, scale down as needed
-        if (scale > 1.0) {
-            // Upscaling: limit to maximum 3x for readability, but allow significant enlargement
-            scale = Math.min(scale, 3.0);
-        }
-        
-        // Apply minimum scale to maintain readability (but allow more aggressive scaling)
-        scale = Math.max(scale, 0.05);
-        
-        int scaledWidth = (int) (originalWidth * scale);
-        int scaledHeight = (int) (originalHeight * scale);
-        
-        Image scaledImage = originalImage.getImage().getScaledInstance(
-            scaledWidth, scaledHeight, Image.SCALE_SMOOTH);
-        
-        return new ImageIcon(scaledImage);
-    }
-    
-    /**
      * Update the graph panel with a new image
      */
-    private void updateGraphPanelWithImage(ImageIcon imageIcon) {
-        JLabel imageLabel = new JLabel(imageIcon);
-        imageLabel.setHorizontalAlignment(JLabel.CENTER);
-        imageLabel.setVerticalAlignment(JLabel.CENTER);
-        
-        // Create a wrapper panel to center the image
-        JPanel imageWrapper = new JPanel(new BorderLayout());
-        imageWrapper.setBackground(Color.WHITE);
-        imageWrapper.add(imageLabel, BorderLayout.CENTER);
-        
+    private void updateGraphPanelWithImage(JSVGCanvas svgCanvas) {
         graphPanel.removeAll();
-        graphPanel.add(imageWrapper, BorderLayout.CENTER);
+        graphPanel.add(svgCanvas, BorderLayout.CENTER);
         graphPanel.revalidate();
         graphPanel.repaint();
     }
