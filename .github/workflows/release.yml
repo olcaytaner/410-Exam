@@ -150,7 +150,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: jar-java8
-          path: .
+          path: downloaded-jar
 
       - name: Rename and commit JAR
         run: |
@@ -159,18 +159,18 @@ jobs:
           # Remove old JAR files from repo root
           rm -f CS410-Exam-*.jar
 
-          # The artifact contains just the JAR file (no subdirectories)
-          # It's extracted directly to the specified path
-          JAR_NAME="CS410-Exam-${VERSION}-java8.jar"
+          # Find the JAR file in the downloaded artifact
+          JAR_FILE=$(find downloaded-jar -name "CS410-Exam-*-java8.jar" -type f)
 
-          if [ -f "$JAR_NAME" ]; then
-            mv "$JAR_NAME" "CS410-Exam-${VERSION}.jar"
-          else
-            echo "Error: Could not find $JAR_NAME"
-            echo "Files in current directory:"
-            ls -la
+          if [ -z "$JAR_FILE" ]; then
+            echo "Error: Could not find JAR file"
+            echo "Contents of downloaded-jar:"
+            find downloaded-jar -type f
             exit 1
           fi
+
+          # Move and rename the JAR to repo root
+          mv "$JAR_FILE" "CS410-Exam-${VERSION}.jar"
 
           # Configure git
           git config user.name "github-actions[bot]"
