@@ -28,9 +28,9 @@ import java.util.regex.Pattern;
  */
 public class NFA extends Automaton {
 
-    private static final String transitionPattern = "(?:(q\\d+)|.) ?-> ?(?:(q\\d+)|\\S*)? ?(?:(\\((?:[a-zA-Z0-9]|eps)(?:\\s(?:[a-zA-Z0-9]|eps))*\\s?\\))|.*)?";
+    private static final String transitionPattern = "(?:(q\\S+)|.) ?-> ?(?:(q\\S+)|\\S*)? ?(?:(\\((?:[a-zA-Z0-9]|eps)(?:\\s(?:[a-zA-Z0-9]|eps))*\\s?\\))|.*)?";
     private static final String transitionSymbolPattern = "\\((?:[a-zA-Z0-9]|eps)(?:\\s(?:[a-zA-Z0-9]|eps))*\\s?\\)";
-    private static final String statePattern = "q\\d+";
+    private static final String statePattern = "q\\S+";
 
     private Map<String, State> states;
     private Set<Symbol> alphabet;
@@ -40,6 +40,7 @@ public class NFA extends Automaton {
 
     private static final boolean TIME = false;
     private static final boolean VERBOSE = false;
+    private static final int STATE_NAME_MAX_LENGTH_WARNING= 20;
 
     /**
      * Constructs an NFA with specified states, alphabet, start state, final states, and transitions.
@@ -154,6 +155,9 @@ public class NFA extends Automaton {
         String[] stateNames = String.join(" ", stateLines).split("\\s+");
         for (String name : stateNames) {
             lineNumber = findLineNumberFromSectionLines(name, lineNum, stateLines);
+            if (name.length() > STATE_NAME_MAX_LENGTH_WARNING) {
+                messages.add(new ValidationMessage("State Name Too Long.", lineNumber, ValidationMessageType.WARNING));
+            }
             if (name.matches("^" + statePattern + "$")) {
                 this.states.put(name, new State(name));
                 if (VERBOSE) {
