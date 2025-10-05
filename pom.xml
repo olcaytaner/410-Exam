@@ -35,7 +35,7 @@
         </dependency>
         <dependency>
             <groupId>org.apache.xmlgraphics</groupId>
-            <artifactId>batik-transcoder</artifactId>
+            <artifactId>batik-all</artifactId>
             <version>1.19</version>
         </dependency>
     </dependencies>
