@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.1.1] - 2025-10-05
+
+### Added
+- NFA test case generation for exercises
+- Warning when NFA state name is too long
+
+### Changed
+- NFA now accepts alphanumerical state names (not just numerical)
+
+### Fixed
+- JAR artifact download path in release workflow
+
 ## [1.1.0] - 2025-10-05
 
 ### Changed
