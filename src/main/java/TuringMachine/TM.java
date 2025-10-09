@@ -218,16 +218,17 @@ public class TM extends Automaton {
 
     @Override
     public String getDefaultTemplate() {
-        return "Start: q0\n" +
-               "Accept: qAccept\n" +
-               "Reject: qReject\n" +
-               "Alphabet: a b\n" +
-               "Tape_alphabet: a b _\n" +
-               "States: q0 qAccept qReject\n" +
+        return "start: q0\n" +
+               "accept: q_accept\n" +
+               "reject: q_reject\n" +
+               "alphabet: a b\n" +
+               "tape_alphabet: a b _\n" +
+                "input_alphabet: a b _\n" +
+               "states: q0 q_accept q_reject\n" +
                "\n" +
-               "Transitions:\n" +
-               "q0 a -> qAccept a R\n" +
-               "q0 b -> qAccept b R\n" +
-               "q0 _ -> qAccept _ R\n";
+               "transitions:\n" +
+               "q0 a -> q_accept a R\n" +
+               "q0 b -> q_accept b R\n" +
+               "q0 _ -> q_accept _ R\n";
     }
 }

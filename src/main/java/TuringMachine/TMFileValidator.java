@@ -110,7 +110,7 @@ public class TMFileValidator {
             Set<String> seen = new HashSet<>();
             for (String s : raw.split("\\s+")) {
                 if (!STATE_NAME.matcher(s).matches()) {
-                    context.addMessage(line, ValidationMessageType.ERROR, "INVALID_STATE_NAME", "Invalid state: " + s);
+                    context.addMessage(line, ValidationMessageType.ERROR, "INVALID_STATE_NAME", "States must start with 'q' followed by digits (e.g., q0, q21), or be 'q_accept' or 'q_reject'. Invalid state name: '" + s );
                 } else {
                     if (!seen.add(s)) {
                         context.addMessage(line, ValidationMessageType.ERROR, "DUPLICATE_STATE", "Duplicate state: " + s);
@@ -132,7 +132,7 @@ public class TMFileValidator {
                 Set<String> seen = new HashSet<>();
                 for (String s : raw.split("\\s+")) {
                     if (!isValidSymbol(s)) {
-                        context.addMessage(line, ValidationMessageType.ERROR, "INVALID_INPUT_SYMBOL", "Invalid input symbol: '" + s + "'");
+                        context.addMessage(line, ValidationMessageType.ERROR, "INVALID_INPUT_SYMBOL", "Symbols must be a single character. Invalid input symbol: '" + s );
                     } else if (!seen.add(s)) {
                         context.addMessage(line, ValidationMessageType.ERROR, "DUPLICATE_INPUT_SYMBOL", "Duplicate input symbol: " + s);
                     } else {
@@ -151,7 +151,7 @@ public class TMFileValidator {
                 Set<String> seen = new HashSet<>();
                 for (String s : raw.split("\\s+")) {
                     if (!isValidSymbol(s)) {
-                        context.addMessage(line, ValidationMessageType.ERROR, "INVALID_TAPE_SYMBOL", "Invalid tape symbol: '" + s + "'");
+                        context.addMessage(line, ValidationMessageType.ERROR, "INVALID_TAPE_SYMBOL", "Symbols must be a single character. Invalid tape symbol: '" + s );
                     } else if (!seen.add(s)) {
                         context.addMessage(line, ValidationMessageType.ERROR, "DUPLICATE_TAPE_SYMBOL", "Duplicate tape symbol: " + s);
                     }
