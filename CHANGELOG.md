@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.1.3] - 2025-10-09
+
+### Fixed
+- Regex replacement in state and transition validation to use replaceFirst instead of replace
+
+### Changed
+- Added exclusions for xml-apis and xalan in batik-all dependency to avoid conflicts
+
 ## [1.1.2] - 2025-10-09
 
 ### Fixed
