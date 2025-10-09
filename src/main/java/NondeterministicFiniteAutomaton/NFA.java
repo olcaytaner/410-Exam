@@ -462,20 +462,20 @@ public class NFA extends Automaton {
             wrongPart = wrongPart.replace("->", "");
             if (matcher.group(1) != null && matcher.group(1).matches(statePattern)) {
                 fromStateName = matcher.group(1);
-                wrongPart = wrongPart.replace(matcher.group(1),"");
+                wrongPart = wrongPart.replaceFirst(Pattern.quote(matcher.group(1)),"");
             }else {
                 message += "First state incorrect \n";
             }
 
             if (matcher.group(2) != null && matcher.group(2).matches(statePattern)) {
                 toStateName = matcher.group(2);
-                wrongPart = wrongPart.replace(matcher.group(2),"");
+                wrongPart = wrongPart.replaceFirst(Pattern.quote(matcher.group(2)),"");
             }else {
                 message += "Second state incorrect \n";
             }
 
             if (matcher.group(3) != null && matcher.group(3).matches(transitionSymbolPattern)) {
-                wrongPart = wrongPart.replace(matcher.group(3),"");
+                wrongPart = wrongPart.replaceFirst(Pattern.quote(matcher.group(3)),"");
             }else {
                 message += "Transition letters incorrect \n";
             }
