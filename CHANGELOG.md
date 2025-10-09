@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.1.2] - 2025-10-09
+
+### Fixed
+- CFG bug caused by epsilon productions
+
+### Changed
+- Updated default TM template
+
 ## [1.1.1] - 2025-10-05
 
 ### Added
