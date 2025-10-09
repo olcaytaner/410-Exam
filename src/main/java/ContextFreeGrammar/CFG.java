@@ -389,11 +389,20 @@ public class CFG extends Automaton {
 
         for (String alternative : alternatives) {
             alternative = alternative.trim();
-            List<Symbol> rightSide = new ArrayList<>();
 
+            // Epsilon handling: "_" (or "ε") alone means empty RHS
+            if (alternative.equals("_") || alternative.equals("ε")) {
+                productions.add(new Production(left, Collections.emptyList()));
+                continue;
+            }
+
+            List<Symbol> rightSide = new ArrayList<>();
             if (!alternative.isEmpty()) {
                 String[] symbols = alternative.split("\\s+");
                 for (String symbol : symbols) {
+                    if (symbol.equals("_") || symbol.equals("ε")) {
+                        throw new GrammarParseException("Epsilon '_' must appear alone on the right-hand side");
+                    }
                     Symbol s = findSymbol(symbol, variables, terminals);
                     if (s != null) {
                         rightSide.add(s);
@@ -446,11 +455,7 @@ public class CFG extends Automaton {
             }
         }
 
-        // Special case for epsilon
-        if (name.equals("_")) {
-            return new Terminal("_");
-        }
-
+        // No epsilon here; epsilon is handled in parseProduction by empty RHS
         return null;
     }
 
@@ -500,28 +505,35 @@ public class CFG extends Automaton {
      * without the nullable variables.
      */
     private List<Production> eliminateEpsilonProductions(List<Production> productions, Set<NonTerminal> variables) {
-        // Find all nullable variables (variables that can derive epsilon)
         Set<NonTerminal> nullable = findNullableVariables(productions);
-
         List<Production> newProductions = new ArrayList<>();
 
         for (Production p : productions) {
-            // Skip epsilon productions
+            // Skip epsilon productions - they should not be in CNF
             if (p.getRight().isEmpty()) {
-                continue;
+                continue; // DO NOT add epsilon productions
             }
 
-            // Generate all combinations by including/excluding nullable variables
-            List<List<Symbol>> combinations = generateCombinations(p.getRight(), nullable);
+            // Check if production contains nullable variables
+            boolean hasNullable = p.getRight().stream()
+                    .anyMatch(symbol -> symbol instanceof NonTerminal && nullable.contains(symbol));
 
-            for (List<Symbol> combination : combinations) {
-                if (!combination.isEmpty()) { // Don't add empty productions
-                    newProductions.add(new Production(p.getLeft(), combination));
+            if (!hasNullable) {
+                // No nullable variables - keep as-is
+                newProductions.add(p);
+            } else {
+                // Generate all combinations by including/excluding nullable variables
+                List<List<Symbol>> combinations = generateCombinations(p.getRight(), nullable);
+
+                for (List<Symbol> combination : combinations) {
+                    // Add all non-empty combinations
+                    if (!combination.isEmpty()) {
+                        newProductions.add(new Production(p.getLeft(), combination));
+                    }
                 }
             }
         }
 
-        // Remove duplicate productions
         return removeDuplicateProductions(newProductions);
     }
 
@@ -558,34 +570,30 @@ public class CFG extends Automaton {
      * Generates all possible combinations by including/excluding nullable variables.
      */
     private List<List<Symbol>> generateCombinations(List<Symbol> symbols, Set<NonTerminal> nullable) {
-        List<List<Symbol>> result = new ArrayList<>();
-        generateCombinationsHelper(symbols, nullable, 0, new ArrayList<>(), result);
-        return result;
+        List<List<Symbol>> results = new ArrayList<>();
+        generateCombinationsHelper(symbols, nullable, 0, new ArrayList<>(), results);
+        return results;
     }
 
+
+
     private void generateCombinationsHelper(List<Symbol> symbols, Set<NonTerminal> nullable,
-                                            int index, List<Symbol> current, List<List<Symbol>> result) {
+                                            int index, List<Symbol> current, List<List<Symbol>> results) {
         if (index == symbols.size()) {
-            result.add(new ArrayList<>(current));
+            results.add(new ArrayList<>(current));
             return;
         }
 
         Symbol symbol = symbols.get(index);
 
-        // Always include non-nullable symbols
-        if (!(symbol instanceof NonTerminal) || !nullable.contains(symbol)) {
-            current.add(symbol);
-            generateCombinationsHelper(symbols, nullable, index + 1, current, result);
-            current.remove(current.size() - 1);
-        } else {
-            // For nullable variables, try both including and excluding
-            // Include the variable
-            current.add(symbol);
-            generateCombinationsHelper(symbols, nullable, index + 1, current, result);
-            current.remove(current.size() - 1);
+        // Always try including the symbol
+        current.add(symbol);
+        generateCombinationsHelper(symbols, nullable, index + 1, current, results);
+        current.remove(current.size() - 1);
 
-            // Exclude the variable
-            generateCombinationsHelper(symbols, nullable, index + 1, current, result);
+        // If symbol is nullable, try excluding it
+        if (symbol instanceof NonTerminal && nullable.contains(symbol)) {
+            generateCombinationsHelper(symbols, nullable, index + 1, current, results);
         }
     }
 
@@ -674,6 +682,11 @@ public class CFG extends Automaton {
         for (Production p : productions) {
             List<Symbol> rightSide = p.getRight();
 
+            // Skip epsilon productions here (they should have been removed during epsilon-elimination)
+            if (rightSide.isEmpty()) {
+                continue;
+            }
+
             // Case 1: A -> a (already in CNF)
             if (rightSide.size() == 1 && rightSide.get(0) instanceof Terminal) {
                 newProductions.add(p);
@@ -693,12 +706,11 @@ public class CFG extends Automaton {
 
             // Replace terminals with new variables (except for single terminal productions)
             for (Symbol symbol : rightSide) {
-                if (symbol instanceof Terminal && rightSide.size() > 1) {
-                    NonTerminal termVar = getOrCreateTerminalVariable(symbol.getName(), terminalVariables, variables, newVarCounter++);
-                    processedRight.add(termVar);
-
-                    // Add production: NewVar -> terminal
-                    newProductions.add(new Production(termVar, Arrays.asList(symbol)));
+                if (symbol instanceof Terminal) {
+                    Terminal t = (Terminal) symbol;
+                    NonTerminal tVar = getOrCreateTerminalVariable(t.getName(), terminalVariables, variables, ++newVarCounter);
+                    newProductions.add(new Production(tVar, Collections.singletonList(t)));
+                    processedRight.add(tVar);
                 } else {
                     processedRight.add(symbol);
                 }
@@ -706,8 +718,7 @@ public class CFG extends Automaton {
 
             // Handle long productions (more than 2 symbols)
             if (processedRight.size() > 2) {
-                newProductions.addAll(breakLongProduction(p.getLeft(), processedRight, variables, newVarCounter));
-                newVarCounter += processedRight.size() - 2;
+                newProductions.addAll(breakLongProduction(p.getLeft(), processedRight, variables, ++newVarCounter));
             } else {
                 newProductions.add(new Production(p.getLeft(), processedRight));
             }
@@ -850,35 +861,45 @@ public class CFG extends Automaton {
                 return new ExecutionResult(false, messages, trace.toString());
             }
 
-            // Convert to CNF first
-            trace.append("Converting grammar to Chomsky Normal Form...\n");
-            CFG cnfGrammar = this.toChomskyNormalForm();
-            trace.append("CNF conversion completed.\n");
-            trace.append("Original productions: ").append(this.productions.size()).append("\n");
-            trace.append("CNF productions: ").append(cnfGrammar.getProductions().size()).append("\n\n");
-
-            // Handle empty string case
+            // Handle empty string case BEFORE CNF conversion
             if (inputText == null || inputText.isEmpty()) {
                 trace.append("Input is empty string (ε)\n");
                 trace.append("Checking if start symbol can derive ε...\n");
 
-                // Check if original start symbol has epsilon production
-                for (Production p : this.productions) {
-                    if (p.getLeft().equals(this.startSymbol) && p.getRight().isEmpty()) {
-                        accepted = true;
-                        trace.append("Found epsilon production: ").append(this.startSymbol.getName()).append(" -> ε\n");
-                        break;
-                    }
-                }
+                // Find all nullable variables using the original grammar
+                Set<NonTerminal> nullable = findNullableVariables(this.productions);
 
-                if (!accepted) {
-                    trace.append("No epsilon production found for start symbol\n");
+                if (nullable.contains(this.startSymbol)) {
+                    accepted = true;
+                    trace.append("Start symbol ").append(this.startSymbol.getName()).append(" is nullable\n");
+                    trace.append("Found derivation path to epsilon\n");
+                } else {
+                    trace.append("Start symbol ").append(this.startSymbol.getName()).append(" cannot derive ε\n");
                 }
 
                 trace.append("Result: ").append(accepted ? "ACCEPTED" : "REJECTED").append("\n");
                 return new ExecutionResult(accepted, messages, trace.toString());
             }
 
+            // Convert to CNF for non-empty strings
+            trace.append("Converting grammar to Chomsky Normal Form...\n");
+            CFG cnfGrammar = this.toChomskyNormalForm();
+            trace.append("CNF conversion completed.\n");
+            trace.append("Original productions: ").append(this.productions.size()).append("\n");
+            trace.append("CNF productions: ").append(cnfGrammar.getProductions().size()).append("\n\n");
+            trace.append("\nCNF Productions:\n");
+            for (Production p : cnfGrammar.getProductions()) {
+                trace.append("  ").append(p.getLeft().getName()).append(" -> ");
+                if (p.getRight().isEmpty()) {
+                    trace.append("ε");
+                } else {
+                    for (Symbol s : p.getRight()) {
+                        trace.append(s.getName()).append(" ");
+                    }
+                }
+                trace.append("\n");
+            }
+            trace.append("\n");
             trace.append("Input length: ").append(inputText.length()).append("\n");
             trace.append("Start symbol: ").append(cnfGrammar.getStartSymbol().getName()).append("\n\n");
 
@@ -1019,18 +1040,25 @@ public class CFG extends Automaton {
                             for (NonTerminal right : rightSet) {
                                 // Look for productions A -> BC where B ∈ leftSet and C ∈ rightSet
                                 for (Production p : productions) {
-                                    if (p.getRight().size() == 2 &&
-                                            p.getRight().get(0) instanceof NonTerminal &&
-                                            p.getRight().get(1) instanceof NonTerminal &&
-                                            p.getRight().get(0).equals(left) &&
-                                            p.getRight().get(1).equals(right)) {
+                                    if (p.getRight().size() == 2) {
+                                        Symbol first = p.getRight().get(0);
+                                        Symbol second = p.getRight().get(1);
 
-                                        if (!table[i][j].contains(p.getLeft())) {
-                                            table[i][j].add(p.getLeft());
-                                            trace.append("      Added ").append(p.getLeft().getName())
-                                                    .append(" (from production: ").append(p.getLeft().getName())
-                                                    .append(" -> ").append(left.getName())
-                                                    .append(" ").append(right.getName()).append(")\n");
+                                        // CRITICAL FIX: Compare by NAME, not by reference
+                                        if (first instanceof NonTerminal && second instanceof NonTerminal) {
+                                            NonTerminal firstNT = (NonTerminal) first;
+                                            NonTerminal secondNT = (NonTerminal) second;
+
+                                            // Use .getName().equals() instead of .equals()
+                                            if (firstNT.getName().equals(left.getName()) &&
+                                                    secondNT.getName().equals(right.getName())) {
+
+                                                table[i][j].add(p.getLeft());
+                                                trace.append("      Added ").append(p.getLeft().getName())
+                                                        .append(" (from production: ").append(p.getLeft().getName())
+                                                        .append(" -> ").append(firstNT.getName())
+                                                        .append(" ").append(secondNT.getName()).append(")\n");
+                                            }
                                         }
                                     }
                                 }

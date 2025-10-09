@@ -39,7 +39,7 @@ public class NonTerminal extends Symbol {
         if (this == o) return true;
         if (!(o instanceof NonTerminal)) return false;
         NonTerminal that = (NonTerminal) o;
-        return name.equals(that.name);
+        return this.name.equals(that.name);
     }
 
     @Override
