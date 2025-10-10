@@ -1,11 +1,6 @@
 package NondeterministicFiniteAutomaton;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -193,6 +188,297 @@ public class ExecuteTest {
     }
 
     @Nested
+    @DisplayName("Advanced Epsilon Execution Tests")
+    class EpsilonExecutionTests {
+
+        @Nested
+        @DisplayName("Advanced NFA 1 Tests")
+        class AdvancedNFA_1 {
+
+            private NFA epsilonNFA;
+
+            @BeforeEach
+            void setupEpsilonNFA() {
+
+                String text = "Start: q0\n" +
+                        "Finals: q4\n" +
+                        "Alphabet: a b\n" +
+                        "States: q0 q1 q2 q3 q4\n" +
+                        "transitions:\n" +
+                        "q0 -> q1 (eps)\n" +
+                        "q0 -> q2 (a)\n" +
+                        "q1 -> q2 (eps)\n" +
+                        "q1 -> q3 (b)\n" +
+                        "q2 -> q1 (eps)\n" +
+                        "q2 -> q4 (a)\n" +
+                        "q3 -> q4 (eps)";
+
+                NFA nfa = new NFA();
+                nfa.parse(text);
+
+                epsilonNFA = nfa;
+            }
+
+            @Test
+            @DisplayName("Empty string should be rejected")
+            void testEmptyStringAccepted() {
+                Automaton.ExecutionResult result = epsilonNFA.execute("");
+                assertNotNull(result);
+                assertFalse(result.isAccepted(), "Empty string should be rejected");
+                System.out.println(result.getTrace());
+            }
+
+            @Test
+            @DisplayName("Single 'a' should be accepted via direct transition q0-ε→q1-ε→q2-a→q4")
+            void testSingleA() {
+                Automaton.ExecutionResult result = epsilonNFA.execute("a");
+                assertNotNull(result);
+                assertTrue(result.isAccepted(), "String 'a' should be accepted through q0-ε→q1-ε→q2-a→q4");
+                System.out.println(result.getTrace());
+            }
+
+            @Test
+            @DisplayName("Single 'b' should be accepted via direct transition q0-ε→q1-b→q3-ε→q4")
+            void testSingleB() {
+                Automaton.ExecutionResult result = epsilonNFA.execute("b");
+                assertNotNull(result);
+                assertTrue(result.isAccepted(), "String 'b' should be accepted through q0-ε→q1-b→q3-ε→q4");
+                System.out.println(result.getTrace());
+            }
+
+            @Test
+            @DisplayName("'ba' should be rejected")
+            void testBA() {
+                Automaton.ExecutionResult result = epsilonNFA.execute("ba");
+                assertNotNull(result);
+                assertFalse(result.isAccepted(), "String 'ba' should be rejected");
+            }
+
+            @Test
+            @DisplayName("'ab' should be accepted due to epsilon loops q0-a→q2-ε→q1-b→q3-ε→q4")
+            void testAB() {
+                Automaton.ExecutionResult result = epsilonNFA.execute("ab");
+                assertNotNull(result);
+                assertTrue(result.isAccepted(), "String 'ab' should be accepted through q0-a→q2-ε→q1-b→q3-ε→q4");
+                System.out.println(result.getTrace());
+            }
+
+            @Test
+            @DisplayName("'aab' should be rejected")
+            void testAAB() {
+                Automaton.ExecutionResult result = epsilonNFA.execute("aab");
+                assertNotNull(result);
+                assertFalse(result.isAccepted(), "String 'aab' should be rejected");
+                System.out.println(result.getTrace());
+            }
+
+        }
+
+        @Nested
+        @DisplayName("NFA that accepts Even # of 0s or 1s Tests")
+        class EvenBinaryNFA {
+
+            private NFA epsilonNFA;
+
+            @BeforeEach
+            void setupEpsilonNFA() {
+
+                String text = "Start: q0\n" +
+                        "Finals: q1 q2\n" +
+                        "Alphabet: 0 1\n" +
+                        "States: q0 q1 q2 q3 q4\n" +
+                        "transitions:\n" +
+                        "q0 -> q1 (eps)\n" +
+                        "q0 -> q2 (eps)\n" +
+                        "q1 -> q1 (1)\n" +
+                        "q1 -> q3 (0)\n" +
+                        "q3 -> q1 (0)\n" +
+                        "q3 -> q3 (1)\n" +
+                        "q2 -> q2 (0)\n" +
+                        "q2 -> q4 (1)\n" +
+                        "q4 -> q2 (1)\n" +
+                        "q4 -> q4 (0)";
+
+                NFA nfa = new NFA();
+                nfa.parse(text);
+
+                epsilonNFA = nfa;
+            }
+
+            @Test
+            @DisplayName("Empty string should be accepted")
+            void testEmptyStringAccepted() {
+                Automaton.ExecutionResult result = epsilonNFA.execute("");
+                assertNotNull(result);
+                assertTrue(result.isAccepted(), "Empty string should be accepted");
+                System.out.println(result.getTrace());
+            }
+
+            @Test
+            @DisplayName("Single '0' should be accepted")
+            void testSingle0() {
+                Automaton.ExecutionResult result = epsilonNFA.execute("0");
+                assertNotNull(result);
+                assertTrue(result.isAccepted(), "String '0' should be accepted");
+                System.out.println(result.getTrace());
+            }
+
+            @Test
+            @DisplayName("Single '1' should be accepted")
+            void testSingle1() {
+                Automaton.ExecutionResult result = epsilonNFA.execute("1");
+                assertNotNull(result);
+                assertTrue(result.isAccepted(), "String '1' should be accepted");
+                System.out.println(result.getTrace());
+            }
+
+            @Test
+            @DisplayName("'01' should be rejected")
+            void test01() {
+                Automaton.ExecutionResult result = epsilonNFA.execute("01");
+                assertNotNull(result);
+                assertFalse(result.isAccepted(), "String '01' should be rejected");
+            }
+
+            @Test
+            @DisplayName("'10' should be rejected")
+            void test10() {
+                Automaton.ExecutionResult result = epsilonNFA.execute("10");
+                assertNotNull(result);
+                assertFalse(result.isAccepted(), "String '10' should be rejected");
+                System.out.println(result.getTrace());
+            }
+
+            @Test
+            @DisplayName("'001' should be accepted")
+            void test001() {
+                Automaton.ExecutionResult result = epsilonNFA.execute("001");
+                assertNotNull(result);
+                assertTrue(result.isAccepted(), "String '001' should be accepted");
+                System.out.println(result.getTrace());
+            }
+
+        }
+
+        @Nested
+        @DisplayName("NFA that accepts (01 ∪ 1)*0 Tests")
+        class RegexNFA {
+
+            private NFA epsilonNFA;
+
+            @BeforeEach
+            void setupEpsilonNFA() {
+
+                String text = "Start: q0\n" +
+                        "Finals: q9\n" +
+                        "Alphabet: 0 1\n" +
+                        "States: q0 q1 q2 q3 q4 q5 q6 q7 q8 q9\n" +
+                        "Transitions:\n" +
+                        "q0 -> q1 (eps)\n" +
+                        "q0 -> q8 (eps)\n" +
+                        "q1 -> q2 (eps)\n" +
+                        "q1 -> q6 (eps)\n" +
+                        "q2 -> q3 (0)\n" +
+                        "q3 -> q4 (eps)\n" +
+                        "q4 -> q5 (1)\n" +
+                        "q5 -> q1 (eps)\n" +
+                        "q5 -> q8 (eps)\n" +
+                        "q6 -> q7 (1)\n" +
+                        "q7 -> q1 (eps)\n" +
+                        "q7 -> q8 (eps)\n" +
+                        "q8 -> q9 (0)\n";
+
+                NFA nfa = new NFA();
+                nfa.parse(text);
+
+                epsilonNFA = nfa;
+            }
+
+            @Test
+            @DisplayName("Empty string should be rejected")
+            void testEmptyStringAccepted() {
+                Automaton.ExecutionResult result = epsilonNFA.execute("");
+                assertNotNull(result);
+                assertFalse(result.isAccepted(), "Empty string should be rejected");
+                System.out.println(result.getTrace());
+            }
+
+            @Test
+            @DisplayName("Single '0' should be accepted")
+            void testSingle0() {
+                Automaton.ExecutionResult result = epsilonNFA.execute("0");
+                assertNotNull(result);
+                assertTrue(result.isAccepted(), "String '0' should be accepted");
+                System.out.println(result.getTrace());
+            }
+
+            @Test
+            @DisplayName("Single '1' should be rejected")
+            void testSingle1() {
+                Automaton.ExecutionResult result = epsilonNFA.execute("1");
+                assertNotNull(result);
+                assertFalse(result.isAccepted(), "String '1' should be rejected");
+                System.out.println(result.getTrace());
+            }
+
+            @Test
+            @DisplayName("'01' should be rejected")
+            void test01() {
+                Automaton.ExecutionResult result = epsilonNFA.execute("01");
+                assertNotNull(result);
+                assertFalse(result.isAccepted(), "String '01' should be rejected");
+            }
+
+            @Test
+            @DisplayName("'10' should be accepted")
+            void test10() {
+                Automaton.ExecutionResult result = epsilonNFA.execute("10");
+                assertNotNull(result);
+                assertTrue(result.isAccepted(), "String '10' should be accepted");
+                System.out.println(result.getTrace());
+            }
+
+            @Test
+            @DisplayName("'010' should be accepted")
+            void test010() {
+                Automaton.ExecutionResult result = epsilonNFA.execute("010");
+                assertNotNull(result);
+                assertTrue(result.isAccepted(), "String '010' should be accepted");
+                System.out.println(result.getTrace());
+            }
+
+            @Test
+            @DisplayName("'01010' should be accepted")
+            void test01010() {
+                Automaton.ExecutionResult result = epsilonNFA.execute("01010");
+                assertNotNull(result);
+                assertTrue(result.isAccepted(), "String '01010' should be accepted");
+                System.out.println(result.getTrace());
+            }
+
+            @Test
+            @DisplayName("'0110' should be accepted")
+            void test0110() {
+                Automaton.ExecutionResult result = epsilonNFA.execute("0110");
+                assertNotNull(result);
+                assertTrue(result.isAccepted(), "String '0110' should be accepted");
+                System.out.println(result.getTrace());
+            }
+
+            @Test
+            @DisplayName("'10110' should be accepted")
+            void test10110() {
+                Automaton.ExecutionResult result = epsilonNFA.execute("10110");
+                assertNotNull(result);
+                assertTrue(result.isAccepted(), "String '10110' should be accepted");
+                System.out.println(result.getTrace());
+            }
+
+        }
+
+    }
+
+    @Nested
     @DisplayName("Parse Method Tests")
     class ParseMethodTests {
         
@@ -256,7 +542,7 @@ public class ExecuteTest {
                                  validationWarnings + " warning(s) and " + validationInfos + " info(s).");
                 
                 // Test pretty print functionality
-                assertDoesNotThrow(() -> parsedNFA.prettyPrint(), 
+                assertDoesNotThrow(parsedNFA::prettyPrint,
                     "Pretty print should not throw exceptions");
             }
         }
