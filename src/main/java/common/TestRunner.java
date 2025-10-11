@@ -86,6 +86,7 @@ public class TestRunner {
         private int falsePositives;
         private int falseNegatives;
         private int timeoutCount;
+        private int maxPoints;
 
         public TestResult() {
             this.failures = new ArrayList<>();
@@ -95,6 +96,7 @@ public class TestRunner {
             this.falsePositives = 0;
             this.falseNegatives = 0;
             this.timeoutCount = 0;
+            this.maxPoints = 10;
         }
 
         public int getTotalTests() { return totalTests; }
@@ -103,18 +105,22 @@ public class TestRunner {
         public List<String> getFailures() { return failures; }
         public List<TestCaseResult> getDetailedResults() { return detailedResults; }
         public int getTimeoutCount() { return timeoutCount; }
-        
+
         // Classification metrics getters
         public int getTruePositives() { return truePositives; }
         public int getTrueNegatives() { return trueNegatives; }
         public int getFalsePositives() { return falsePositives; }
         public int getFalseNegatives() { return falseNegatives; }
 
+        // Grading getters and setters
+        public void setMaxPoints(int max) { this.maxPoints = max; }
+        public int getMaxPoints() { return maxPoints; }
+
         public void setTotalTests(int total) { this.totalTests = total; }
         public void setPassedTests(int passed) { this.passedTests = passed; }
         public void addFailure(String failure) { this.failures.add(failure); }
         public void addResult(TestCaseResult result) { this.detailedResults.add(result); }
-        
+
         // Classification metrics setters
         public void incrementTruePositives() { this.truePositives++; }
         public void incrementTrueNegatives() { this.trueNegatives++; }
@@ -149,6 +155,61 @@ public class TestRunner {
             return (precision + recall == 0) ? 0.0 : 2.0 * (precision * recall) / (precision + recall) * 100.0;
         }
 
+        /**
+         * Calculate points using logarithmic grading formula.
+         *
+         * For cases with false positives (FP > 0):
+         *   - Error rate > 50%: 1 point
+         *   - Error rate > 10%: 2 points
+         *   - Error rate ≤ 10%: 6 points
+         *
+         * For cases without false positives (FP = 0):
+         *   - Uses logarithmic scale: 2 + round(8 * log(1 + 35*correctness) / log(36))
+         *   - Points range from 2 to 10 based on true positives
+         *   - Correctness = TP / (TP + FN), where TP + FN = total strings that should be accepted
+         *
+         * @return calculated points (0 if no expected accepts)
+         */
+        public int calculatePoints() {
+            // Total strings that should be accepted = TP + FN
+            int totalRequired = truePositives + falseNegatives;
+            if (totalRequired == 0) {
+                return 0; // Cannot calculate without any expected accepts
+            }
+
+            int generated = truePositives + falsePositives;
+            double errorRate = generated > 0 ? (double) falsePositives / generated : 0.0;
+
+            if (falsePositives > 0) {
+                // Cases with false positives - based on error rate
+                if (errorRate > 0.5) {
+                    return 1;
+                } else if (errorRate > 0.1) {
+                    return 2;
+                } else {
+                    return 6;
+                }
+            } else {
+                // Cases without false positives - logarithmic scale
+                double correctness = (double) truePositives / totalRequired;
+                double k = 35.0;
+                double logScale = Math.log(1 + k * correctness) / Math.log(1 + k);
+                int points = 2 + (int) Math.round(8.0 * logScale);
+
+                // Clamp to valid range [2, maxPoints]
+                return Math.max(2, Math.min(maxPoints, points));
+            }
+        }
+
+        /**
+         * Get the calculated points for this test result.
+         *
+         * @return points earned (0 if totalRequiredStrings not set)
+         */
+        public int getPoints() {
+            return calculatePoints();
+        }
+
         @Override
         public String toString() {
             return String.format("Tests passed: %d/%d", passedTests, totalTests);
@@ -174,11 +235,17 @@ public class TestRunner {
                                   getAccuracy(), truePositives + trueNegatives, getTotalTests()));
             sb.append(String.format("Precision:   %6.2f%% (%d/%d)\n", 
                                   getPrecision(), truePositives, truePositives + falsePositives));
-            sb.append(String.format("Recall:      %6.2f%% (%d/%d)\n", 
+            sb.append(String.format("Recall:      %6.2f%% (%d/%d)\n",
                                   getRecall(), truePositives, truePositives + falseNegatives));
-            sb.append(String.format("Specificity: %6.2f%% (%d/%d)\n", 
+            sb.append(String.format("Specificity: %6.2f%% (%d/%d)\n",
                                   getSpecificity(), trueNegatives, trueNegatives + falsePositives));
-            sb.append(String.format("F1 Score:    %6.2f%%\n\n", getF1Score()));
+            sb.append(String.format("F1 Score:    %6.2f%%\n", getF1Score()));
+
+            // Display points if there are expected accepts (TP + FN > 0)
+            if ((truePositives + falseNegatives) > 0) {
+                sb.append(String.format("Points:      %d/%d\n", getPoints(), maxPoints));
+            }
+            sb.append("\n");
             
             // Show failures if any
             if (!getFailures().isEmpty()) {
@@ -342,16 +409,16 @@ public class TestRunner {
      */
     private static TestResult runTestsWithoutTimeout(Automaton automaton, String testFilePath, TestProgressCallback progressCallback) {
         TestResult result = new TestResult();
-        
+
         try {
             List<TestCase> testCases = TestFileParser.parseTestFile(testFilePath);
             result.setTotalTests(testCases.size());
-            
+
             if (testCases.isEmpty()) {
                 result.addFailure("No test cases found in file: " + testFilePath);
                 return result;
             }
-            
+
             int passed = 0;
             
             for (int i = 0; i < testCases.size(); i++) {
