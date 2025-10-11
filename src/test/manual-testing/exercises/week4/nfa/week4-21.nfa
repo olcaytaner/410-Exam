@@ -1,0 +1,10 @@
+#week4-21
+Start: q0
+Finals: q0
+Alphabet: a b
+States: q0 q1
+
+Transitions:
+q0 -> q0 (a)
+q0 -> q1 (b)
+q1 -> q0 (a)
