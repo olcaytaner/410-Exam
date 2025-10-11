@@ -1,0 +1,13 @@
+#week4-19
+Start: q0
+Finals: q4
+Alphabet: a b
+States: q0 q1 q2 q3 q4
+
+Transitions:
+q0 -> q1 (a)
+q1 -> q2 (a b)
+q2 -> q0 (a)
+q0 -> q3 (b)
+q3 -> q4 (a)
+q4 -> q4 (b)

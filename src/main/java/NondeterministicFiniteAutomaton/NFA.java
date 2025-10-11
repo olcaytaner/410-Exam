@@ -315,7 +315,6 @@ public class NFA extends Automaton {
         StringBuilder trace = new StringBuilder();
 
         Set<State> currentStates = new LinkedHashSet<>();
-        Set<State> nextStates = new LinkedHashSet<>();
 
         if (this.startState == null) {
             runtimeMessages.add(new ValidationMessage("Start state is not defined", -1, ValidationMessageType.ERROR));
@@ -337,6 +336,7 @@ public class NFA extends Automaton {
 
         for (char c : inputText.toCharArray()) {
             Symbol inputSymbol = new Symbol(c);
+            Set<State> nextStates = new LinkedHashSet<>();
 
             if (!this.alphabet.contains(inputSymbol)) {
                 runtimeMessages.add(new ValidationMessage("Symbol not in alphabet: " + c, -1, ValidationMessageType.ERROR));
@@ -360,13 +360,12 @@ public class NFA extends Automaton {
 
             }
 
-            for (State s : getEpsilonClosure(currentStates)) {
+            for (State s : getEpsilonClosure(nextStates)) {
                 trace.append("Epsilon-closure includes: ").append(s.getName()).append("\n");
                 nextStates.add(s);
             }
 
             currentStates = new LinkedHashSet<>(nextStates);
-            nextStates.clear();
         }
 
         currentStates.addAll(getEpsilonClosure(currentStates));
