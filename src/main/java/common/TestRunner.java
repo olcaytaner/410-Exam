@@ -87,6 +87,7 @@ public class TestRunner {
         private int falseNegatives;
         private int timeoutCount;
         private int maxPoints;
+        private int minPoints;
 
         public TestResult() {
             this.failures = new ArrayList<>();
@@ -97,6 +98,7 @@ public class TestRunner {
             this.falseNegatives = 0;
             this.timeoutCount = 0;
             this.maxPoints = 10;
+            this.minPoints = 4;
         }
 
         public int getTotalTests() { return totalTests; }
@@ -115,6 +117,8 @@ public class TestRunner {
         // Grading getters and setters
         public void setMaxPoints(int max) { this.maxPoints = max; }
         public int getMaxPoints() { return maxPoints; }
+        public void setMinPoints(int min) { this.minPoints = min; }
+        public int getMinPoints() { return minPoints; }
 
         public void setTotalTests(int total) { this.totalTests = total; }
         public void setPassedTests(int passed) { this.passedTests = passed; }
@@ -156,48 +160,54 @@ public class TestRunner {
         }
 
         /**
-         * Calculate points using logarithmic grading formula.
-         *
-         * For cases with false positives (FP > 0):
-         *   - Error rate > 50%: 1 point
-         *   - Error rate > 10%: 2 points
-         *   - Error rate ≤ 10%: 6 points
+         * Calculate points using specified logarithmic grading formula.
          *
          * For cases without false positives (FP = 0):
-         *   - Uses logarithmic scale: 2 + round(8 * log(1 + 35*correctness) / log(36))
-         *   - Points range from 2 to 10 based on true positives
-         *   - Correctness = TP / (TP + FN), where TP + FN = total strings that should be accepted
+         *   Formula: (log₂(TP) * (max - min)) / log₂(TP + FN) + min
+         *   - Calculates ratio of log₂(TP) to log₂(total required)
+         *   - Scales this ratio across point range from min to max
+         *   - TP + FN = total strings that should be accepted
+         *   - Example: 2/1024 → ~5 points, 1024/1024 → 10 points
          *
-         * @return calculated points (0 if no expected accepts)
+         * For cases with false positives (FP > 0):
+         *   Formula: min / log₂(FN + FP + 2)
+         *   - Penalizes based on total errors (FN + FP)
+         *   - Gives very low points (typically < 1 point)
+         *   - Example: FP=127, FN=2492 → ~0.35 points (rounds to 0)
+         *   - Minimum return value is 1 point
+         *
+         * The log₂ base is intuitive for CS students as it represents doublings (powers of 2).
+         *
+         * @return calculated points (0 if no expected accepts, minimum 1 if FP > 0)
          */
         public int calculatePoints() {
             // Total strings that should be accepted = TP + FN
             int totalRequired = truePositives + falseNegatives;
+
             if (totalRequired == 0) {
                 return 0; // Cannot calculate without any expected accepts
             }
 
-            int generated = truePositives + falsePositives;
-            double errorRate = generated > 0 ? (double) falsePositives / generated : 0.0;
-
-            if (falsePositives > 0) {
-                // Cases with false positives - based on error rate
-                if (errorRate > 0.5) {
-                    return 1;
-                } else if (errorRate > 0.1) {
-                    return 2;
-                } else {
-                    return 6;
+            if (falsePositives == 0) {
+                // Cases without false positives
+                if (truePositives == 0) {
+                    return minPoints;
                 }
-            } else {
-                // Cases without false positives - logarithmic scale
-                double correctness = (double) truePositives / totalRequired;
-                double k = 35.0;
-                double logScale = Math.log(1 + k * correctness) / Math.log(1 + k);
-                int points = 2 + (int) Math.round(8.0 * logScale);
 
-                // Clamp to valid range [2, maxPoints]
-                return Math.max(2, Math.min(maxPoints, points));
+                // Formula: (log2(TP) * (max - min)) / log2(TP + FN) + min
+                double log2TP = Math.log(truePositives) / Math.log(2);
+                double log2Total = Math.log(totalRequired) / Math.log(2);
+                double numerator = log2TP * (maxPoints - minPoints);
+                double points = (numerator / log2Total) + minPoints;
+
+                return (int) Math.round(points);
+            } else {
+                // Cases with false positives
+                // Formula: min / log2(FN + FP + 2)
+                double log2Errors = Math.log(falseNegatives + falsePositives + 2) / Math.log(2);
+                double points = (double) minPoints / log2Errors;
+
+                return Math.max(1, (int) Math.round(points)); // Minimum 1 point
             }
         }
 
