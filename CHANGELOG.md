@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.1.5] - 2025-10-12
+
+### Changed
+- Refactored scoring logic to remove minimum point constraint in TestRunner
+
 ## [1.1.4] - 2025-10-12
 
 ### Added
