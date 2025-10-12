@@ -217,46 +217,50 @@ public class TestRunner {
 
         public String getDetailedReport() {
             StringBuilder sb = new StringBuilder();
-            
-            // Classification Statistics Header
-            sb.append("Classification Statistics:\n");
-            sb.append(String.format("True Positives (TP): %-4d    False Positives (FP): %d\n", 
-                                  truePositives, falsePositives));
-            sb.append(String.format("True Negatives (TN): %-4d    False Negatives (FN): %d\n", 
-                                  trueNegatives, falseNegatives));
-            if (timeoutCount > 0) {
-                sb.append(String.format("Timeouts: %d\n", timeoutCount));
+
+            // Student-friendly test results summary
+            sb.append("Test Results Summary:\n");
+            sb.append("══════════════════════════════════════════════════\n");
+
+            // Show what they got right
+            if (truePositives > 0) {
+                sb.append(String.format("✓ Correctly accepted:  %d strings\n", truePositives));
             }
-            sb.append(String.format("Total Tests: %d\n\n", getTotalTests()));
-            
-            // Calculated Scores
-            sb.append("Calculated Scores:\n");
-            sb.append(String.format("Accuracy:    %6.2f%% (%d/%d)\n", 
-                                  getAccuracy(), truePositives + trueNegatives, getTotalTests()));
-            sb.append(String.format("Precision:   %6.2f%% (%d/%d)\n", 
-                                  getPrecision(), truePositives, truePositives + falsePositives));
-            sb.append(String.format("Recall:      %6.2f%% (%d/%d)\n",
-                                  getRecall(), truePositives, truePositives + falseNegatives));
-            sb.append(String.format("Specificity: %6.2f%% (%d/%d)\n",
-                                  getSpecificity(), trueNegatives, trueNegatives + falsePositives));
-            sb.append(String.format("F1 Score:    %6.2f%%\n", getF1Score()));
+            if (trueNegatives > 0) {
+                sb.append(String.format("✓ Correctly rejected:  %d strings\n", trueNegatives));
+            }
+
+            // Show what they got wrong
+            if (falsePositives > 0) {
+                sb.append(String.format("✗ Incorrectly accepted: %d strings (should have been rejected)\n", falsePositives));
+            }
+            if (falseNegatives > 0) {
+                sb.append(String.format("✗ Incorrectly rejected: %d strings (should have been accepted)\n", falseNegatives));
+            }
+
+            // Show timeouts if any
+            if (timeoutCount > 0) {
+                sb.append(String.format("⏱ Timed out:           %d tests\n", timeoutCount));
+            }
+
+            sb.append(String.format("\nTotal Tests: %d\n", getTotalTests()));
+            sb.append("══════════════════════════════════════════════════\n");
 
             // Display points if there are expected accepts (TP + FN > 0)
             if ((truePositives + falseNegatives) > 0) {
-                sb.append(String.format("Points:      %d/%d\n", getPoints(), maxPoints));
+                sb.append(String.format("\nGrade: %d/%d points\n\n", getPoints(), maxPoints));
             }
-            sb.append("\n");
-            
+
             // Show failures if any
             if (!getFailures().isEmpty()) {
-                sb.append("Failure Details:\n");
+                sb.append("Detailed Errors:\n");
                 for (String failure : getFailures()) {
                     sb.append("• ").append(failure).append("\n");
                 }
             } else {
-                sb.append("No errors - all test cases classified correctly!\n");
+                sb.append("Perfect! All test cases passed correctly.\n");
             }
-            
+
             return sb.toString();
         }
     }
