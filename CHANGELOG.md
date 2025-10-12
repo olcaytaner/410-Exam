@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.1.4] - 2025-10-12
+
+### Added
+- Grading functionality for exams with automatic points calculation
+- Grading configuration fields (minimum points, per-test points, penalty points) in exam interface
+- Student-friendly test results reporting with detailed grading summary
+- Enhanced test results display showing points earned vs total points
+
+### Fixed
+- NFA epsilon transition bug causing incorrect acceptance/rejection
+- Test case generation producing wrong solutions
+
+### Improved
+- Additional NFA execution tests for better coverage
+- Test result validation and error reporting
+
 ## [1.1.3] - 2025-10-09
 
 ### Fixed
