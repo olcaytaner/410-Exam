@@ -32,6 +32,8 @@ public abstract class AbstractAutomatonPanel extends JPanel implements Automaton
     protected MainPanel mainPanel;
     protected Automaton automaton;
     protected UndoManager undoManager;
+    protected JTextField minPointsField;
+    protected JTextField maxPointsField;
     
     // Inline testing components
     protected JPanel inlineTestPanel;
@@ -93,28 +95,61 @@ public abstract class AbstractAutomatonPanel extends JPanel implements Automaton
     }
 
     /**
-     * Creates the top panel with tab label and test button.
+     * Creates the top panel with tab label, grading configuration, and test button.
      */
     private void createTopPanel() {
-        topPanel = new JPanel(new BorderLayout());
+        topPanel = new JPanel();
+        topPanel.setLayout(new BoxLayout(topPanel, BoxLayout.X_AXIS));
         topPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         topPanel.setBackground(Color.WHITE);
-        
+
+        // Tab label on the left
         JLabel tabLabel = new JLabel(getTabLabelText());
         tabLabel.setFont(new Font("Arial", Font.BOLD, 14));
         tabLabel.setForeground(new Color(102, 133, 102));
-        
+
+        // Grading configuration components
+        JLabel minLabel = new JLabel("Min:");
+        minLabel.setFont(new Font("Arial", Font.PLAIN, 12));
+
+        minPointsField = new JTextField("4");
+        minPointsField.setPreferredSize(new Dimension(40, 30));
+        minPointsField.setMaximumSize(new Dimension(40, 30));
+        minPointsField.setHorizontalAlignment(JTextField.CENTER);
+        minPointsField.setToolTipText("Minimum points for grading");
+
+        JLabel maxLabel = new JLabel("Max:");
+        maxLabel.setFont(new Font("Arial", Font.PLAIN, 12));
+
+        maxPointsField = new JTextField("10");
+        maxPointsField.setPreferredSize(new Dimension(40, 30));
+        maxPointsField.setMaximumSize(new Dimension(40, 30));
+        maxPointsField.setHorizontalAlignment(JTextField.CENTER);
+        maxPointsField.setToolTipText("Maximum points for grading");
+
+        // Run button
         JButton runButton = new JButton("Run");
         runButton.setPreferredSize(new Dimension(80, 30));
+        runButton.setMaximumSize(new Dimension(80, 30));
         runButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 runTestFile();
             }
         });
-        
-        topPanel.add(tabLabel, BorderLayout.WEST);
-        topPanel.add(runButton, BorderLayout.EAST);
+
+        // Assemble the panel
+        topPanel.add(tabLabel);
+        topPanel.add(Box.createHorizontalGlue());
+        topPanel.add(minLabel);
+        topPanel.add(Box.createHorizontalStrut(5));
+        topPanel.add(minPointsField);
+        topPanel.add(Box.createHorizontalStrut(10));
+        topPanel.add(maxLabel);
+        topPanel.add(Box.createHorizontalStrut(5));
+        topPanel.add(maxPointsField);
+        topPanel.add(Box.createHorizontalStrut(10));
+        topPanel.add(runButton);
     }
 
     /**
@@ -696,6 +731,35 @@ public abstract class AbstractAutomatonPanel extends JPanel implements Automaton
      * Run tests in background with progress dialog
      */
     private void runTestsInBackground(Automaton testAutomaton, String testFilePath) {
+        // Parse and validate min/max points
+        int minPoints, maxPoints;
+        try {
+            minPoints = Integer.parseInt(minPointsField.getText().trim());
+            maxPoints = Integer.parseInt(maxPointsField.getText().trim());
+
+            if (minPoints < 0 || maxPoints < 0) {
+                JOptionPane.showMessageDialog(this,
+                    "Points must be non-negative values.",
+                    "Invalid Point Configuration",
+                    JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            if (minPoints >= maxPoints) {
+                JOptionPane.showMessageDialog(this,
+                    "Minimum points must be less than maximum points.",
+                    "Invalid Point Configuration",
+                    JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+        } catch (NumberFormatException e) {
+            JOptionPane.showMessageDialog(this,
+                "Please enter valid numbers for min and max points.",
+                "Invalid Point Configuration",
+                JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
         // Create progress dialog
         javax.swing.JDialog progressDialog = new javax.swing.JDialog(
             javax.swing.SwingUtilities.getWindowAncestor(this), 
@@ -740,7 +804,11 @@ public abstract class AbstractAutomatonPanel extends JPanel implements Automaton
         progressDialog.setSize(350, 180);
         progressDialog.setLocationRelativeTo(this);
         progressDialog.setDefaultCloseOperation(javax.swing.JDialog.DO_NOTHING_ON_CLOSE);
-        
+
+        // Capture min/max points as final variables for use in SwingWorker
+        final int finalMinPoints = minPoints;
+        final int finalMaxPoints = maxPoints;
+
         // Create SwingWorker for background execution
         SwingWorker<TestRunner.TestResult, TestRunner.TestProgress> worker = new SwingWorker<TestRunner.TestResult, TestRunner.TestProgress>() {
             @Override
@@ -796,9 +864,11 @@ public abstract class AbstractAutomatonPanel extends JPanel implements Automaton
             @Override
             protected void done() {
                 progressDialog.dispose();
-                
+
                 try {
                     TestRunner.TestResult result = get();
+                    result.setMinPoints(finalMinPoints);
+                    result.setMaxPoints(finalMaxPoints);
                     showTestResults(result);
                 } catch (InterruptedException e) {
                     // Test was cancelled
