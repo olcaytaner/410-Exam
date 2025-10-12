@@ -207,7 +207,7 @@ public class TestRunner {
                 double log2Errors = Math.log(falseNegatives + falsePositives + 2) / Math.log(2);
                 double points = (double) minPoints / log2Errors;
 
-                return Math.max(1, (int) Math.round(points)); // Minimum 1 point
+                return (int) Math.round(points);
             }
         }
 
