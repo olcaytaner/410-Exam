@@ -86,6 +86,8 @@ public class TestRunner {
         private int falsePositives;
         private int falseNegatives;
         private int timeoutCount;
+        private int maxPoints;
+        private int minPoints;
 
         public TestResult() {
             this.failures = new ArrayList<>();
@@ -95,6 +97,8 @@ public class TestRunner {
             this.falsePositives = 0;
             this.falseNegatives = 0;
             this.timeoutCount = 0;
+            this.maxPoints = 10;
+            this.minPoints = 4;
         }
 
         public int getTotalTests() { return totalTests; }
@@ -103,18 +107,24 @@ public class TestRunner {
         public List<String> getFailures() { return failures; }
         public List<TestCaseResult> getDetailedResults() { return detailedResults; }
         public int getTimeoutCount() { return timeoutCount; }
-        
+
         // Classification metrics getters
         public int getTruePositives() { return truePositives; }
         public int getTrueNegatives() { return trueNegatives; }
         public int getFalsePositives() { return falsePositives; }
         public int getFalseNegatives() { return falseNegatives; }
 
+        // Grading getters and setters
+        public void setMaxPoints(int max) { this.maxPoints = max; }
+        public int getMaxPoints() { return maxPoints; }
+        public void setMinPoints(int min) { this.minPoints = min; }
+        public int getMinPoints() { return minPoints; }
+
         public void setTotalTests(int total) { this.totalTests = total; }
         public void setPassedTests(int passed) { this.passedTests = passed; }
         public void addFailure(String failure) { this.failures.add(failure); }
         public void addResult(TestCaseResult result) { this.detailedResults.add(result); }
-        
+
         // Classification metrics setters
         public void incrementTruePositives() { this.truePositives++; }
         public void incrementTrueNegatives() { this.trueNegatives++; }
@@ -149,6 +159,67 @@ public class TestRunner {
             return (precision + recall == 0) ? 0.0 : 2.0 * (precision * recall) / (precision + recall) * 100.0;
         }
 
+        /**
+         * Calculate points using specified logarithmic grading formula.
+         *
+         * For cases without false positives (FP = 0):
+         *   Formula: (log₂(TP) * (max - min)) / log₂(TP + FN) + min
+         *   - Calculates ratio of log₂(TP) to log₂(total required)
+         *   - Scales this ratio across point range from min to max
+         *   - TP + FN = total strings that should be accepted
+         *   - Example: 2/1024 → ~5 points, 1024/1024 → 10 points
+         *
+         * For cases with false positives (FP > 0):
+         *   Formula: min / log₂(FN + FP + 2)
+         *   - Penalizes based on total errors (FN + FP)
+         *   - Gives very low points (typically < 1 point)
+         *   - Example: FP=127, FN=2492 → ~0.35 points (rounds to 0)
+         *   - Minimum return value is 1 point
+         *
+         * The log₂ base is intuitive for CS students as it represents doublings (powers of 2).
+         *
+         * @return calculated points (0 if no expected accepts, minimum 1 if FP > 0)
+         */
+        public int calculatePoints() {
+            // Total strings that should be accepted = TP + FN
+            int totalRequired = truePositives + falseNegatives;
+
+            if (totalRequired == 0) {
+                return 0; // Cannot calculate without any expected accepts
+            }
+
+            if (falsePositives == 0) {
+                // Cases without false positives
+                if (truePositives == 0) {
+                    return minPoints;
+                }
+
+                // Formula: (log2(TP) * (max - min)) / log2(TP + FN) + min
+                double log2TP = Math.log(truePositives) / Math.log(2);
+                double log2Total = Math.log(totalRequired) / Math.log(2);
+                double numerator = log2TP * (maxPoints - minPoints);
+                double points = (numerator / log2Total) + minPoints;
+
+                return (int) Math.round(points);
+            } else {
+                // Cases with false positives
+                // Formula: min / log2(FN + FP + 2)
+                double log2Errors = Math.log(falseNegatives + falsePositives + 2) / Math.log(2);
+                double points = (double) minPoints / log2Errors;
+
+                return Math.max(1, (int) Math.round(points)); // Minimum 1 point
+            }
+        }
+
+        /**
+         * Get the calculated points for this test result.
+         *
+         * @return points earned (0 if totalRequiredStrings not set)
+         */
+        public int getPoints() {
+            return calculatePoints();
+        }
+
         @Override
         public String toString() {
             return String.format("Tests passed: %d/%d", passedTests, totalTests);
@@ -156,40 +227,50 @@ public class TestRunner {
 
         public String getDetailedReport() {
             StringBuilder sb = new StringBuilder();
-            
-            // Classification Statistics Header
-            sb.append("Classification Statistics:\n");
-            sb.append(String.format("True Positives (TP): %-4d    False Positives (FP): %d\n", 
-                                  truePositives, falsePositives));
-            sb.append(String.format("True Negatives (TN): %-4d    False Negatives (FN): %d\n", 
-                                  trueNegatives, falseNegatives));
-            if (timeoutCount > 0) {
-                sb.append(String.format("Timeouts: %d\n", timeoutCount));
+
+            // Student-friendly test results summary
+            sb.append("Test Results Summary:\n");
+            sb.append("══════════════════════════════════════════════════\n");
+
+            // Show what they got right
+            if (truePositives > 0) {
+                sb.append(String.format("✓ Correctly accepted:  %d strings\n", truePositives));
             }
-            sb.append(String.format("Total Tests: %d\n\n", getTotalTests()));
-            
-            // Calculated Scores
-            sb.append("Calculated Scores:\n");
-            sb.append(String.format("Accuracy:    %6.2f%% (%d/%d)\n", 
-                                  getAccuracy(), truePositives + trueNegatives, getTotalTests()));
-            sb.append(String.format("Precision:   %6.2f%% (%d/%d)\n", 
-                                  getPrecision(), truePositives, truePositives + falsePositives));
-            sb.append(String.format("Recall:      %6.2f%% (%d/%d)\n", 
-                                  getRecall(), truePositives, truePositives + falseNegatives));
-            sb.append(String.format("Specificity: %6.2f%% (%d/%d)\n", 
-                                  getSpecificity(), trueNegatives, trueNegatives + falsePositives));
-            sb.append(String.format("F1 Score:    %6.2f%%\n\n", getF1Score()));
-            
+            if (trueNegatives > 0) {
+                sb.append(String.format("✓ Correctly rejected:  %d strings\n", trueNegatives));
+            }
+
+            // Show what they got wrong
+            if (falsePositives > 0) {
+                sb.append(String.format("✗ Incorrectly accepted: %d strings (should have been rejected)\n", falsePositives));
+            }
+            if (falseNegatives > 0) {
+                sb.append(String.format("✗ Incorrectly rejected: %d strings (should have been accepted)\n", falseNegatives));
+            }
+
+            // Show timeouts if any
+            if (timeoutCount > 0) {
+                sb.append(String.format("⏱ Timed out:           %d tests\n", timeoutCount));
+            }
+
+            sb.append(String.format("\nTotal Tests: %d\n", getTotalTests()));
+            sb.append("══════════════════════════════════════════════════\n");
+
+            // Display points if there are expected accepts (TP + FN > 0)
+            if ((truePositives + falseNegatives) > 0) {
+                sb.append(String.format("\nGrade: %d/%d points\n\n", getPoints(), maxPoints));
+            }
+
             // Show failures if any
             if (!getFailures().isEmpty()) {
-                sb.append("Failure Details:\n");
+                sb.append("Detailed Errors:\n");
                 for (String failure : getFailures()) {
                     sb.append("• ").append(failure).append("\n");
                 }
             } else {
-                sb.append("No errors - all test cases classified correctly!\n");
+                sb.append("Perfect! All test cases passed correctly.\n");
             }
-            
+
             return sb.toString();
         }
     }
@@ -342,16 +423,16 @@ public class TestRunner {
      */
     private static TestResult runTestsWithoutTimeout(Automaton automaton, String testFilePath, TestProgressCallback progressCallback) {
         TestResult result = new TestResult();
-        
+
         try {
             List<TestCase> testCases = TestFileParser.parseTestFile(testFilePath);
             result.setTotalTests(testCases.size());
-            
+
             if (testCases.isEmpty()) {
                 result.addFailure("No test cases found in file: " + testFilePath);
                 return result;
             }
-            
+
             int passed = 0;
             
             for (int i = 0; i < testCases.size(); i++) {
