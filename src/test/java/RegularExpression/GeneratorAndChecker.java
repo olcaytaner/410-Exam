@@ -11,13 +11,14 @@ import java.io.PrintWriter;
  */
 public class GeneratorAndChecker {
     public static void main(String[] args) throws FileNotFoundException {
+
         String correct_reg = "(aa*cc* u bb*cc*)(aa*cc* u bb*cc*)*";
         RegularExpression re = new RegularExpression(correct_reg, new char[]{'a', 'b', 'c'});
 
         new PrintWriter("src/test/manual-testing/examples/rex/rex.test").close(); // clear left over cases from rex.test
 
-        re.generateCorrectCasesExhaustive(6, "src/test/manual-testing/examples/rex/rex.test");
-        re.generateWrongCasesExhaustive(6, "src/test/manual-testing/examples/rex/rex.test");
+        re.generateCorrectCasesExhaustive(6, "src/test/manual-testing/examples/rex/rex.test", false);
+        re.generateWrongCasesExhaustive(6, "src/test/manual-testing/examples/rex/rex.test", true);
 
 
         Check.check("src/test/manual-testing/examples/rex/regex-correct.rex",

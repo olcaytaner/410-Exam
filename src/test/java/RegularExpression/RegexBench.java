@@ -21,10 +21,10 @@ public class RegexBench {
 
         long start = System.nanoTime();
 
-        int cnt_c = re.generateCorrectCasesExhaustive(max_len_c, cases_loc);
+        int cnt_c = re.generateCorrectCasesExhaustive(max_len_c, cases_loc, false);
         long correct_case_gen_finish = System.nanoTime();
 
-        int cnt_w = re.generateWrongCasesExhaustive(max_len_w, cases_loc);
+        int cnt_w = re.generateWrongCasesExhaustive(max_len_w, cases_loc, true);
         long wrong_case_gen_finish = System.nanoTime();
 
         Check.check(check_regex_loc, cases_loc);

@@ -73,10 +73,10 @@ public class RegularExpression {
      * @param maxLen Max length of the case
      * @param path Path where you wish to save the cases to
      */
-    public int generateCorrectCasesExhaustive(int maxLen, String path) {
+    public int generateCorrectCasesExhaustive(int maxLen, String path, boolean append) {
         Set<String> cases = st.root.generateCasesExhaustive(maxLen);
         //System.out.println(cases);
-        try (BufferedWriter bw = new BufferedWriter(new FileWriter(path, true))) {
+        try (BufferedWriter bw = new BufferedWriter(new FileWriter(path, append))) {
             for (String case_ : cases) {
                 bw.write(case_);
                 bw.write(",1");
@@ -94,11 +94,11 @@ public class RegularExpression {
      * @param maxLen Max length of the case
      * @param path Path where you wish to save the cases to
      */
-    public int generateWrongCasesExhaustive(int maxLen, String path) {
+    public int generateWrongCasesExhaustive(int maxLen, String path, boolean append) {
         Set<String> cases = new HashSet<>();
         rec(maxLen, new StringBuilder(), cases);
         //System.out.println(cases);
-        try (BufferedWriter bw = new BufferedWriter(new FileWriter(path, true))) {
+        try (BufferedWriter bw = new BufferedWriter(new FileWriter(path, append))) {
             for (String case_ : cases) {
                 bw.write(case_);
                 bw.write(",0");

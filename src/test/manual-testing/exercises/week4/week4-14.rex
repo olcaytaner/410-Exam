@@ -1,1 +1,0 @@
-(ba)*(ba u (a u bb)(a u b))b
