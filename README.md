@@ -273,8 +273,7 @@ a b c d
 
 **Operators:**
 - `*` - Zero or more (Kleene star)
-- `+` - One or more
-- `|` - OR (alternation)
+- `u` - OR (alternation)
 - `()` - Grouping
 - Concatenation (implicit)
 
