@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.2.2] - 2025-10-16
+
+### Changed
+- Improved false positive handling in scoring algorithm
+- Adjusted log10 calculation for penalty scoring (changed denominator from FN+FP+2 to FN+FP+10)
+- Refined conditional logic for zero false positive cases in point calculation
+
+### Improved
+- More accurate grading with better handling of edge cases
+- Optimized import statements in TestRunner
+
 ## [1.2.1] - 2025-10-16
 
 ### Added
