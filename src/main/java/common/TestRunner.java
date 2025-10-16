@@ -167,31 +167,30 @@ public class TestRunner {
          *   - Calculates ratio of log₂(TP) to log₂(total required)
          *   - Scales this ratio across point range from min to max
          *   - TP + FN = total strings that should be accepted
-         *   - Example: 2/1024 → ~5 points, 1024/1024 → 10 points
+         *   - Example: 2/1024 → ~5.0 points, 1024/1024 → 10.0 points
          *
          * For cases with false positives (FP > 0):
-         *   Formula: min / log₂(FN + FP + 2)
+         *   Formula: min / log₁₀(FN + FP + 2)
          *   - Penalizes based on total errors (FN + FP)
-         *   - Gives very low points (typically < 1 point)
-         *   - Example: FP=127, FN=2492 → ~0.35 points (rounds to 0)
-         *   - Minimum return value is 1 point
+         *   - Gives very low points (typically < 1.0 point)
+         *   - Example: FP=127, FN=2492 → ~0.4 points
          *
          * The log₂ base is intuitive for CS students as it represents doublings (powers of 2).
          *
-         * @return calculated points (0 if no expected accepts, minimum 1 if FP > 0)
+         * @return calculated points with one decimal place (0.0 if no expected accepts)
          */
-        public int calculatePoints() {
+        public double calculatePoints() {
             // Total strings that should be accepted = TP + FN
             int totalRequired = truePositives + falseNegatives;
 
             if (totalRequired == 0) {
-                return 0; // Cannot calculate without any expected accepts
+                return 0.0; // Cannot calculate without any expected accepts
             }
 
             if (falsePositives == 0) {
                 // Cases without false positives
                 if (truePositives == 0) {
-                    return minPoints;
+                    return (double) minPoints;
                 }
 
                 // Formula: (log2(TP) * (max - min)) / log2(TP + FN) + min
@@ -200,23 +199,23 @@ public class TestRunner {
                 double numerator = log2TP * (maxPoints - minPoints);
                 double points = (numerator / log2Total) + minPoints;
 
-                return (int) Math.round(points);
+                return Math.round(points * 10.0) / 10.0;
             } else {
                 // Cases with false positives
-                // Formula: min / log2(FN + FP + 2)
-                double log2Errors = Math.log(falseNegatives + falsePositives + 2) / Math.log(2);
-                double points = (double) minPoints / log2Errors;
+                // Formula: min / log10(FN + FP + 2)
+                double log10Errors = Math.log10(falseNegatives + falsePositives + 2);
+                double points = (double) minPoints / log10Errors;
 
-                return (int) Math.round(points);
+                return Math.round(points * 10.0) / 10.0;
             }
         }
 
         /**
          * Get the calculated points for this test result.
          *
-         * @return points earned (0 if totalRequiredStrings not set)
+         * @return points earned with one decimal place (0.0 if totalRequiredStrings not set)
          */
-        public int getPoints() {
+        public double getPoints() {
             return calculatePoints();
         }
 
@@ -258,7 +257,7 @@ public class TestRunner {
 
             // Display points if there are expected accepts (TP + FN > 0)
             if ((truePositives + falseNegatives) > 0) {
-                sb.append(String.format("\nGrade: %d/%d points\n\n", getPoints(), maxPoints));
+                sb.append(String.format("\nGrade: %.1f/%d points\n\n", getPoints(), maxPoints));
             }
 
             // Show failures if any
