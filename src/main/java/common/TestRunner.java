@@ -1,9 +1,14 @@
 package common;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.ArrayList;
-import java.util.concurrent.*;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 /**
  * Executes test cases against automaton implementations.
@@ -187,11 +192,7 @@ public class TestRunner {
                 return 0.0; // Cannot calculate without any expected accepts
             }
 
-            if (falsePositives == 0) {
-                // Cases without false positives
-                if (truePositives == 0) {
-                    return (double) minPoints;
-                }
+            if (falsePositives == 0 && truePositives > 0) {
 
                 // Formula: (log2(TP) * (max - min)) / log2(TP + FN) + min
                 double log2TP = Math.log(truePositives) / Math.log(2);
@@ -203,7 +204,7 @@ public class TestRunner {
             } else {
                 // Cases with false positives
                 // Formula: min / log10(FN + FP + 2)
-                double log10Errors = Math.log10(falseNegatives + falsePositives + 2);
+                double log10Errors = Math.log10(falseNegatives + falsePositives + 10);
                 double points = (double) minPoints / log10Errors;
 
                 return Math.round(points * 10.0) / 10.0;
