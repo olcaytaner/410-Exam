@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.2.1] - 2025-10-16
+
+### Added
+- Resizable divider between text editor and graph visualization panels
+- Custom divider styling with grip lines for better visibility
+- One-touch expandable arrows for quick panel collapse/expand
+- Resize cursor on hover to indicate draggable divider
+
+### Improved
+- Enhanced UI usability with more obvious resizing controls
+- Proportional panel resizing when window is resized (30/70 split)
+
 ## [1.2.0] - 2025-10-16
 
 ### Changed
