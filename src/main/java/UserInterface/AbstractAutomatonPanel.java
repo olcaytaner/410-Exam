@@ -436,10 +436,14 @@ public abstract class AbstractAutomatonPanel extends JPanel implements Automaton
     @Override
     public void compileWithFigure() {
         final String inputText = textArea.getText();
-        
+
+        // Check if this is a machine type that doesn't need visualization
+        boolean skipVisualization = automaton.getType() == Automaton.MachineType.CFG ||
+                                    automaton.getType() == Automaton.MachineType.REGEX;
+
         // Show loading indicator immediately
         showLoadingIndicator();
-        
+
         // Create SwingWorker to handle parsing and GraphViz processing in background
         SwingWorker<GraphGenerationResult, Void> worker = new SwingWorker<GraphGenerationResult, Void>() {
             @Override
@@ -448,8 +452,8 @@ public abstract class AbstractAutomatonPanel extends JPanel implements Automaton
                 Automaton.ParseResult parseResult = automaton.parse(inputText);
 
                 JSVGCanvas imageCanvas = null;
-                if (parseResult.isSuccess()) {
-                    // Only generate image if parsing succeeded
+                if (parseResult.isSuccess() && !skipVisualization) {
+                    // Only generate image if parsing succeeded and visualization is not skipped
                     JLabel imageLabel = automaton.toGraphviz(inputText);
                     StringReader svgTextReader = new StringReader(imageLabel.getText());
 
@@ -465,7 +469,7 @@ public abstract class AbstractAutomatonPanel extends JPanel implements Automaton
 
                     updateGraphPanelWithImage(svgCanvas);
                 }
-                
+
                 return new GraphGenerationResult(parseResult, imageCanvas, inputText);
             }
             
@@ -473,19 +477,22 @@ public abstract class AbstractAutomatonPanel extends JPanel implements Automaton
             protected void done() {
                 // This runs on EDT when background work is complete
                 hideLoadingIndicator();
-                
+
                 try {
                     GraphGenerationResult result = get(); // Get result from doInBackground()
-                    
+
                     // Always update warnings first to show parsing errors
                     updateWarningDisplayWithParseResult(result.parseResult, result.inputText);
-                    
+
                     if (!result.parseResult.isSuccess() || result.imageCanvas == null) {
 
                         // Parsing failed or no image generated
                         String errorMessage;
                         if (!result.parseResult.isSuccess()) {
                             errorMessage = "<h3>Parsing Failed</h3><p>Check the warnings panel for syntax errors</p>";
+                        } else if (skipVisualization) {
+                            // Visualization was intentionally skipped for CFG/REGEX
+                            errorMessage = "<h3>Visualization Not Available</h3><p>Graph visualization is not supported for this automaton type</p>";
                         } else {
                             errorMessage = "<h3>Graph generation failed</h3><p>Check the warnings panel for details</p>";
                         }
@@ -493,7 +500,13 @@ public abstract class AbstractAutomatonPanel extends JPanel implements Automaton
                         JLabel errorLabel = new JLabel("<html><body style='text-align: center;'>" + errorMessage + "</body></html>");
                         errorLabel.setHorizontalAlignment(JLabel.CENTER);
                         errorLabel.setVerticalAlignment(JLabel.CENTER);
-                        errorLabel.setForeground(new Color(150, 50, 50));
+
+                        // Use a neutral color for skipped visualization, red for actual errors
+                        if (skipVisualization && result.parseResult.isSuccess()) {
+                            errorLabel.setForeground(new Color(100, 100, 100));
+                        } else {
+                            errorLabel.setForeground(new Color(150, 50, 50));
+                        }
 
                         graphPanel.removeAll();
                         graphPanel.add(errorLabel, BorderLayout.CENTER);
