@@ -1,5 +1,32 @@
 # Changelog
 
+## [1.2.1] - 2025-10-16
+
+### Added
+- Resizable divider between text editor and graph visualization panels
+- Custom divider styling with grip lines for better visibility
+- One-touch expandable arrows for quick panel collapse/expand
+- Resize cursor on hover to indicate draggable divider
+
+### Improved
+- Enhanced UI usability with more obvious resizing controls
+- Proportional panel resizing when window is resized (30/70 split)
+
+## [1.2.0] - 2025-10-16
+
+### Changed
+- Refactored calculatePoints and getPoints methods to return double values for more precise point calculations
+- Updated documentation for grading methods to reflect double-precision scoring
+
+## [1.1.6] - 2025-10-12
+
+### Changed
+- Enhanced compileWithFigure method to skip visualization for CFG and REGEX types
+
+### Added
+- Regex test files and week 5 regex exercises
+- README updates for regex documentation
+
 ## [1.1.5] - 2025-10-12
 
 ### Changed

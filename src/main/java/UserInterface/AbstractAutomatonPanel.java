@@ -427,19 +427,75 @@ public abstract class AbstractAutomatonPanel extends JPanel implements Automaton
         } else {
             this.add(topPanel, BorderLayout.NORTH);
         }
-        
-        this.add(textEditorPanel, BorderLayout.WEST);
-        this.add(graphPanel, BorderLayout.CENTER);
+
+        // Create a horizontal split pane for text editor and graph panel with resizable divider
+        JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, textEditorPanel, graphPanel);
+        splitPane.setDividerLocation(350); // Initial divider position in pixels
+        splitPane.setDividerSize(8); // Width of the divider - made more prominent
+        splitPane.setContinuousLayout(true); // Smooth updates while dragging
+        splitPane.setOneTouchExpandable(true); // Show expand/collapse arrows for better visibility
+        splitPane.setResizeWeight(0.3); // 30% to left panel when window resizes
+
+        // Customize the divider appearance for better visibility
+        splitPane.setUI(new javax.swing.plaf.basic.BasicSplitPaneUI() {
+            @Override
+            public javax.swing.plaf.basic.BasicSplitPaneDivider createDefaultDivider() {
+                return new javax.swing.plaf.basic.BasicSplitPaneDivider(this) {
+                    @Override
+                    public void paint(Graphics g) {
+                        super.paint(g);
+                        // Draw a more visible divider with grip lines
+                        Graphics2D g2d = (Graphics2D) g.create();
+                        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+                        int width = getWidth();
+                        int height = getHeight();
+
+                        // Draw background
+                        g2d.setColor(new Color(200, 200, 200));
+                        g2d.fillRect(0, 0, width, height);
+
+                        // Draw grip lines in the middle
+                        g2d.setColor(new Color(120, 120, 120));
+                        int centerX = width / 2;
+                        int centerY = height / 2;
+                        int gripHeight = 40;
+                        int gripSpacing = 3;
+
+                        for (int i = -2; i <= 2; i++) {
+                            int y = centerY + (i * gripSpacing) - gripHeight / 2;
+                            g2d.drawLine(centerX - 1, y, centerX - 1, y + gripHeight);
+                            g2d.setColor(new Color(180, 180, 180));
+                            g2d.drawLine(centerX, y, centerX, y + gripHeight);
+                            g2d.setColor(new Color(120, 120, 120));
+                        }
+
+                        g2d.dispose();
+                    }
+
+                    @Override
+                    public Cursor getCursor() {
+                        return Cursor.getPredefinedCursor(Cursor.E_RESIZE_CURSOR);
+                    }
+                };
+            }
+        });
+
+        this.add(splitPane, BorderLayout.CENTER);
     }
 
     // AutomatonPanel interface implementations
     @Override
     public void compileWithFigure() {
         final String inputText = textArea.getText();
-        
+
+        // Check if this is a machine type that doesn't need visualization
+        boolean skipVisualization = automaton.getType() == Automaton.MachineType.CFG ||
+                                    automaton.getType() == Automaton.MachineType.REGEX;
+
         // Show loading indicator immediately
         showLoadingIndicator();
-        
+
         // Create SwingWorker to handle parsing and GraphViz processing in background
         SwingWorker<GraphGenerationResult, Void> worker = new SwingWorker<GraphGenerationResult, Void>() {
             @Override
@@ -448,8 +504,8 @@ public abstract class AbstractAutomatonPanel extends JPanel implements Automaton
                 Automaton.ParseResult parseResult = automaton.parse(inputText);
 
                 JSVGCanvas imageCanvas = null;
-                if (parseResult.isSuccess()) {
-                    // Only generate image if parsing succeeded
+                if (parseResult.isSuccess() && !skipVisualization) {
+                    // Only generate image if parsing succeeded and visualization is not skipped
                     JLabel imageLabel = automaton.toGraphviz(inputText);
                     StringReader svgTextReader = new StringReader(imageLabel.getText());
 
@@ -465,7 +521,7 @@ public abstract class AbstractAutomatonPanel extends JPanel implements Automaton
 
                     updateGraphPanelWithImage(svgCanvas);
                 }
-                
+
                 return new GraphGenerationResult(parseResult, imageCanvas, inputText);
             }
             
@@ -473,19 +529,22 @@ public abstract class AbstractAutomatonPanel extends JPanel implements Automaton
             protected void done() {
                 // This runs on EDT when background work is complete
                 hideLoadingIndicator();
-                
+
                 try {
                     GraphGenerationResult result = get(); // Get result from doInBackground()
-                    
+
                     // Always update warnings first to show parsing errors
                     updateWarningDisplayWithParseResult(result.parseResult, result.inputText);
-                    
+
                     if (!result.parseResult.isSuccess() || result.imageCanvas == null) {
 
                         // Parsing failed or no image generated
                         String errorMessage;
                         if (!result.parseResult.isSuccess()) {
                             errorMessage = "<h3>Parsing Failed</h3><p>Check the warnings panel for syntax errors</p>";
+                        } else if (skipVisualization) {
+                            // Visualization was intentionally skipped for CFG/REGEX
+                            errorMessage = "<h3>Visualization Not Available</h3><p>Graph visualization is not supported for this automaton type</p>";
                         } else {
                             errorMessage = "<h3>Graph generation failed</h3><p>Check the warnings panel for details</p>";
                         }
@@ -493,7 +552,13 @@ public abstract class AbstractAutomatonPanel extends JPanel implements Automaton
                         JLabel errorLabel = new JLabel("<html><body style='text-align: center;'>" + errorMessage + "</body></html>");
                         errorLabel.setHorizontalAlignment(JLabel.CENTER);
                         errorLabel.setVerticalAlignment(JLabel.CENTER);
-                        errorLabel.setForeground(new Color(150, 50, 50));
+
+                        // Use a neutral color for skipped visualization, red for actual errors
+                        if (skipVisualization && result.parseResult.isSuccess()) {
+                            errorLabel.setForeground(new Color(100, 100, 100));
+                        } else {
+                            errorLabel.setForeground(new Color(150, 50, 50));
+                        }
 
                         graphPanel.removeAll();
                         graphPanel.add(errorLabel, BorderLayout.CENTER);
