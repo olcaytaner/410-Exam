@@ -427,9 +427,61 @@ public abstract class AbstractAutomatonPanel extends JPanel implements Automaton
         } else {
             this.add(topPanel, BorderLayout.NORTH);
         }
-        
-        this.add(textEditorPanel, BorderLayout.WEST);
-        this.add(graphPanel, BorderLayout.CENTER);
+
+        // Create a horizontal split pane for text editor and graph panel with resizable divider
+        JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, textEditorPanel, graphPanel);
+        splitPane.setDividerLocation(350); // Initial divider position in pixels
+        splitPane.setDividerSize(8); // Width of the divider - made more prominent
+        splitPane.setContinuousLayout(true); // Smooth updates while dragging
+        splitPane.setOneTouchExpandable(true); // Show expand/collapse arrows for better visibility
+        splitPane.setResizeWeight(0.3); // 30% to left panel when window resizes
+
+        // Customize the divider appearance for better visibility
+        splitPane.setUI(new javax.swing.plaf.basic.BasicSplitPaneUI() {
+            @Override
+            public javax.swing.plaf.basic.BasicSplitPaneDivider createDefaultDivider() {
+                return new javax.swing.plaf.basic.BasicSplitPaneDivider(this) {
+                    @Override
+                    public void paint(Graphics g) {
+                        super.paint(g);
+                        // Draw a more visible divider with grip lines
+                        Graphics2D g2d = (Graphics2D) g.create();
+                        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+                        int width = getWidth();
+                        int height = getHeight();
+
+                        // Draw background
+                        g2d.setColor(new Color(200, 200, 200));
+                        g2d.fillRect(0, 0, width, height);
+
+                        // Draw grip lines in the middle
+                        g2d.setColor(new Color(120, 120, 120));
+                        int centerX = width / 2;
+                        int centerY = height / 2;
+                        int gripHeight = 40;
+                        int gripSpacing = 3;
+
+                        for (int i = -2; i <= 2; i++) {
+                            int y = centerY + (i * gripSpacing) - gripHeight / 2;
+                            g2d.drawLine(centerX - 1, y, centerX - 1, y + gripHeight);
+                            g2d.setColor(new Color(180, 180, 180));
+                            g2d.drawLine(centerX, y, centerX, y + gripHeight);
+                            g2d.setColor(new Color(120, 120, 120));
+                        }
+
+                        g2d.dispose();
+                    }
+
+                    @Override
+                    public Cursor getCursor() {
+                        return Cursor.getPredefinedCursor(Cursor.E_RESIZE_CURSOR);
+                    }
+                };
+            }
+        });
+
+        this.add(splitPane, BorderLayout.CENTER);
     }
 
     // AutomatonPanel interface implementations
