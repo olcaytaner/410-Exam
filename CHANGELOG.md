@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.2.0] - 2025-10-16
+
+### Changed
+- Refactored calculatePoints and getPoints methods to return double values for more precise point calculations
+- Updated documentation for grading methods to reflect double-precision scoring
+
+## [1.1.6] - 2025-10-12
+
+### Changed
+- Enhanced compileWithFigure method to skip visualization for CFG and REGEX types
+
+### Added
+- Regex test files and week 5 regex exercises
+- README updates for regex documentation
+
 ## [1.1.5] - 2025-10-12
 
 ### Changed
