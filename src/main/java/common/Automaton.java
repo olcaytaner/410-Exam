@@ -193,7 +193,11 @@ public String getFileExtension(){
             // Batik cannot parse "transparent"
             svgText = svgText.replaceAll("stroke=\"transparent\"", "stroke=\"none\"");
 
-            System.out.println("[GraphViz] Graph rendered successfully using GraalVM JDK engine");
+            if (svgText.contains("<svg") && svgText.contains("</svg>")) {
+                System.out.println("[GraphViz] Graph rendered successfully using GraalVM JDK engine");
+            }else {
+                System.out.println("[GraphViz] Graph rendering failed");
+            }
 
             return new JLabel(svgText);
 

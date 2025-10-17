@@ -493,6 +493,9 @@ public abstract class AbstractAutomatonPanel extends JPanel implements Automaton
         boolean skipVisualization = automaton.getType() == Automaton.MachineType.CFG ||
                                     automaton.getType() == Automaton.MachineType.REGEX;
 
+        final String[] errorText = {""};
+
+
         // Show loading indicator immediately
         showLoadingIndicator();
 
@@ -502,17 +505,24 @@ public abstract class AbstractAutomatonPanel extends JPanel implements Automaton
             protected GraphGenerationResult doInBackground() throws Exception {
                 // This runs on background thread - First parse, then generate if successful
                 Automaton.ParseResult parseResult = automaton.parse(inputText);
+                JLabel imageLabel = automaton.toGraphviz(inputText);
+
+                boolean validSVG = imageLabel.getText().startsWith("<svg") && imageLabel.getText().contains("xmlns=\"http://www.w3.org/2000/svg\"");
+
+                if (!validSVG) {
+                    errorText[0] = imageLabel.getText();
+                }
 
                 JSVGCanvas imageCanvas = null;
-                if (parseResult.isSuccess() && !skipVisualization) {
+                if (parseResult.isSuccess() && !skipVisualization && validSVG) {
                     // Only generate image if parsing succeeded and visualization is not skipped
-                    JLabel imageLabel = automaton.toGraphviz(inputText);
                     StringReader svgTextReader = new StringReader(imageLabel.getText());
-
 
                     String parser = XMLResourceDescriptor.getXMLParserClassName();
                     SAXSVGDocumentFactory factory = new SAXSVGDocumentFactory(parser);
                     SVGDocument svgDocument = factory.createSVGDocument(null, svgTextReader);
+
+                    svgTextReader.close();
 
                     imageCanvas = new JSVGCanvas();
                     imageCanvas.setSVGDocument(svgDocument);
@@ -545,6 +555,8 @@ public abstract class AbstractAutomatonPanel extends JPanel implements Automaton
                         } else if (skipVisualization) {
                             // Visualization was intentionally skipped for CFG/REGEX
                             errorMessage = "<h3>Visualization Not Available</h3><p>Graph visualization is not supported for this automaton type</p>";
+                        } else if (result.imageCanvas == null) {
+                            errorMessage = errorText[0];
                         } else {
                             errorMessage = "<h3>Graph generation failed</h3><p>Check the warnings panel for details</p>";
                         }
