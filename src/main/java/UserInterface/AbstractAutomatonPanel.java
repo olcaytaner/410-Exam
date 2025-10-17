@@ -507,7 +507,7 @@ public abstract class AbstractAutomatonPanel extends JPanel implements Automaton
                 Automaton.ParseResult parseResult = automaton.parse(inputText);
                 JLabel imageLabel = automaton.toGraphviz(inputText);
 
-                boolean validSVG = imageLabel.getText().contains("<svg") || imageLabel.getText().contains("<?xml");
+                boolean validSVG = imageLabel.getText().startsWith("<svg") && imageLabel.getText().contains("xmlns=\"http://www.w3.org/2000/svg\"");
 
                 if (!validSVG) {
                     errorText[0] = imageLabel.getText();
@@ -516,10 +516,7 @@ public abstract class AbstractAutomatonPanel extends JPanel implements Automaton
                 JSVGCanvas imageCanvas = null;
                 if (parseResult.isSuccess() && !skipVisualization && validSVG) {
                     // Only generate image if parsing succeeded and visualization is not skipped
-
-                    System.out.println("Used svg: " + imageLabel.getText());
                     StringReader svgTextReader = new StringReader(imageLabel.getText());
-
 
                     String parser = XMLResourceDescriptor.getXMLParserClassName();
                     SAXSVGDocumentFactory factory = new SAXSVGDocumentFactory(parser);
