@@ -88,16 +88,10 @@
                 <version>3.1.0</version>
                 <configuration>
                     <mainClass>UserInterface.MainFrame</mainClass>
-                    <systemProperties>
-                        <systemProperty>
-                            <key>polyglot.engine.WarnInterpreterOnly</key>
-                            <value>false</value>
-                        </systemProperty>
-                        <systemProperty>
-                            <key>polyglot.log.file</key>
-                            <value>/dev/null</value>
-                        </systemProperty>
-                    </systemProperties>
+                    <cleanupDaemonThreads>false</cleanupDaemonThreads>
+                    <arguments>
+                        <argument>-Dpolyglot.engine.WarnInterpreterOnly=false</argument>
+                    </arguments>
                 </configuration>
             </plugin>
             <plugin>
