@@ -7,13 +7,18 @@ import java.io.*;
 import java.util.List;
 import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
-import javax.swing.undo.UndoManager;
+
+import common.AutoCompletionProviderRegistry;
 import common.Automaton;
 import common.TestRunner;
 import org.apache.batik.anim.dom.SAXSVGDocumentFactory;
 import org.apache.batik.swing.JSVGCanvas;
 import org.apache.batik.util.XMLResourceDescriptor;
+import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 import org.w3c.dom.svg.SVGDocument;
+import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
+import org.fife.ui.rtextarea.RTextScrollPane;
+import org.fife.ui.autocomplete.*;
 
 /**
  * Abstract base class for all automaton panels to eliminate code duplication.
@@ -25,13 +30,12 @@ public abstract class AbstractAutomatonPanel extends JPanel implements Automaton
     private static final boolean ENABLE_INLINE_TESTING = true; // Set to false for production
     
     protected JPanel textEditorPanel, graphPanel, topPanel;
-    protected JTextArea textArea;
-    protected JScrollPane scrollPane;
+    protected RSyntaxTextArea textArea;
+    protected RTextScrollPane scrollPane;
     protected JTextArea warningField;
     protected File file;
     protected MainPanel mainPanel;
     protected Automaton automaton;
-    protected UndoManager undoManager;
     protected JTextField minPointsField;
     protected JTextField maxPointsField;
     
@@ -253,120 +257,31 @@ public abstract class AbstractAutomatonPanel extends JPanel implements Automaton
         textEditorPanel.setPreferredSize(new Dimension(300, 300));
         textEditorPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
-        textArea = new JTextArea();
-        scrollPane = new JScrollPane(textArea);
+        textArea = new RSyntaxTextArea();
+        textArea.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_NONE);
+        textArea.setCodeFoldingEnabled(true);
+        textArea.setAntiAliasingEnabled(true);
 
-        TextLineNumber lineNumbering = new TextLineNumber(textArea);
-        scrollPane.setRowHeaderView(lineNumbering);
+        CompletionProvider provider = createAutomatonCompletionProvider();
+        AutoCompletion ac = new AutoCompletion(provider);
+        ac.setAutoActivationEnabled(true);
+        ac.setAutoActivationDelay(50);
+        ac.setAutoCompleteSingleChoices(false);
+        ac.install(textArea);
+
+        scrollPane = new RTextScrollPane(textArea);
+        scrollPane.setFoldIndicatorEnabled(true);
 
         textEditorPanel.add(scrollPane, BorderLayout.CENTER);
-
-        // Set up undo/redo functionality
-        setupUndoRedo();
     }
 
     /**
-     * Set up undo/redo functionality for the text area
+     * Creates a completion provider based on the automaton type.
+     *
+     * @return A configured CompletionProvider for the specific automaton type.
      */
-    private void setupUndoRedo() {
-        // Create and configure UndoManager
-        undoManager = new UndoManager();
-        undoManager.setLimit(1000); // Limit undo history to prevent memory issues
-
-        // Add UndoManager directly as the listener (it implements UndoableEditListener)
-        textArea.getDocument().addUndoableEditListener(undoManager);
-
-        // Get the platform-specific menu shortcut key mask (Command on Mac, Control on Windows/Linux)
-        int menuShortcutKeyMask = java.awt.Toolkit.getDefaultToolkit().getMenuShortcutKeyMask();
-
-        // Define unique action key names to avoid conflicts with parent component action maps
-        final String UNDO_ACTION_KEY = "cs410-text-undo";
-        final String REDO_ACTION_KEY = "cs410-text-redo";
-        final String REDO_ALT_ACTION_KEY = "cs410-text-redo-alt";
-
-        // Get both WHEN_FOCUSED and WHEN_ANCESTOR_OF_FOCUSED_COMPONENT input maps
-        // We register in both to handle all focus scenarios (direct focus and wrapped in JScrollPane)
-        InputMap inputMapFocused = textArea.getInputMap(JComponent.WHEN_FOCUSED);
-        InputMap inputMapAncestor = textArea.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
-        ActionMap actionMap = textArea.getActionMap();
-
-        // Remove any existing conflicting actions from ActionMap
-        actionMap.remove("undo");
-        actionMap.remove("redo");
-        actionMap.remove("redo-alt");
-
-        // Create KeyStroke objects (reuse for consistency)
-        KeyStroke undoKeyStroke = KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_Z, menuShortcutKeyMask);
-        KeyStroke redoKeyStroke = KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_Y, menuShortcutKeyMask);
-        KeyStroke redoAltKeyStroke = KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_Z,
-            menuShortcutKeyMask | java.awt.event.InputEvent.SHIFT_DOWN_MASK);
-
-        // Remove any existing bindings for these keystrokes in both InputMaps
-        inputMapFocused.remove(undoKeyStroke);
-        inputMapFocused.remove(redoKeyStroke);
-        inputMapFocused.remove(redoAltKeyStroke);
-        inputMapAncestor.remove(undoKeyStroke);
-        inputMapAncestor.remove(redoKeyStroke);
-        inputMapAncestor.remove(redoAltKeyStroke);
-
-        // Install new bindings in BOTH InputMaps for redundancy
-        // WHEN_FOCUSED - when textArea has direct focus
-        inputMapFocused.put(undoKeyStroke, UNDO_ACTION_KEY);
-        inputMapFocused.put(redoKeyStroke, REDO_ACTION_KEY);
-        inputMapFocused.put(redoAltKeyStroke, REDO_ALT_ACTION_KEY);
-
-        // WHEN_ANCESTOR_OF_FOCUSED_COMPONENT - when wrapped in JScrollPane
-        inputMapAncestor.put(undoKeyStroke, UNDO_ACTION_KEY);
-        inputMapAncestor.put(redoKeyStroke, REDO_ACTION_KEY);
-        inputMapAncestor.put(redoAltKeyStroke, REDO_ALT_ACTION_KEY);
-
-        // Undo: Ctrl+Z (or Cmd+Z on Mac)
-        actionMap.put(UNDO_ACTION_KEY, new AbstractAction() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                if (undoManager.canUndo()) {
-                    try {
-                        undoManager.undo();
-                    } catch (Exception ex) {
-                        // Silently handle undo errors to prevent disrupting user workflow
-                        System.err.println("Error during undo: " + ex.getMessage());
-                    }
-                }
-            }
-        });
-
-        // Redo: Ctrl+Y (or Cmd+Y on Mac)
-        actionMap.put(REDO_ACTION_KEY, new AbstractAction() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                if (undoManager.canRedo()) {
-                    try {
-                        undoManager.redo();
-                    } catch (Exception ex) {
-                        // Silently handle redo errors to prevent disrupting user workflow
-                        System.err.println("Error during redo: " + ex.getMessage());
-                    }
-                }
-            }
-        });
-
-        // Alternative redo: Ctrl+Shift+Z (or Cmd+Shift+Z on Mac)
-        actionMap.put(REDO_ALT_ACTION_KEY, new AbstractAction() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                if (undoManager.canRedo()) {
-                    try {
-                        undoManager.redo();
-                    } catch (Exception ex) {
-                        // Silently handle redo errors to prevent disrupting user workflow
-                        System.err.println("Error during redo: " + ex.getMessage());
-                    }
-                }
-            }
-        });
-
-        // Clear any initialization edits from the undo stack
-        undoManager.discardAllEdits();
+    private CompletionProvider createAutomatonCompletionProvider() {
+        return AutoCompletionProviderRegistry.getProvider(automaton.getType());
     }
 
     /**
@@ -1265,11 +1180,6 @@ public abstract class AbstractAutomatonPanel extends JPanel implements Automaton
             String content = new String(java.nio.file.Files.readAllBytes(file.toPath()),
                                       java.nio.charset.StandardCharsets.UTF_8);
             textArea.setText(content);
-
-            // Clear the setText edit from undo history (we don't want to undo file loading)
-            if (undoManager != null) {
-                undoManager.discardAllEdits();
-            }
 
             // Set the current file so test discovery works
             this.file = file;

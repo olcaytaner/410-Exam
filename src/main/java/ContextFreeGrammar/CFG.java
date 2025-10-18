@@ -45,6 +45,8 @@ public class CFG extends Automaton {
      */
     public CFG() {
         super(MachineType.CFG);
+        CFGCompletionProvider.CFGProviderRegistration.register();
+
         this.variables = new HashSet<>();
         this.terminals = new HashSet<>();
         this.productions = new ArrayList<>();
@@ -63,6 +65,8 @@ public class CFG extends Automaton {
                List<Production> productions,
                NonTerminal startSymbol) {
         super(MachineType.CFG);
+        CFGCompletionProvider.CFGProviderRegistration.register();
+
         this.variables = variables;
         this.terminals = terminals;
         this.productions = new ArrayList<>(productions);
