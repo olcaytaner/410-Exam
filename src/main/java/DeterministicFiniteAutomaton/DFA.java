@@ -28,6 +28,8 @@ public class DFA extends Automaton {
    */
   public DFA() {
     super(MachineType.DFA);
+    DFACompletionProvider.DFAProviderRegistration.register();
+
     this.states = new HashSet<>();
     this.alphabet = new HashSet<>();
     this.finalStates = new HashSet<>();
@@ -49,6 +51,8 @@ public class DFA extends Automaton {
             State startState, 
             Set<Transition> transitions) {
     super(MachineType.DFA);
+      DFACompletionProvider.DFAProviderRegistration.register();
+
     this.states = states;
     this.alphabet = alphabet;
     this.finalStates = finalStates;

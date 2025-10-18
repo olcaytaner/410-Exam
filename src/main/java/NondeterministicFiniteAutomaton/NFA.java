@@ -53,6 +53,8 @@ public class NFA extends Automaton {
      */
     public NFA(Map<String, State> states, Set<Symbol> alphabet, State startState, Set<State> finalStates, Map<State, List<Transition>> transitions) {
         super(MachineType.NFA);
+        NFACompletionProvider.NFAProviderRegistration.register();
+
         this.states = states;
         this.alphabet = alphabet;
         this.startState = startState;
@@ -65,6 +67,8 @@ public class NFA extends Automaton {
      */
     public NFA(){
         super(MachineType.NFA);
+        NFACompletionProvider.NFAProviderRegistration.register();
+
         this.states = new HashMap<>();
         this.alphabet = new HashSet<>();
         this.startState = null;
