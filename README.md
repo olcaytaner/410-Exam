@@ -263,7 +263,7 @@ The system uses the **CYK algorithm** for parsing.
 **File format:** `.rex`
 
 ```text
-(ab*c|d+)
+(ab*c) u d u eps
 a b c d
 ```
 
