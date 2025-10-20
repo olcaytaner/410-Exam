@@ -31,7 +31,7 @@ public class TestCaseGen {
 
                         String test_path = f.toString().replaceFirst("\\.rex$", ".test");
 
-                        re.generateCorrectCasesExhaustive(11, test_path, false);
+                        re.generateCorrectCasesExhaustive(12, test_path, false);
                         re.generateWrongCasesExhaustive(6, test_path, true);
 
                         Check.check(f.toString(), test_path);

@@ -1,2 +1,2 @@
-(aaa*b*) u (aaa*b*c) u (aaa*b*cc)
+(aaa*b*)(eps u c u cc)
 a b c

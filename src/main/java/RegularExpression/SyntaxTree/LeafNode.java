@@ -22,11 +22,11 @@ public class LeafNode extends SyntaxTreeNode {
     }
 
     public Set<Integer> match(String s, int pos) {
-        if (pos < s.length() && s.charAt(pos) == sym) {
+        if (sym == 'ε')
+            return Collections.singleton(pos);
+        if (pos < s.length() && s.charAt(pos) == sym)
             return Collections.singleton(pos + 1);
-        } else {
-            return new HashSet<>();
-        }
+        return new HashSet<>();
     }
 
     public String generateOneCase() {
@@ -38,10 +38,10 @@ public class LeafNode extends SyntaxTreeNode {
     }
 
     public Set<String> generateCasesExhaustive(int maxLen) {
-        if (maxLen > 1) {
-            return Collections.singleton(String.valueOf(sym));
-        } else {
+        if (sym == 'ε')
             return Collections.emptySet();
-        }
+        if (maxLen > 1)
+            return Collections.singleton(String.valueOf(sym));
+        return Collections.emptySet();
     }
 }

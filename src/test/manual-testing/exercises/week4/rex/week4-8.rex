@@ -1,2 +1,2 @@
-((a u b)*) u ((a u b)* c (a u b)*) u ((a u b)* c (a u b)* c (a u b)*)
+(a u b)* (c u eps) (a u b*) (c u eps) (a u b)*
 a b c

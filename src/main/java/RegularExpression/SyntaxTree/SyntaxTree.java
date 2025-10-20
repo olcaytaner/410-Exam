@@ -38,6 +38,7 @@ public class SyntaxTree extends Automaton {
     private String sanitize(String regex) {
         // TODO check for other malformations like ** or * at the start
         regex = regex.replaceAll("\\s+", ""); // delete whitespace from input
+        regex = regex.replace("eps", "ε"); // This will make things much easier for me
         StringBuilder sanitized = new StringBuilder();
         int parenthesisCount = 0;
         for (char c : regex.toCharArray()) {
@@ -132,7 +133,6 @@ public class SyntaxTree extends Automaton {
                 }
             }
         }
-
 
         boolean hasErrors = messages.stream().anyMatch(m -> m.getType() == ValidationMessage.ValidationMessageType.ERROR);
         if (hasErrors) {
@@ -256,6 +256,8 @@ public class SyntaxTree extends Automaton {
      * Utility method to check whether the alphabet has a certain char.
      */
     public boolean alphabetHas(char c) {
+        if (c == 'ε')
+            return true;
         for (char ch : alphabet)
             if (ch == c)
                 return true;
