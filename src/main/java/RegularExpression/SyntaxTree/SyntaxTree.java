@@ -219,6 +219,12 @@ public class SyntaxTree extends Automaton {
         return "";
     }
 
+    @Override
+    public String getDefaultTemplate() {
+        return "a*b(c u d)\n" +
+               "a b c d\n";
+    }
+
     /**
      * Builds the AST of the regular expression using its postfix representation.
      */
