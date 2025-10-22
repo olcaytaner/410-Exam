@@ -33,7 +33,7 @@ public class ManualTest {
         double maxTestTime = Integer.MIN_VALUE;
         double minTestTime = Integer.MAX_VALUE;
 
-        generateTotalMs += generateTests(dfa, 18, testFile, false);
+        generateTotalMs += generateTests(dfa, 16, testFile, false);
 
         for (int i = 0; i < testCount; i++) {
             System.out.println("Test: " + i);
