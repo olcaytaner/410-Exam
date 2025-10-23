@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.2.3] - 2025-10-23
+
+### Added
+- Syntax Help dialog and menu item in Help menu
+- DFA test files for exercises
+- Default template for SyntaxTree class
+- Epsilon support for regex with revised regex exercises
+
+### Changed
+- GraalVM plugin configuration refactored to use arguments instead of system properties
+- GraalVM dependency version updated with enhanced graph compilation checks
+
+### Fixed
+- Regex README documentation
+- Issue #38 (compilation fix)
+- Merge pull request #40 for compilation improvements
+
 ## [1.2.2] - 2025-10-16
 
 ### Changed
