@@ -273,10 +273,16 @@ public class MainFrame extends JFrame {
     
     private void createHelpMenu(JMenuBar menuBar) {
         JMenu helpMenu = new JMenu("Help");
-        
+
+        JMenuItem syntaxHelpItem = new JMenuItem("Syntax Help");
+        syntaxHelpItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F1, 0));
+        syntaxHelpItem.addActionListener(e -> showSyntaxHelpDialog());
+
         JMenuItem aboutItem = new JMenuItem("About");
         aboutItem.addActionListener(e -> showAboutDialog());
-        
+
+        helpMenu.add(syntaxHelpItem);
+        helpMenu.addSeparator();
         helpMenu.add(aboutItem);
         menuBar.add(helpMenu);
     }
@@ -304,8 +310,87 @@ public class MainFrame extends JFrame {
         return version != null ? version : "1.0.1"; // Fallback version matching pom.xml
     }
     
+    private void showSyntaxHelpDialog() {
+        String syntaxHelp =
+            "<html><body style='width: 600px; font-family: sans-serif;'>" +
+            "<h2>Automaton Syntax Reference</h2>" +
+
+            "<h3>1. DFA (Deterministic Finite Automaton)</h3>" +
+            "<pre style='background: #f5f5f5; padding: 5px; margin-left: 0; font-family: monospace;'>Start: q0\n" +
+            "Finals: q0\n" +
+            "Alphabet: a b\n" +
+            "States: q0\n" +
+            "\n" +
+            "Transitions:\n" +
+            "q0 -> q0 (a b)</pre>" +
+
+            "<h3>2. NFA (Nondeterministic Finite Automaton)</h3>" +
+            "<pre style='background: #f5f5f5; padding: 5px; margin-left: 0; font-family: monospace;'>Start: q1\n" +
+            "Finals: q2\n" +
+            "Alphabet: a b\n" +
+            "States: q1 q2\n" +
+            "\n" +
+            "Transitions:\n" +
+            "q1 -> q2 (a b eps)\n" +
+            "q2 -> q2 (a b)</pre>" +
+
+            "<h3>3. PDA (Pushdown Automaton)</h3>" +
+            "<pre style='background: #f5f5f5; padding: 5px; margin-left: 0; font-family: monospace;'>Start: q0\n" +
+            "Finals: q1\n" +
+            "Alphabet: a b\n" +
+            "Stack_alphabet: Z X\n" +
+            "States: q0 q1\n" +
+            "\n" +
+            "Transitions:\n" +
+            "q0 a Z -> q1 Z\n" +
+            "q0 b Z -> q1 Z\n" +
+            "q1 eps Z -> q1 eps</pre>" +
+
+            "<h3>4. TM (Turing Machine)</h3>" +
+            "<pre style='background: #f5f5f5; padding: 5px; margin-left: 0; font-family: monospace;'>start: q0\n" +
+            "accept: q_accept\n" +
+            "reject: q_reject\n" +
+            "alphabet: a b\n" +
+            "tape_alphabet: a b _\n" +
+            "input_alphabet: a b _\n" +
+            "states: q0 q_accept q_reject\n" +
+            "\n" +
+            "transitions:\n" +
+            "q0 a -> q_accept a R\n" +
+            "q0 b -> q_accept b R\n" +
+            "q0 _ -> q_accept _ R</pre>" +
+
+            "<h3>5. CFG (Context-Free Grammar)</h3>" +
+            "<pre style='background: #f5f5f5; padding: 5px; margin-left: 0; font-family: monospace;'>Variables = S A B\n" +
+            "Terminals = a b\n" +
+            "Start = S\n" +
+            "\n" +
+            "S -> A B\n" +
+            "A -> a\n" +
+            "B -> b</pre>" +
+
+            "<h3>6. REGEX (Regular Expression)</h3>" +
+            "<pre style='background: #f5f5f5; padding: 5px; margin-left: 0; font-family: monospace;'>a*b(c u d)\n" +
+            "a b c d</pre>" +
+
+            "</body></html>";
+
+        javax.swing.JScrollPane scrollPane = new javax.swing.JScrollPane(
+            new javax.swing.JLabel(syntaxHelp)
+        );
+        scrollPane.setPreferredSize(new java.awt.Dimension(650, 500));
+        scrollPane.getVerticalScrollBar().setUnitIncrement(16);
+
+        javax.swing.JOptionPane.showMessageDialog(
+            this,
+            scrollPane,
+            "Syntax Help",
+            javax.swing.JOptionPane.PLAIN_MESSAGE
+        );
+    }
+
     private void showAboutDialog() {
-        String aboutText = 
+        String aboutText =
             "<html><center>" +
             "<h2>CS.410 Graph System</h2>" +
             "<p>Version " + getVersionFromManifest() + "</p><br>" +
@@ -317,7 +402,7 @@ public class MainFrame extends JFrame {
             "Hakan Çildaş • Selim Özyılmaz • Olcay Taner Yıldız</p><br>" +
             "<p>© 2024 CS.410 Graph System</p>" +
             "</center></html>";
-        
+
         javax.swing.JOptionPane.showMessageDialog(this, aboutText, "About", javax.swing.JOptionPane.INFORMATION_MESSAGE);
     }
     
