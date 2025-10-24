@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.2.4] - 2025-10-24
+
+### Changed
+- Simplified release workflow to build single universal JAR instead of multiple Java-specific versions
+- Extended Java testing support to Java 24 and 25 (GA releases)
+- Added Java 26 (Early Access) testing support
+- Restructured test workflow to verify Java 8-built JAR compatibility across all supported Java versions
+- Release workflow now includes JAR verification step on all supported Java versions before publishing
+
+### Technical Details
+- Test workflow now builds JAR once with Java 8, then tests that specific JAR on Java 8, 11, 17, 21, 24, and 25
+- Release workflow includes new `verify-jar` job that validates the release artifact on all supported Java versions
+- Ensures released JAR actually works on all claimed supported versions (8+)
+
 ## [1.2.3] - 2025-10-23
 
 ### Added
