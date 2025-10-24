@@ -76,9 +76,49 @@ jobs:
           path: target/CS410-Exam-*.jar
           retention-days: 1
 
+  verify-jar:
+    name: Verify JAR on Java ${{ matrix.java }}
+    runs-on: ubuntu-latest
+    needs: build-jar
+
+    strategy:
+      fail-fast: true  # Stop release if any version fails
+      matrix:
+        java: [8, 11, 17, 21, 24, 25]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Java ${{ matrix.java }}
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: ${{ matrix.java }}
+          cache: 'maven'
+
+      - name: Download JAR artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: jar-file
+          path: downloaded-jar
+
+      - name: Extract JAR to target directory
+        run: |
+          mkdir -p target/classes
+          unzip -o downloaded-jar/CS410-Exam-*.jar -d target/classes
+
+      - name: Print Java info
+        run: |
+          java -version
+          echo "JAVA_HOME=$JAVA_HOME"
+
+      - name: Run GraphViz tests
+        run: mvn test -Dtest=GraphvizEngineTest
+
   create-release:
     name: Create GitHub Release
-    needs: [update-version, build-jar]
+    needs: [update-version, verify-jar]
     runs-on: ubuntu-latest
     permissions:
       contents: write
