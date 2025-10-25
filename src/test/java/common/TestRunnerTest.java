@@ -35,8 +35,8 @@ public class TestRunnerTest {
     
     @Test
     void testParseTestFile() throws IOException {
-        List<TestCase> testCases = TestFileParser.parseTestFile(tempTestFile.getAbsolutePath());
-        
+        List<TestCase> testCases = TestFileParser.parseTestFile(tempTestFile.getAbsolutePath()).getTestCases();
+
         assertEquals(4, testCases.size());
         
         assertEquals("", testCases.get(0).getInput());

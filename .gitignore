@@ -46,3 +46,7 @@ graph.png
 **/graph.png
 
 /test-results*
+/exams*
+/grading_results*
+/reference_tests*
+/test_results*

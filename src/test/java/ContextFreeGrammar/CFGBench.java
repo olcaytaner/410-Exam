@@ -32,7 +32,7 @@ public class CFGBench {
         Automaton.ParseResult pr = cfg.parse(cfgText);
         if (!pr.isSuccess()) throw new IllegalStateException("CFG parse failed: " + name);
 
-        List<TestCase> tests = TestFileParser.parseTestFile(testPath);
+        List<TestCase> tests = TestFileParser.parseTestFile(testPath).getTestCases();
         if (tests.isEmpty()) throw new IllegalStateException("Empty test file: " + testPath);
 
         // warm-up

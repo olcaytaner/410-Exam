@@ -93,6 +93,22 @@
                         <argument>-Dpolyglot.engine.WarnInterpreterOnly=false</argument>
                     </arguments>
                 </configuration>
+                <executions>
+                    <execution>
+                        <id>grade</id>
+                        <goals>
+                            <goal>java</goal>
+                        </goals>
+                        <configuration>
+                            <mainClass>grader.BatchGrader</mainClass>
+                            <arguments>
+                                <argument>${exam.folder}</argument>
+                                <argument>${test.cases}</argument>
+                                <argument>${output}</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

@@ -32,7 +32,7 @@ public class PDABench {
         Automaton.ParseResult pr = pda.parse(pdaText);
         if (!pr.isSuccess()) throw new IllegalStateException("PDA parse failed: " + name);
 
-        List<TestCase> tests = TestFileParser.parseTestFile(testPath);
+        List<TestCase> tests = TestFileParser.parseTestFile(testPath).getTestCases();
         if (tests.isEmpty()) throw new IllegalStateException("Empty test file: " + testPath);
 
         // warm-up

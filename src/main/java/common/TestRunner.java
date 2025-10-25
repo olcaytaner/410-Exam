@@ -380,8 +380,11 @@ public class TestRunner {
             // Create a result indicating the entire test suite timed out
             TestResult result = new TestResult();
             try {
-                List<TestCase> testCases = TestFileParser.parseTestFile(testFilePath);
+                TestFileParser.TestFileResult fileResult = TestFileParser.parseTestFile(testFilePath);
+                List<TestCase> testCases = fileResult.getTestCases();
                 result.setTotalTests(testCases.size());
+                result.setMinPoints(fileResult.getMinPoints());
+                result.setMaxPoints(fileResult.getMaxPoints());
                 result.incrementTimeoutCount();
                 result.addFailure("TIMEOUT: Entire test suite exceeded " + totalTimeoutMs + "ms");
                 
@@ -425,8 +428,11 @@ public class TestRunner {
         TestResult result = new TestResult();
 
         try {
-            List<TestCase> testCases = TestFileParser.parseTestFile(testFilePath);
+            TestFileParser.TestFileResult fileResult = TestFileParser.parseTestFile(testFilePath);
+            List<TestCase> testCases = fileResult.getTestCases();
             result.setTotalTests(testCases.size());
+            result.setMinPoints(fileResult.getMinPoints());
+            result.setMaxPoints(fileResult.getMaxPoints());
 
             if (testCases.isEmpty()) {
                 result.addFailure("No test cases found in file: " + testFilePath);
