@@ -161,6 +161,8 @@ public class ExamGrader {
         // For DFAs, perform additional validation to ensure completeness
         // DFAs must have all transitions defined (deterministic and complete)
         if (".dfa".equals(extension)) {
+            // Note: setInputText is used here to provide the automaton definition for validation,
+            // not as input to be processed. The validate() method needs this to check completeness.
             parsedAutomaton.setInputText(content);
             java.util.List<Automaton.ValidationMessage> validationMessages = parsedAutomaton.validate();
             

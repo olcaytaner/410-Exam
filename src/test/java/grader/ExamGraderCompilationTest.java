@@ -64,9 +64,10 @@ public class ExamGraderCompilationTest {
         assertNotNull(result, "Result should not be null");
         assertFalse(result.success, "Result should not be successful");
         assertNotNull(result.errorMessage, "Error message should be present");
-        assertTrue(result.errorMessage.contains("Compilation Error") || 
-                   result.errorMessage.contains("Missing transition"),
-                   "Error message should mention compilation error or missing transition");
+        assertTrue(result.errorMessage.contains("Compilation Error"),
+                   "Error message should mention compilation error");
+        assertTrue(result.errorMessage.contains("Missing transition"),
+                   "Error message should mention missing transition");
         assertEquals(0.0, result.score, "Score should be 0.0 for incomplete DFA");
         assertEquals(10, result.maxPoints, "Max points should be set");
     }
@@ -257,6 +258,8 @@ public class ExamGraderCompilationTest {
         assertNotNull(result, "Result should not be null");
         assertFalse(result.success, "Result should not be successful");
         assertNotNull(result.errorMessage, "Error message should be present");
+        assertTrue(result.errorMessage.contains("Compilation Error"), 
+                   "Error message should mention compilation error");
         assertTrue(result.errorMessage.contains("Missing transition"), 
                    "Error message should mention missing transition");
         assertEquals(0.0, result.score, "Score should be 0.0 for partially incomplete DFA");
