@@ -451,6 +451,29 @@ public class TestRunner {
                 
                 try {
                     Automaton.ExecutionResult execResult = automaton.execute(testCase.getInput());
+
+                    // Check for validation errors FIRST - invalid automaton should fail all tests
+                    boolean hasValidationError = execResult.getRuntimeMessages().stream()
+                        .anyMatch(msg -> msg.getType() == Automaton.ValidationMessage.ValidationMessageType.ERROR);
+
+                    if (hasValidationError) {
+                        // Automaton is invalid - stop processing and fail with clear message
+                        String errorMessage = execResult.getRuntimeMessages().stream()
+                            .filter(msg -> msg.getType() == Automaton.ValidationMessage.ValidationMessageType.ERROR)
+                            .map(Automaton.ValidationMessage::getMessage)
+                            .collect(java.util.stream.Collectors.joining(", "));
+
+                        result.addFailure("Automaton validation failed: " + errorMessage);
+
+                        // Report test completion with failure
+                        if (progressCallback != null) {
+                            progressCallback.onTestCompleted(i + 1, testCases.size(), testCase.getInput(), false);
+                        }
+
+                        // Stop processing tests - invalid automaton gets no credit
+                        break;
+                    }
+
                     boolean actualAccept = execResult.isAccepted();
                     boolean expectedAccept = testCase.shouldAccept();
                     

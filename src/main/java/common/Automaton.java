@@ -162,8 +162,31 @@ public String getFileExtension(){
         if (parsedAutomaton == null) {
             parsedAutomaton = this; // fallback to current instance
         }
-        
-        String dotCode = parsedAutomaton.toDotCode(inputText);
+
+        String dotCode;
+        try {
+            dotCode = parsedAutomaton.toDotCode(inputText);
+        } catch (IllegalStateException e) {
+            // Handle validation errors from toDotCode (e.g., missing transitions)
+            JLabel errorLabel = new JLabel("<html><body style='text-align: center; padding: 20px;'>"
+                + "<h2 style='color: #d32f2f;'>Visualization Not Available</h2>"
+                + "<p style='margin: 10px 0;'>" + e.getMessage() + "</p>"
+                + "<p style='color: #666;'>Check the warnings panel below for details</p>"
+                + "</body></html>");
+            errorLabel.setHorizontalAlignment(SwingConstants.CENTER);
+            return errorLabel;
+        }
+
+        // Guard against null DOT code (defensive programming)
+        if (dotCode == null || dotCode.trim().isEmpty()) {
+            JLabel errorLabel = new JLabel("<html><body style='text-align: center;'>"
+                + "<h2>Visualization Not Available</h2>"
+                + "<p>The automaton structure cannot be visualized</p>"
+                + "<p>Check warnings for validation errors</p>"
+                + "</body></html>");
+            errorLabel.setHorizontalAlignment(SwingConstants.CENTER);
+            return errorLabel;
+        }
 
         try {
             // Log Java and GraalVM version info

@@ -163,14 +163,36 @@ public class DFA extends Automaton {
     if (inputText == null) {
       throw new IllegalArgumentException("Input text cannot be null");
     }
-    
+
+    // Validate DFA is properly configured before execution
+    if (!isValidForExecution()) {
+      List<ValidationMessage> runtimeMessages = new ArrayList<>();
+
+      // Provide specific error messages for debugging
+      if (states == null || states.isEmpty()) {
+        runtimeMessages.add(new ValidationMessage("No states defined", 0, ValidationMessage.ValidationMessageType.ERROR));
+      }
+      if (alphabet == null || alphabet.isEmpty()) {
+        runtimeMessages.add(new ValidationMessage("No alphabet defined", 0, ValidationMessage.ValidationMessageType.ERROR));
+      }
+      if (startState == null) {
+        runtimeMessages.add(new ValidationMessage("No start state defined", 0, ValidationMessage.ValidationMessageType.ERROR));
+      }
+      if (finalStates == null) {
+        runtimeMessages.add(new ValidationMessage("Final states not initialized", 0, ValidationMessage.ValidationMessageType.ERROR));
+      }
+      if (transitions == null) {
+        runtimeMessages.add(new ValidationMessage("No transitions defined", 0, ValidationMessage.ValidationMessageType.ERROR));
+      }
+      if (!hasAllTransitions()) {
+        runtimeMessages.add(new ValidationMessage("DFA has missing transitions", 0, ValidationMessage.ValidationMessageType.ERROR));
+      }
+
+      return new ExecutionResult(false, runtimeMessages, "DFA not properly configured for execution");
+    }
+
     List<ValidationMessage> runtimeMessages = new ArrayList<>();
     StringBuilder trace = new StringBuilder();
-    
-    if (startState == null) {
-      runtimeMessages.add(new ValidationMessage("No start state defined", 0, ValidationMessage.ValidationMessageType.ERROR));
-      return new ExecutionResult(false, runtimeMessages, "DFA not properly initialized");
-    }
     
     State currentState = startState;
     trace.append("Initial state: ").append(currentState.getName()).append("\n");
@@ -629,16 +651,32 @@ public class DFA extends Automaton {
   }
 
   /**
+   * Checks if the DFA is properly configured for execution.
+   * Validates that all required components are initialized and the transition function is complete.
+   *
+   * @return true if the DFA is ready for execution, false otherwise
+   */
+  private boolean isValidForExecution() {
+    return states != null && !states.isEmpty() &&
+           alphabet != null && !alphabet.isEmpty() &&
+           startState != null &&
+           finalStates != null &&
+           transitions != null &&
+           hasAllTransitions();
+  }
+
+  /**
    * Generates a Graphviz DOT representation of the DFA.
    *
    * @param inputText Unused parameter, maintained for interface compatibility
-   * @return A string containing the DOT representation of the DFA, or null if there are missing transitions
+   * @return A string containing the DOT representation of the DFA
+   * @throws IllegalStateException if the DFA has missing transitions
    */
   @Override
   public String toDotCode(String inputText) {
     // Check for missing transitions before generating DOT code
     if (!hasAllTransitions()) {
-      return null; // Return null to indicate no visualization should be shown
+      throw new IllegalStateException("DFA has missing transitions. Cannot generate visualization.");
     }
 
     StringBuilder dot = new StringBuilder();
