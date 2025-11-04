@@ -91,12 +91,13 @@ public class ExamGrader {
     /**
      * Load and parse an automaton from a file based on its extension.
      * Follows the same pattern as the UI application.
+     * For DFAs, ensures the automaton is complete (all transitions defined).
      *
      * @param file The automaton file
      * @param extension File extension (e.g., ".dfa", ".nfa", ".rex")
      * @return Successfully parsed Automaton instance
      * @throws IOException if file reading fails
-     * @throws IllegalArgumentException if parsing fails or extension is not supported
+     * @throws IllegalArgumentException if parsing fails, validation fails, or extension is not supported
      */
     private static Automaton loadAutomaton(File file, String extension) throws IOException {
         // Check file size
@@ -154,8 +155,32 @@ public class ExamGrader {
             throw new IllegalArgumentException(errorMsg.toString());
         }
 
-        // Return the successfully parsed automaton
-        return parseResult.getAutomaton();
+        // Get the parsed automaton
+        Automaton parsedAutomaton = parseResult.getAutomaton();
+        
+        // For DFAs, perform additional validation to ensure completeness
+        // DFAs must have all transitions defined (deterministic and complete)
+        if (".dfa".equals(extension)) {
+            parsedAutomaton.setInputText(content);
+            java.util.List<Automaton.ValidationMessage> validationMessages = parsedAutomaton.validate();
+            
+            // Check for any ERROR messages (like missing transitions)
+            boolean hasErrors = false;
+            StringBuilder errorMsg = new StringBuilder("Validation error:\n");
+            for (Automaton.ValidationMessage msg : validationMessages) {
+                if (msg.getType() == Automaton.ValidationMessage.ValidationMessageType.ERROR) {
+                    hasErrors = true;
+                    errorMsg.append(msg.toString()).append("\n");
+                }
+            }
+            
+            if (hasErrors) {
+                throw new IllegalArgumentException(errorMsg.toString());
+            }
+        }
+
+        // Return the successfully parsed and validated automaton
+        return parsedAutomaton;
     }
 
     /**
@@ -212,8 +237,20 @@ public class ExamGrader {
 
         } catch (IOException e) {
             result.errorMessage = "IO Error: " + e.getMessage();
+            result.score = 0.0;
+            result.maxPoints = 10;
+            result.minPoints = 4;
+        } catch (IllegalArgumentException e) {
+            // Compilation/validation errors (parse errors, missing transitions, etc.)
+            result.errorMessage = "Compilation Error: " + e.getMessage();
+            result.score = 0.0;
+            result.maxPoints = 10;
+            result.minPoints = 4;
         } catch (Exception e) {
             result.errorMessage = "Error: " + e.getClass().getSimpleName() + ": " + e.getMessage();
+            result.score = 0.0;
+            result.maxPoints = 10;
+            result.minPoints = 4;
             e.printStackTrace(System.err);
         }
 
