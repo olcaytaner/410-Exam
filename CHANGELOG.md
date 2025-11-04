@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.2.5] - 2025-11-04
+
+### Added
+- DFA validation in execute() method to check for complete transition function before execution
+- Validation error detection in TestRunner to prevent grading of invalid automata
+
+### Fixed
+- Invalid DFAs no longer receive partial credit during batch grading
+- GraphViz visualization error handling for DFAs with missing transitions
+
+### Improved
+- Clear error messages when DFA is incomplete or improperly configured
+- Better separation between validation errors and execution errors
+
 ## [1.2.4] - 2025-10-24
 
 ### Changed
