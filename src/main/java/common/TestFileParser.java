@@ -24,11 +24,13 @@ public class TestFileParser {
         private final List<TestCase> testCases;
         private final int minPoints;
         private final int maxPoints;
+        private final Integer maxRegexLength; // null means no limit
 
-        public TestFileResult(List<TestCase> testCases, int minPoints, int maxPoints) {
+        public TestFileResult(List<TestCase> testCases, int minPoints, int maxPoints, Integer maxRegexLength) {
             this.testCases = testCases;
             this.minPoints = minPoints;
             this.maxPoints = maxPoints;
+            this.maxRegexLength = maxRegexLength;
         }
 
         public List<TestCase> getTestCases() {
@@ -41,6 +43,14 @@ public class TestFileParser {
 
         public int getMaxPoints() {
             return maxPoints;
+        }
+
+        public Integer getMaxRegexLength() {
+            return maxRegexLength;
+        }
+
+        public boolean hasRegexLengthLimit() {
+            return maxRegexLength != null;
         }
     }
 
@@ -56,6 +66,7 @@ public class TestFileParser {
         List<TestCase> testCases = new ArrayList<>();
         int minPoints = 4;  // Default
         int maxPoints = 10; // Default
+        Integer maxRegexLength = null; // null means no limit
 
         try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
             String line;
@@ -86,6 +97,18 @@ public class TestFileParser {
                         } catch (NumberFormatException e) {
                             throw new IllegalArgumentException(
                                 String.format("Invalid max_points value at line %d: '%s'", lineNumber, line));
+                        }
+                        continue;
+                    } else if (line.startsWith("#max_regex_length=")) {
+                        try {
+                            maxRegexLength = Integer.valueOf(line.substring("#max_regex_length=".length()).trim());
+                            if (maxRegexLength < 1) {
+                                throw new IllegalArgumentException(
+                                    String.format("Invalid max_regex_length value at line %d: must be positive", lineNumber));
+                            }
+                        } catch (NumberFormatException e) {
+                            throw new IllegalArgumentException(
+                                String.format("Invalid max_regex_length value at line %d: '%s'", lineNumber, line));
                         }
                         continue;
                     } else {
@@ -121,6 +144,6 @@ public class TestFileParser {
             }
         }
 
-        return new TestFileResult(testCases, minPoints, maxPoints);
+        return new TestFileResult(testCases, minPoints, maxPoints, maxRegexLength);
     }
 }

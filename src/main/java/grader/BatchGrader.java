@@ -251,7 +251,7 @@ public class BatchGrader {
             for (String qid : QUESTION_IDS) {
                 writer.print("," + qid);
             }
-            writer.println(",Total,Max");
+            writer.println(",Total,Max,Notes");
 
             // Each student
             for (StudentResult student : results) {
@@ -259,14 +259,23 @@ public class BatchGrader {
 
                 double total = 0;
                 int totalMaxPoints = 0;
+                StringBuilder notes = new StringBuilder();
+
                 for (ExamGrader.GradingResult q : student.questions) {
                     double score = q.score != null ? q.score : 0.0;
                     writer.printf(",%.1f", score);
                     total += score;
                     totalMaxPoints += (q.maxPoints != null ? q.maxPoints : 10);
+
+                    // Track length violations for notes column
+                    if (q.regexLengthViolation != null && q.regexLengthViolation) {
+                        if (notes.length() > 0) notes.append("; ");
+                        notes.append(q.questionId).append(" LENGTH VIOLATION (")
+                             .append(q.actualRegexLength).append("/").append(q.maxAllowedRegexLength).append(")");
+                    }
                 }
 
-                writer.printf(",%.1f,%d\n", total, totalMaxPoints);
+                writer.printf(",%.1f,%d,\"%s\"\n", total, totalMaxPoints, notes.toString());
             }
         }
 
@@ -386,6 +395,20 @@ public class BatchGrader {
             html.append("                                    <td style=\"border-left: 3px solid #e74c3c; padding-left: 10px; font-family: Arial, sans-serif;\">\n");
             html.append("                                        <strong>Error:</strong> ");
             html.append(escapeHtml(q.errorMessage != null ? q.errorMessage : "Unknown error"));
+            html.append("\n                                    </td>\n");
+            html.append("                                </tr>\n");
+            html.append("                            </table>\n");
+        } else if (q.regexLengthViolation != null && q.regexLengthViolation) {
+            // Regex length violation warning
+            html.append("                            <table width=\"100%\" cellpadding=\"5\" cellspacing=\"0\" border=\"0\" style=\"font-family: Arial, sans-serif; background-color: #fff3cd;\">\n");
+            html.append("                                <tr>\n");
+            html.append("                                    <td style=\"border-left: 3px solid #f39c12; padding-left: 10px; font-family: Arial, sans-serif;\">\n");
+            html.append("                                        <strong>REGEX LENGTH VIOLATION</strong><br>\n");
+            html.append("                                        Your regex exceeds the maximum allowed length.<br><br>\n");
+            html.append("                                        <strong>Actual length:</strong> ").append(q.actualRegexLength).append(" characters<br>\n");
+            html.append("                                        <strong>Maximum allowed:</strong> ").append(q.maxAllowedRegexLength).append(" characters<br>\n");
+            html.append("                                        <strong>Exceeded by:</strong> ").append(q.actualRegexLength - q.maxAllowedRegexLength).append(" characters<br><br>\n");
+            html.append("                                        <em>Note: Length is measured after removing whitespace and normalizing 'eps' to 'ε'.</em>\n");
             html.append("\n                                    </td>\n");
             html.append("                                </tr>\n");
             html.append("                            </table>\n");

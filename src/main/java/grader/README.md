@@ -189,10 +189,12 @@ inputString,expectedResult
 ```csv
 #min_points=2
 #max_points=10
+#max_regex_length=50
 ```
 
 - **#min_points**: Minimum points achievable (default: 4)
 - **#max_points**: Maximum points achievable (default: 10)
+- **#max_regex_length**: Maximum allowed regex length for `.rex` files (default: no limit)
 
 ### Complete Example
 
@@ -217,6 +219,86 @@ inputString,expectedResult
 ```
 
 This example tests a language that accepts binary strings ending in `10`, `01`, or `11` (but not `00`).
+
+## Regex Length Validation
+
+For Regular Expression (`.rex`) questions, you can enforce a maximum regex length limit to prevent overly complex or brute-force solutions.
+
+### How It Works
+
+1. **Configure Limit**: Add `#max_regex_length=N` to your test file
+2. **Automatic Enforcement**: Length is checked after parsing, before running tests
+3. **Sanitized Length**: Length is measured after:
+   - Removing all whitespace
+   - Converting `eps` to `ε`
+   - Keeping all operators, symbols, and parentheses
+4. **Automatic Zero**: If limit is exceeded, student receives 0 points automatically
+
+### Example Test File
+
+```csv
+#min_points=4
+#max_points=10
+#max_regex_length=50
+inputString,expectedResult
+,0
+a,1
+aa,1
+aaa,0
+```
+
+### Length Violation Reporting
+
+When a student exceeds the regex length limit:
+
+**CSV Report:**
+```csv
+Student,Q1a,Q1b,Q2a,Q2b,Q3a,Q3b,Total,Max,Notes
+john_doe_s123456,10.0,8.5,0.0,9.0,5.0,10.0,42.5,60,"Q2a LENGTH VIOLATION (75/50)"
+```
+
+**HTML Report:**
+```
+REGEX LENGTH VIOLATION
+Your regex exceeds the maximum allowed length.
+
+Actual length:  75 characters
+Maximum allowed: 50 characters
+Exceeded by:    25 characters
+
+Grade: 0.0/10 points (automatic zero for length violation)
+
+Note: Length is measured after removing whitespace and normalizing 'eps' to 'ε'.
+```
+
+**Student Detail Report:**
+```
+REGEX LENGTH VIOLATION
+══════════════════════════════════════════════════
+Your regex exceeds the maximum allowed length.
+
+Actual length:  75 characters
+Maximum allowed: 50 characters
+Exceeded by:    25 characters
+
+Grade: 0.0/10 points (automatic zero for length violation)
+
+Note: Length is measured after removing whitespace and normalizing 'eps' to 'ε'.
+```
+
+### Best Practices
+
+- **Set Appropriate Limits**: Choose limits that allow elegant solutions but prevent brute-force approaches
+- **Test Your Limit**: Verify reference solutions fit within the limit
+- **Document in Instructions**: Tell students about length limits in exam instructions
+- **Optional Feature**: Don't add `#max_regex_length` if you don't need length enforcement
+
+### Why Enforce Length Limits?
+
+1. **Encourage Elegance**: Students must find concise, well-structured solutions
+2. **Prevent Brute Force**: Blocks solutions that simply enumerate all valid strings
+3. **Fair Assessment**: Ensures students understand pattern construction, not just exhaustive enumeration
+4. **Realistic Constraints**: Mirrors real-world scenarios where concise patterns are preferred
 
 ## Grading Formula
 

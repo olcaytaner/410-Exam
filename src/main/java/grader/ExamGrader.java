@@ -46,11 +46,15 @@ public class ExamGrader {
         public Double recall;
         public Double f1Score;
         public String detailedReport;
+        public Boolean regexLengthViolation;
+        public Integer actualRegexLength;
+        public Integer maxAllowedRegexLength;
 
         public GradingResult(String studentFolder, String questionId) {
             this.studentFolder = studentFolder;
             this.questionId = questionId;
             this.success = false;
+            this.regexLengthViolation = false;
         }
     }
 
@@ -189,10 +193,47 @@ public class ExamGrader {
             // Load and parse the automaton (reuses UI logic)
             Automaton automaton = loadAutomaton(detected.file, detected.extension);
 
-            // Run tests
+            // Run tests to get test configuration (including max regex length)
             TestRunner.TestResult testResult = TestRunner.runTests(automaton, testFilePath);
 
-            // Populate result
+            // For regex files, check length limit BEFORE awarding any points
+            if (".rex".equals(detected.extension) && automaton instanceof SyntaxTree) {
+                SyntaxTree syntaxTree = (SyntaxTree) automaton;
+                Integer maxRegexLength = testResult.getMaxRegexLength();
+
+                if (maxRegexLength != null) {
+                    Automaton.ValidationMessage lengthValidation = syntaxTree.validateRegexLength(maxRegexLength);
+
+                    if (lengthValidation != null) {
+                        // Length violation - automatic zero points
+                        result.success = true; // File was processed successfully
+                        result.regexLengthViolation = true;
+                        result.actualRegexLength = syntaxTree.getSanitizedRegexLength();
+                        result.maxAllowedRegexLength = maxRegexLength;
+                        result.score = 0.0;
+                        result.minPoints = testResult.getMinPoints();
+                        result.maxPoints = testResult.getMaxPoints();
+                        result.totalTests = testResult.getTotalTests();
+                        result.errorMessage = lengthValidation.getMessage();
+                        result.detailedReport = String.format(
+                            "REGEX LENGTH VIOLATION\n" +
+                            "══════════════════════════════════════════════════\n" +
+                            "Your regex exceeds the maximum allowed length.\n\n" +
+                            "Actual length:  %d characters\n" +
+                            "Maximum allowed: %d characters\n" +
+                            "Exceeded by:    %d characters\n\n" +
+                            "Grade: 0.0/%d points (automatic zero for length violation)\n\n" +
+                            "Note: Length is measured after removing whitespace and normalizing 'eps' to 'ε'.\n",
+                            result.actualRegexLength, result.maxAllowedRegexLength,
+                            result.actualRegexLength - result.maxAllowedRegexLength,
+                            result.maxPoints
+                        );
+                        return result;
+                    }
+                }
+            }
+
+            // Populate result with test results (no length violation)
             result.success = true;
             result.score = testResult.getPoints();
             result.minPoints = testResult.getMinPoints();

@@ -1,5 +1,29 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+- **Regex Length Limiting**: Dynamic regex length validation during grading
+  - New `#max_regex_length` parameter in test files for per-question length limits
+  - Automatic zero points awarded if student's regex exceeds the specified limit
+  - Length measured after sanitization (whitespace removed, eps→ε conversion)
+  - Length violation tracking in GradingResult with actualLength and maxAllowedLength fields
+  - CSV reports now include "Notes" column showing length violations (e.g., "Q2a LENGTH VIOLATION (75/50)")
+  - HTML reports display highlighted warning sections for length violations with yellow background
+  - Detailed error messages showing actual vs. allowed length and characters exceeded
+
+### Enhanced
+- TestFileParser now supports `#max_regex_length` configuration header
+- TestRunner propagates regex length limits from test files to grading results
+- SyntaxTree class stores sanitized regex and provides length validation method
+- ExamGrader enforces length limits before running tests for .rex files
+- BatchGrader report generation includes length violation information in both CSV and HTML formats
+
+### Documentation
+- Updated grader README with comprehensive Regex Length Validation section
+- Added usage examples and best practices for setting length limits
+- Documented length violation reporting formats
+
 ## [1.2.5] - 2025-11-04
 
 ### Added

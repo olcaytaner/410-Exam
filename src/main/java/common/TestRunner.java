@@ -93,6 +93,7 @@ public class TestRunner {
         private int timeoutCount;
         private int maxPoints;
         private int minPoints;
+        private Integer maxRegexLength; // null means no limit
 
         public TestResult() {
             this.failures = new ArrayList<>();
@@ -104,6 +105,7 @@ public class TestRunner {
             this.timeoutCount = 0;
             this.maxPoints = 10;
             this.minPoints = 4;
+            this.maxRegexLength = null;
         }
 
         public int getTotalTests() { return totalTests; }
@@ -124,6 +126,9 @@ public class TestRunner {
         public int getMaxPoints() { return maxPoints; }
         public void setMinPoints(int min) { this.minPoints = min; }
         public int getMinPoints() { return minPoints; }
+        public void setMaxRegexLength(Integer max) { this.maxRegexLength = max; }
+        public Integer getMaxRegexLength() { return maxRegexLength; }
+        public boolean hasRegexLengthLimit() { return maxRegexLength != null; }
 
         public void setTotalTests(int total) { this.totalTests = total; }
         public void setPassedTests(int passed) { this.passedTests = passed; }
@@ -385,6 +390,7 @@ public class TestRunner {
                 result.setTotalTests(testCases.size());
                 result.setMinPoints(fileResult.getMinPoints());
                 result.setMaxPoints(fileResult.getMaxPoints());
+                result.setMaxRegexLength(fileResult.getMaxRegexLength());
                 result.incrementTimeoutCount();
                 result.addFailure("TIMEOUT: Entire test suite exceeded " + totalTimeoutMs + "ms");
                 
@@ -433,6 +439,7 @@ public class TestRunner {
             result.setTotalTests(testCases.size());
             result.setMinPoints(fileResult.getMinPoints());
             result.setMaxPoints(fileResult.getMaxPoints());
+            result.setMaxRegexLength(fileResult.getMaxRegexLength());
 
             if (testCases.isEmpty()) {
                 result.addFailure("No test cases found in file: " + testFilePath);

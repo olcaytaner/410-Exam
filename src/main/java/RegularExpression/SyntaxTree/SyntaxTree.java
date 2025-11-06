@@ -19,6 +19,7 @@ public class SyntaxTree extends Automaton {
 
     public char[] alphabet;
     public SyntaxTreeNode root;
+    private String sanitizedRegex; // Store the sanitized regex for length checking
 
     public SyntaxTree() {
         super(MachineType.REGEX);
@@ -151,6 +152,7 @@ public class SyntaxTree extends Automaton {
             // mutate this instance
             this.alphabet = parsedAlphabet;
             String sanitized = sanitize(regex);
+            this.sanitizedRegex = sanitized; // Store for length validation
             String postfix = shunting_yard(sanitized);
             compile(postfix);
         } catch (IllegalArgumentException e) {
@@ -209,6 +211,39 @@ public class SyntaxTree extends Automaton {
         }
 
         return validationWarnings;
+    }
+
+    /**
+     * Validates the sanitized regex length against a maximum allowed length.
+     *
+     * @param maxLength Maximum allowed length for the sanitized regex (null means no limit)
+     * @return Validation message if length exceeds limit, null otherwise
+     */
+    public ValidationMessage validateRegexLength(Integer maxLength) {
+        if (maxLength == null || sanitizedRegex == null) {
+            return null; // No limit or no regex to check
+        }
+
+        int actualLength = sanitizedRegex.length();
+        if (actualLength > maxLength) {
+            String message = String.format(
+                "Regex exceeds maximum allowed length: %d characters (limit: %d). " +
+                "The sanitized regex has %d characters after whitespace removal and normalization.",
+                actualLength, maxLength, actualLength
+            );
+            return new ValidationMessage(message, -1, ValidationMessage.ValidationMessageType.ERROR);
+        }
+
+        return null; // Length is within limit
+    }
+
+    /**
+     * Gets the length of the sanitized regex.
+     *
+     * @return Length of sanitized regex, or 0 if not parsed
+     */
+    public int getSanitizedRegexLength() {
+        return sanitizedRegex != null ? sanitizedRegex.length() : 0;
     }
 
     /**
