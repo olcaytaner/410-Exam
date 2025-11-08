@@ -1,4 +1,4 @@
-states: q0 qB qMoreB qMoreA qf
+states: q0 q1 q2 qf
 alphabet: a b
 stack_alphabet: Z A
 start: q0
@@ -7,12 +7,11 @@ finals: qf
 transitions:
 q0 a Z -> q0 AZ
 q0 a A -> q0 AA
-q0 b A -> qB A
-q0 b Z -> qMoreB Z
-qB b A -> qB eps
-qB b Z -> qMoreB Z
-qMoreB b Z -> qMoreB Z
-qMoreB eps Z -> qf eps
-qB eps A -> qMoreA eps
-qMoreA eps Z -> qf eps
-qMoreA eps A -> qMoreA eps
+q0 b A -> q1 eps
+q0 b Z -> q2 Z
+q1 b A -> q1 eps
+q1 b Z -> q2 Z
+q2 b Z -> q2 Z
+q0 eps A -> qf eps
+q1 eps A -> qf eps
+q2 eps Z -> qf eps

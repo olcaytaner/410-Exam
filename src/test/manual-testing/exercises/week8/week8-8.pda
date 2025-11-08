@@ -1,5 +1,5 @@
 states: q0 q1 qf
-alphabet: a b c d
+alphabet: a b c d e
 stack_alphabet: Z X
 start: q0
 stack_start: Z
@@ -9,9 +9,8 @@ q0 a Z -> q0 XZ
 q0 a X -> q0 XX
 q0 b Z -> q0 XZ
 q0 b X -> q0 XX
-q0 c X -> q1 eps
-q0 d X -> q1 eps
-q1 c X -> q1 eps
+q0 c Z -> q1 Z
+q0 c X -> q1 X
 q1 d X -> q1 eps
-q0 eps Z -> qf eps
+q1 e X -> q1 eps
 q1 eps Z -> qf eps

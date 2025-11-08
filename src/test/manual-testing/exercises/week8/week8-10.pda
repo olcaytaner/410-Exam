@@ -1,19 +1,21 @@
 states: q0 q1 q2 qf
 alphabet: a b c
-stack_alphabet: Z X
+stack_alphabet: Z A B
 start: q0
 stack_start: Z
 finals: qf
 transitions:
-q0 a Z -> q0 XXZ
-q0 a X -> q0 XXX
-q0 b Z -> q1 XXZ
-q0 b X -> q1 XXX
-q1 b Z -> q1 XXZ
-q1 b X -> q1 XXX
-q0 c X -> q2 eps
-q1 c X -> q2 eps
-q2 c X -> q2 eps
+q0 a Z -> q0 AAZ
+q0 a A -> q0 AAA
+q0 b Z -> q1 BBBZ
+q0 b A -> q1 BBBA
+q0 c A -> q2 eps
+q1 b A -> q1 BBBA
+q1 b B -> q1 BBBB
+q1 c A -> q2 eps
+q1 c B -> q2 eps
+q2 c A -> q2 eps
+q2 c B -> q2 eps
 q0 eps Z -> qf eps
 q1 eps Z -> qf eps
 q2 eps Z -> qf eps
