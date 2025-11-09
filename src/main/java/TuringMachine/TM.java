@@ -22,6 +22,8 @@ public class TM extends Automaton {
 
     public TM() {
         super(MachineType.TM);
+        TMCompletionProvider.TMProviderRegistration.register();
+
         this.states = new HashSet<>();
         this.inputAlphabet = new Alphabet();
         this.tapeAlphabet = new Alphabet();
@@ -51,6 +53,8 @@ public class TM extends Automaton {
                          State acceptState,
                          State rejectState) {
         super(MachineType.TM);
+        TMCompletionProvider.TMProviderRegistration.register();
+
         this.states = states;
         this.inputAlphabet = inputAlphabet;
         this.tapeAlphabet = tapeAlphabet;

@@ -1,5 +1,6 @@
 package PushDownAutomaton;
 
+import PushdownAutomaton.PDACompletionProvider;
 import common.Automaton;
 import common.Automaton.ValidationMessage;
 import common.Automaton.ValidationMessage.ValidationMessageType;
@@ -55,6 +56,7 @@ public class PDA extends Automaton {
 
     public PDA() {
         super(MachineType.PDA);
+        PDACompletionProvider.PDAProviderRegistration.register();
     }
 
     /**
