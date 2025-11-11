@@ -59,6 +59,7 @@ public class BatchGrader {
             System.out.println("\nGenerating reports...");
             generateCsvReport(results, outputFolder);
             generateHtmlReports(results, outputFolder);
+            generateIndividualPdfReports(results, outputFolder);
 
             System.out.println("\n======================================================================");
             System.out.println("Grading complete! All done! 🎉");
@@ -66,6 +67,7 @@ public class BatchGrader {
             System.out.println("\nResults saved to: " + outputFolder + "/");
             System.out.println("  - CSV summary: " + outputFolder + "/grading_summary.csv");
             System.out.println("  - HTML reports: " + outputFolder + "/reports/");
+            System.out.println("  - Question PDFs: " + outputFolder + "/question_pdfs/");
 
         } catch (Exception e) {
             System.err.println("Error: " + e.getMessage());
@@ -295,6 +297,13 @@ public class BatchGrader {
         }
 
         System.out.println("Generated " + results.size() + " HTML reports in: " + reportsDir.getPath());
+    }
+
+    /**
+     * Generate question-based PDF reports with all students' answers sorted by grade
+     */
+    private static void generateIndividualPdfReports(List<StudentResult> results, String outputFolder) throws IOException {
+        StudentPdfExporter.exportQuestionPdfs(results, outputFolder);
     }
 
     /**
