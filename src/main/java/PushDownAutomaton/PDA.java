@@ -596,17 +596,16 @@ public class PDA extends Automaton {
      * Default template content for a new PDA file in the editor.
      * <p><strong>Note:</strong> Kept as-is on purpose (UI relies on this exact text/shape).</p>
      */
-    @Override
     public String getDefaultTemplate() {
-        return "Start: q0\n" +
-                "Finals: q1\n" +
-                "Alphabet: a b\n" +
-                "Stack_alphabet: Z X\n" +
-                "States: q0 q1\n" +
+        return "states: q0 q1\n" +
+                "alphabet: a b\n" +
+                "stack_alphabet: Z\n" +
+                "start: q0\n" +
+                "stack_start: Z\n" +
+                "finals: q1\n" +
                 "\n" +
-                "Transitions:\n" +
-                "q0 a Z -> q1 Z\n" +
-                "q0 b Z -> q1 Z\n" +
-                "q1 eps Z -> q1 eps\n";
+                "transitions:\n" +
+                "q0 a Z -> q1 eps\n" +
+                "q0 b Z -> q1 eps\n";
     }
 }
