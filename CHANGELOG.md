@@ -2,7 +2,22 @@
 
 ## [Unreleased]
 
+## [1.2.6] - 2025-11-17
+
 ### Added
+- **PDF Report Generation**: Individual student exam reports with detailed grading information
+  - New StudentPdfExporter class for generating professional PDF reports
+  - Integration with BatchGrader for automated PDF generation per student
+  - Comprehensive report sections: student info, question breakdown, grading summary
+  - Added iText library dependency for PDF creation
+- **Clear Graph Button**: UI enhancement for graph visualization workflow
+  - New "Clear" button in automaton panels to clear graph without recompiling
+  - Keyboard shortcut support (Ctrl+G) for quick graph clearing
+  - Improves iterative automaton design workflow
+- **PDA Test Files**: Comprehensive test suite for week 8 exercises
+  - Added test files for exercises week8-1 through week8-10
+  - Over 47,000 lines of test cases for PDA validation
+  - Complete coverage of push-down automaton exercises
 - **Regex Length Limiting**: Dynamic regex length validation during grading
   - New `#max_regex_length` parameter in test files for per-question length limits
   - Automatic zero points awarded if student's regex exceeds the specified limit
@@ -12,17 +27,31 @@
   - HTML reports display highlighted warning sections for length violations with yellow background
   - Detailed error messages showing actual vs. allowed length and characters exceeded
 
+### Changed
+- **CFG Epsilon Representation**: Standardized epsilon notation from "_" to "eps" (#46)
+  - Updated CFG parser to recognize "eps" as epsilon in productions
+  - Modified Terminal class epsilon handling for new notation
+  - Updated all CFG test files and examples to use "eps" notation
+  - More consistent with standard context-free grammar notation
+  - **Breaking Change**: Old CFG files using "_" for epsilon must be updated to "eps"
+
 ### Enhanced
 - TestFileParser now supports `#max_regex_length` configuration header
 - TestRunner propagates regex length limits from test files to grading results
 - SyntaxTree class stores sanitized regex and provides length validation method
 - ExamGrader enforces length limits before running tests for .rex files
 - BatchGrader report generation includes length violation information in both CSV and HTML formats
+- Graph visualization panel with improved user control and keyboard shortcuts
+
+### Fixed
+- Issue #32: Added clear graph functionality for better UI workflow
+- Issue #46: Standardized epsilon representation in context-free grammars
 
 ### Documentation
 - Updated grader README with comprehensive Regex Length Validation section
 - Added usage examples and best practices for setting length limits
 - Documented length violation reporting formats
+- Updated CFG README with new epsilon notation and usage examples
 
 ## [1.2.5] - 2025-11-04
 
