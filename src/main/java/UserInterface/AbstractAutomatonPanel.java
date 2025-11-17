@@ -40,7 +40,7 @@ public abstract class AbstractAutomatonPanel extends JPanel implements Automaton
     protected JTextField inlineTestInput;
     protected JLabel inlineTestResult;
     protected JButton inlineTestButton;
-    
+    protected JButton clearGraphButton;
     // Loading indicator components
     private JPanel loadingPanel;
     private JLabel loadingSpinner;
@@ -138,6 +138,19 @@ public abstract class AbstractAutomatonPanel extends JPanel implements Automaton
             }
         });
 
+
+        // Clear Graph button
+        clearGraphButton = new JButton("Clear");
+        clearGraphButton.setPreferredSize(new Dimension(100, 30));
+        clearGraphButton.setMaximumSize(new Dimension(100, 30));
+        clearGraphButton.setToolTipText("Clear the current graph visualization (Ctrl+G)");
+        clearGraphButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                clearGraph();
+            }
+        });
+
         // Assemble the panel
         topPanel.add(tabLabel);
         topPanel.add(Box.createHorizontalGlue());
@@ -150,6 +163,8 @@ public abstract class AbstractAutomatonPanel extends JPanel implements Automaton
         topPanel.add(maxPointsField);
         topPanel.add(Box.createHorizontalStrut(10));
         topPanel.add(runButton);
+        topPanel.add(Box.createHorizontalStrut(10));
+        topPanel.add(clearGraphButton);
     }
 
     /**
@@ -1284,6 +1299,23 @@ public abstract class AbstractAutomatonPanel extends JPanel implements Automaton
     private void updateGraphPanelWithImage(JSVGCanvas svgCanvas) {
         graphPanel.removeAll();
         graphPanel.add(svgCanvas, BorderLayout.CENTER);
+        graphPanel.revalidate();
+        graphPanel.repaint();
+    }
+
+    /**
+     * Clear the current graph visualization from the graph panel
+     */
+    private void clearGraph() {
+        graphPanel.removeAll();
+        JLabel clearMessage = new JLabel("<html><body style='text-align: center;'>" +
+                "<p>Graph cleared. Compile with Figure to generate a new visualization.</p>" +
+                "</body></html>");
+        clearMessage.setHorizontalAlignment(JLabel.CENTER);
+        clearMessage.setVerticalAlignment(JLabel.CENTER);
+        clearMessage.setForeground(new Color(100, 100, 100));
+
+        graphPanel.add(clearMessage, BorderLayout.CENTER);
         graphPanel.revalidate();
         graphPanel.repaint();
     }
