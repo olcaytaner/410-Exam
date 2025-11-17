@@ -34,7 +34,7 @@ Each section starts with a keyword and `=`. Lines may contain comments (`# ...`)
 
 **Productions:**
 - Left side: a variable (non-terminal)
-- Right side: space-separated sequence of variables and/or terminals, or `_` for epsilon (empty string)
+- Right side: space-separated sequence of variables and/or terminals, or `eps` for epsilon (empty string)
 - Alternatives separated by `|`
 
 **Example**
