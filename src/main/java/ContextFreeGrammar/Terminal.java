@@ -10,7 +10,7 @@ public class Terminal extends Symbol {
     private final String name;
 
     public Terminal(String name) {
-        super(name.isEmpty() ? '_' : name.charAt(0));
+        super(name.isEmpty() ? 'e' : name.charAt(0));
         this.name = name;
     }
 
@@ -21,17 +21,17 @@ public class Terminal extends Symbol {
 
     @Override
     public boolean isEpsilon() {
-        return name.equals("_") || getValue() == '_';
+        return name.equals("eps") || getValue() == 'e';
     }
 
     @Override
     public String prettyPrint() {
-        return "Terminal: " + (isEpsilon() ? "_" : name);
+        return "Terminal: " + (isEpsilon() ? "eps" : name);
     }
 
     @Override
     public String getName() {
-        return isEpsilon() ? "_" : name;
+        return isEpsilon() ? "e" : name;
     }
 
     @Override
@@ -49,6 +49,6 @@ public class Terminal extends Symbol {
 
     @Override
     public String toString() {
-        return isEpsilon() ? "_" : name;
+        return isEpsilon() ? "eps" : name;
     }
 }

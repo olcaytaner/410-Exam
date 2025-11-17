@@ -390,8 +390,8 @@ public class CFG extends Automaton {
         for (String alternative : alternatives) {
             alternative = alternative.trim();
 
-            // Epsilon handling: "_" (or "ε") alone means empty RHS
-            if (alternative.equals("_") || alternative.equals("ε")) {
+            // Epsilon handling: "eps" alone means empty RHS
+            if (alternative.equals("eps")) {
                 productions.add(new Production(left, Collections.emptyList()));
                 continue;
             }
@@ -400,8 +400,8 @@ public class CFG extends Automaton {
             if (!alternative.isEmpty()) {
                 String[] symbols = alternative.split("\\s+");
                 for (String symbol : symbols) {
-                    if (symbol.equals("_") || symbol.equals("ε")) {
-                        throw new GrammarParseException("Epsilon '_' must appear alone on the right-hand side");
+                    if (symbol.equals("eps")) {
+                        throw new GrammarParseException("Epsilon 'eps' must appear alone on the right-hand side");
                     }
                     Symbol s = findSymbol(symbol, variables, terminals);
                     if (s != null) {
@@ -434,7 +434,7 @@ public class CFG extends Automaton {
 
     /**
      * Finds a symbol (terminal or non-terminal) with the specified name.
-     * Also handles the special case of epsilon ("_").
+     * Also handles the special case of epsilon ("eps").
      *
      * @param name the name of the symbol to find
      * @param variables the set of variables to search in
@@ -1194,7 +1194,7 @@ public class CFG extends Automaton {
             for (Symbol symbol : p.getRight()) {
                 if (symbol instanceof NonTerminal && !variables.contains(symbol)) {
                     messages.add(new ValidationMessage("Production uses undefined variable: " + ((NonTerminal)symbol).getName(), 0, ValidationMessage.ValidationMessageType.ERROR));
-                } else if (symbol instanceof Terminal && !terminals.contains(symbol) && !symbol.getName().equals("_")) {
+                } else if (symbol instanceof Terminal && !terminals.contains(symbol) && !symbol.getName().equals("eps")) {
                     messages.add(new ValidationMessage("Production uses undefined terminal: " + ((Terminal)symbol).getName(), 0, ValidationMessage.ValidationMessageType.WARNING));
                 }
             }
@@ -1332,7 +1332,7 @@ public class CFG extends Automaton {
                             ((NonTerminal)symbol).getName());
                     return false;
                 } else if (symbol instanceof Terminal &&
-                        !terminals.contains(symbol) && !symbol.getName().equals("_")) {
+                        !terminals.contains(symbol) && !symbol.getName().equals("eps")) {
                     System.err.println("Error: Production uses undefined terminal: " +
                             ((Terminal)symbol).getName());
                     return false;
@@ -1432,7 +1432,7 @@ public class CFG extends Automaton {
                             .collect(Collectors.joining(" "));
 
                     // Use "eps" for empty string
-                    sb.append(rightSide.isEmpty() ? "_" : rightSide);
+                    sb.append(rightSide.isEmpty() ? "eps" : rightSide);
                 }
 
                 System.out.println(sb);
