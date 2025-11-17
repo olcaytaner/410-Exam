@@ -245,7 +245,7 @@ B -> b | b B
 - Left side: a variable (uppercase)
 - Right side: sequence of variables and terminals
 - Use `|` for alternatives
-- Use `_` for epsilon (empty string)
+- Use `eps` for epsilon (empty string)
 
 The system uses the **CYK algorithm** for parsing.
 
