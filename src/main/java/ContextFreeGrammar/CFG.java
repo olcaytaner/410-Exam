@@ -136,7 +136,7 @@ public class CFG extends Automaton {
                     throw new GrammarParseException("File exceeds maximum line limit (" + MAX_LINES +
                             " lines). Check for malformed production rules or infinite loops.");
                 }
-
+                line = normalizeWhitespace(line);
                 line = line.trim();
 
                 // Skip comments and empty lines
@@ -258,8 +258,9 @@ public class CFG extends Automaton {
                     throw new GrammarParseException("Input exceeds maximum line limit (" + MAX_LINES +
                             " lines). Check for malformed production rules or infinite loops.");
                 }
-
+                line = normalizeWhitespace(line);
                 line = line.trim();
+
 
                 // Skip comments and empty lines
                 if (line.isEmpty() || line.startsWith("#")) {
@@ -1387,7 +1388,18 @@ public class CFG extends Automaton {
         return true;
     }
 
-
+    /**
+     * Normalizes whitespace in input by converting non-breaking spaces and other
+     * Unicode whitespace characters to regular spaces for consistent parsing.
+     *
+     * @param input the input string that may contain various whitespace characters
+     * @return the normalized string with all whitespace converted to regular spaces
+     */
+    private static String normalizeWhitespace(String input) {
+        return input.replace('\u00A0', ' ')  // Non-breaking space to regular space
+                .replaceAll("\\s+", " ") // Collapse multiple spaces
+                .trim();
+    }
 
     /**
      * Prints a formatted representation of the grammar to standard output.
