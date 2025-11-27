@@ -335,16 +335,16 @@ public class MainFrame extends JFrame {
             "q2 -> q2 (a b)</pre>" +
 
             "<h3>3. PDA (Pushdown Automaton)</h3>" +
-            "<pre style='background: #f5f5f5; padding: 5px; margin-left: 0; font-family: monospace;'>Start: q0\n" +
-            "Finals: q1\n" +
-            "Alphabet: a b\n" +
-            "Stack_alphabet: Z X\n" +
-            "States: q0 q1\n" +
-            "\n" +
-            "Transitions:\n" +
-            "q0 a Z -> q1 Z\n" +
-            "q0 b Z -> q1 Z\n" +
-            "q1 eps Z -> q1 eps</pre>" +
+            "<pre style='background: #f5f5f5; padding: 5px; margin-left: 0; font-family: monospace;'>states: q0 q1\n" +
+                    "alphabet: a b\n" +
+                    "stack_alphabet: Z\n" +
+                    "start: q0\n" +
+                    "stack_start: Z\n" +
+                    "finals: q1\n" +
+                    "\n" +
+                    "transitions:\n" +
+                    "q0 a Z -> q1 eps\n" +
+                    "q0 b Z -> q1 eps\n"+
 
             "<h3>4. TM (Turing Machine)</h3>" +
             "<pre style='background: #f5f5f5; padding: 5px; margin-left: 0; font-family: monospace;'>start: q0\n" +
