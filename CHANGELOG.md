@@ -2,6 +2,19 @@
 
 ## [Unreleased]
 
+## [1.2.7] - 2025-11-29
+
+### Added
+- Week 9 mock exam CFG and test files, adding ~12K test lines for manual CFG testing.
+
+### Changed
+- Updated the default PDA template to match the PDA syntax format.
+- Updated the PDA example in the Syntax Help dialog so it is consistent with the new default PDA template shown in the editor.
+
+### Fixed
+- Improved CFG parser robustness by normalizing whitespace (including non-breaking spaces) before parsing, fixing issues with malformed input files.
+
+
 ## [1.2.6] - 2025-11-17
 
 ### Added
