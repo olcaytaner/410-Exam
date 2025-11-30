@@ -34,6 +34,7 @@ public abstract class AbstractAutomatonPanel extends JPanel implements Automaton
     protected UndoManager undoManager;
     protected JTextField minPointsField;
     protected JTextField maxPointsField;
+    protected JTextField timeoutField;
     
     // Inline testing components
     protected JPanel inlineTestPanel;
@@ -127,6 +128,16 @@ public abstract class AbstractAutomatonPanel extends JPanel implements Automaton
         maxPointsField.setHorizontalAlignment(JTextField.CENTER);
         maxPointsField.setToolTipText("Maximum points for grading");
 
+        // Timeout configuration
+        JLabel timeoutLabel = new JLabel("Timeout(s):");
+        timeoutLabel.setFont(new Font("Arial", Font.PLAIN, 12));
+
+        timeoutField = new JTextField("5");
+        timeoutField.setPreferredSize(new Dimension(50, 30));
+        timeoutField.setMaximumSize(new Dimension(50, 30));
+        timeoutField.setHorizontalAlignment(JTextField.CENTER);
+        timeoutField.setToolTipText("Test suite timeout in seconds");
+
         // Run button
         JButton runButton = new JButton("Run");
         runButton.setPreferredSize(new Dimension(80, 30));
@@ -161,6 +172,10 @@ public abstract class AbstractAutomatonPanel extends JPanel implements Automaton
         topPanel.add(maxLabel);
         topPanel.add(Box.createHorizontalStrut(5));
         topPanel.add(maxPointsField);
+        topPanel.add(Box.createHorizontalStrut(10));
+        topPanel.add(timeoutLabel);
+        topPanel.add(Box.createHorizontalStrut(5));
+        topPanel.add(timeoutField);
         topPanel.add(Box.createHorizontalStrut(10));
         topPanel.add(runButton);
         topPanel.add(Box.createHorizontalStrut(10));
@@ -852,6 +867,37 @@ public abstract class AbstractAutomatonPanel extends JPanel implements Automaton
             return;
         }
 
+        // Parse and validate timeout
+        int timeoutSeconds;
+        try {
+            timeoutSeconds = Integer.parseInt(timeoutField.getText().trim());
+            if (timeoutSeconds <= 0) {
+                JOptionPane.showMessageDialog(this,
+                    "Timeout must be a positive value.",
+                    "Invalid Timeout Configuration",
+                    JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+        } catch (NumberFormatException e) {
+            JOptionPane.showMessageDialog(this,
+                "Please enter a valid number for timeout.",
+                "Invalid Timeout Configuration",
+                JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        // Check if test file has a timeout override
+        long effectiveTimeoutMs = timeoutSeconds * 1000L;
+        try {
+            common.TestFileParser.TestFileResult testFileResult = common.TestFileParser.parseTestFile(testFilePath);
+            if (testFileResult.hasTimeout()) {
+                effectiveTimeoutMs = testFileResult.getTimeout() * 1000L;
+            }
+        } catch (Exception e) {
+            // If we can't parse the test file, continue with UI timeout
+        }
+        final long finalTimeoutMs = effectiveTimeoutMs;
+
         // Create progress dialog
         javax.swing.JDialog progressDialog = new javax.swing.JDialog(
             javax.swing.SwingUtilities.getWindowAncestor(this), 
@@ -875,9 +921,9 @@ public abstract class AbstractAutomatonPanel extends JPanel implements Automaton
         progressLabel.setAlignmentX(CENTER_ALIGNMENT);
         progressLabel.setFont(new Font("Arial", Font.PLAIN, 12));
         
-        javax.swing.JLabel timeoutLabel = new javax.swing.JLabel("Total timeout: " + (TestRunner.DEFAULT_TIMEOUT_MS / 1000) + " seconds for all tests");
-        timeoutLabel.setAlignmentX(CENTER_ALIGNMENT);
-        timeoutLabel.setFont(new Font("Arial", Font.PLAIN, 10));
+        javax.swing.JLabel timeoutDisplayLabel = new javax.swing.JLabel("Total timeout: " + (finalTimeoutMs / 1000) + " seconds for all tests");
+        timeoutDisplayLabel.setAlignmentX(CENTER_ALIGNMENT);
+        timeoutDisplayLabel.setFont(new Font("Arial", Font.PLAIN, 10));
         
         javax.swing.JButton cancelButton = new javax.swing.JButton("Cancel");
         cancelButton.setAlignmentX(CENTER_ALIGNMENT);
@@ -888,7 +934,7 @@ public abstract class AbstractAutomatonPanel extends JPanel implements Automaton
         progressPanel.add(Box.createVerticalStrut(5));
         progressPanel.add(progressLabel);
         progressPanel.add(Box.createVerticalStrut(8));
-        progressPanel.add(timeoutLabel);
+        progressPanel.add(timeoutDisplayLabel);
         progressPanel.add(Box.createVerticalStrut(15));
         progressPanel.add(cancelButton);
         
@@ -919,7 +965,7 @@ public abstract class AbstractAutomatonPanel extends JPanel implements Automaton
                 };
                 
                 // Run tests with timeout and progress callback
-                return TestRunner.runTests(testAutomaton, testFilePath, TestRunner.DEFAULT_TIMEOUT_MS, progressCallback);
+                return TestRunner.runTests(testAutomaton, testFilePath, finalTimeoutMs, progressCallback);
             }
             
             @Override
@@ -1023,8 +1069,15 @@ public abstract class AbstractAutomatonPanel extends JPanel implements Automaton
         
         // Add timeout warning if any tests timed out
         if (result.getTimeoutCount() > 0) {
+            // Get timeout value from UI field for display
+            int displayTimeout;
+            try {
+                displayTimeout = Integer.parseInt(timeoutField.getText().trim());
+            } catch (NumberFormatException e) {
+                displayTimeout = 5; // Default fallback
+            }
             message.append("⚠️ WARNING: Test suite timed out after ")
-                   .append(TestRunner.DEFAULT_TIMEOUT_MS / 1000)
+                   .append(displayTimeout)
                    .append(" seconds total.\n")
                    .append("This may indicate infinite loops or very long computations.\n\n");
         }

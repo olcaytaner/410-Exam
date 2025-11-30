@@ -14,6 +14,7 @@ import java.util.List;
  * Supports optional headers:
  * #min_points=N
  * #max_points=N
+ * #timeout=N (timeout in seconds)
  */
 public class TestFileParser {
 
@@ -25,12 +26,14 @@ public class TestFileParser {
         private final int minPoints;
         private final int maxPoints;
         private final Integer maxRegexLength; // null means no limit
+        private final Integer timeout; // null means use default, value is in seconds
 
-        public TestFileResult(List<TestCase> testCases, int minPoints, int maxPoints, Integer maxRegexLength) {
+        public TestFileResult(List<TestCase> testCases, int minPoints, int maxPoints, Integer maxRegexLength, Integer timeout) {
             this.testCases = testCases;
             this.minPoints = minPoints;
             this.maxPoints = maxPoints;
             this.maxRegexLength = maxRegexLength;
+            this.timeout = timeout;
         }
 
         public List<TestCase> getTestCases() {
@@ -52,6 +55,14 @@ public class TestFileParser {
         public boolean hasRegexLengthLimit() {
             return maxRegexLength != null;
         }
+
+        public Integer getTimeout() {
+            return timeout;
+        }
+
+        public boolean hasTimeout() {
+            return timeout != null;
+        }
     }
 
     /**
@@ -67,6 +78,7 @@ public class TestFileParser {
         int minPoints = 4;  // Default
         int maxPoints = 10; // Default
         Integer maxRegexLength = null; // null means no limit
+        Integer timeout = null; // null means use default (in seconds)
 
         try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
             String line;
@@ -111,6 +123,18 @@ public class TestFileParser {
                                 String.format("Invalid max_regex_length value at line %d: '%s'", lineNumber, line));
                         }
                         continue;
+                    } else if (line.startsWith("#timeout=")) {
+                        try {
+                            timeout = Integer.valueOf(line.substring("#timeout=".length()).trim());
+                            if (timeout < 1) {
+                                throw new IllegalArgumentException(
+                                    String.format("Invalid timeout value at line %d: must be positive", lineNumber));
+                            }
+                        } catch (NumberFormatException e) {
+                            throw new IllegalArgumentException(
+                                String.format("Invalid timeout value at line %d: '%s'", lineNumber, line));
+                        }
+                        continue;
                     } else {
                         // Other comments are ignored
                         continue;
@@ -144,6 +168,6 @@ public class TestFileParser {
             }
         }
 
-        return new TestFileResult(testCases, minPoints, maxPoints, maxRegexLength);
+        return new TestFileResult(testCases, minPoints, maxPoints, maxRegexLength, timeout);
     }
 }
