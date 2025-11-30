@@ -1,21 +1,17 @@
-states: q0 q1 q2 qf
+states: q0 q1 q2 q3 q4 q5 q6 q7
 alphabet: a b c
-stack_alphabet: Z A B
+stack_alphabet: Z  1
 start: q0
-stack_start: Z
-finals: qf
+stack_start: eps
+finals: q7
 transitions:
-q0 a Z -> q0 AAZ
-q0 a A -> q0 AAA
-q0 b Z -> q1 BBBZ
-q0 b A -> q1 BBBA
-q0 c A -> q2 eps
-q1 b A -> q1 BBBA
-q1 b B -> q1 BBBB
-q1 c A -> q2 eps
-q1 c B -> q2 eps
-q2 c A -> q2 eps
-q2 c B -> q2 eps
-q0 eps Z -> qf eps
-q1 eps Z -> qf eps
-q2 eps Z -> qf eps
+q0 eps eps -> q1 Z
+q1 a eps -> q2 1
+q2 eps eps -> q1 1
+q1 eps eps -> q3 eps
+q3 b eps -> q4 1
+q4 eps eps -> q5 1
+q5 eps eps -> q3 1
+q3 eps eps ->q6 eps
+q6 c 1 -> q6 eps
+q6 eps Z ->q7 eps

@@ -101,7 +101,11 @@ public class PDA extends Automaton {
         processAlphabet(sections.get("alphabet"), sectionLineNumbers.getOrDefault("alphabet", 0), this.inputAlphabet, messages);
         processAlphabet(sections.get("stack_alphabet"), sectionLineNumbers.getOrDefault("stack_alphabet", 0), this.stackAlphabet, messages);
         this.startState = processStartState(sections.get("start"), sectionLineNumbers.get("start"), stateMap, messages);
-        this.stackStartSymbol = processStackStartSymbol(sections.get("stack_start"), sectionLineNumbers.get("stack_start"), this.stackAlphabet, messages);
+        this.stackStartSymbol = processStackStartSymbol(
+                sections.get("stack_start"),
+                sectionLineNumbers.getOrDefault("stack_start", 0),
+                this.stackAlphabet,
+                messages);
         this.finalStates.addAll(processFinalStates(sections.get("finals"), sectionLineNumbers.get("finals"), stateMap, messages));
         this.transitionMap.putAll(processTransitions(sections.get("transitions"), sectionLineNumbers.get("transitions"), stateMap, this.inputAlphabet, this.stackAlphabet, messages));
 
@@ -119,7 +123,8 @@ public class PDA extends Automaton {
      * Execute the PDA on the given input string.
      *
      * <p>Performs a BFS over configurations. Acceptance occurs if we reach a final state after consuming
-     * the whole input. To prevent pathological blow-ups, execution respects:
+     * the whole input and the stack is empty (acceptance by final state + empty stack). To prevent
+     * pathological blow-ups, execution respects:
      * <ul>
      *   <li>{@code pda.maxExpansions} (expansion cap)</li>
      *   <li>{@code pda.timeoutMs} (wall-clock timeout), if set</li>
@@ -177,8 +182,10 @@ public class PDA extends Automaton {
 
             Conf cur = queue.poll();
 
-            // Accept when input fully consumed & in a final state
-            if (cur.pos == n && this.finalStates.contains(cur.state)) {
+            // Accept when input fully consumed, in a final state, and stack is empty
+            if (cur.pos == n
+                    && this.finalStates.contains(cur.state)
+                    && cur.stack.isEmpty()) {
                 String trace = reconstructTrace(parent, cur);
                 logs.add(new ValidationMessage(
                         "Accepted at state '" + cur.state.getName() + "' with stack='" + cur.stack + "'.",
@@ -421,10 +428,14 @@ public class PDA extends Automaton {
     private Symbol processStackStartSymbol(List<String> lines, int lineNum,
                                            Set<Symbol> stackAlphabet, List<ValidationMessage> messages) {
         if (lines == null || lines.isEmpty()) {
-            messages.add(new ValidationMessage("Stack start symbol definition is missing.", lineNum, ValidationMessageType.ERROR));
-            return null;
+            // Allow missing stack_start: stack begins empty (epsilon)
+            return new Symbol('_');
         }
         String stackStartStr = lines.get(0).trim();
+        if ("eps".equals(stackStartStr)) {
+            // Explicit epsilon → stack begins empty
+            return new Symbol('_');
+        }
         if (stackStartStr.length() != 1) {
             messages.add(new ValidationMessage("Stack start symbol must be a single character.", lineNum, ValidationMessageType.ERROR));
             return null;
@@ -601,11 +612,12 @@ public class PDA extends Automaton {
                 "alphabet: a b\n" +
                 "stack_alphabet: Z\n" +
                 "start: q0\n" +
-                "stack_start: Z\n" +
+                "stack_start: eps\n" +
                 "finals: q1\n" +
                 "\n" +
                 "transitions:\n" +
-                "q0 a Z -> q1 eps\n" +
-                "q0 b Z -> q1 eps\n";
+                "q0 eps eps -> q1 Z\n" +
+                "q1 a Z -> q1 eps\n" +
+                "q1 b Z -> q1 eps\n";
     }
 }

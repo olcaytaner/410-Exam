@@ -255,7 +255,7 @@ public class InputNormalizer {
                 requiredKeys = new String[]{"states", "alphabet", "start", "finals", "transitions"};
                 break;
             case PDA:
-                requiredKeys = new String[]{"states", "alphabet", "stack_alphabet", "start", "stack_start", "finals", "transitions"};
+                requiredKeys = new String[]{"states", "alphabet", "stack_alphabet", "start", "finals", "transitions"};
                 break;
             case TM:
                 requiredKeys = new String[]{"states", "alphabet", "tape_alphabet", "start", "accept", "reject", "transitions"};
