@@ -1,6 +1,21 @@
 # Changelog
 
 ## [Unreleased]
+
+## [1.2.9] - 2025-11-30
+
+### Added
+- **Configurable Test Timeout**: UI field and test file header support for custom timeout values (#48)
+  - New "Timeout(s):" field in automaton panels alongside Min/Max points
+  - Default timeout: 5 seconds (configurable by user)
+  - Test file header `#timeout=N` support to override UI setting per test file
+  - Validation for positive integer values with user-friendly error messages
+  - Progress dialog displays effective timeout value during test execution
+
+### Changed
+- Test runner now accepts custom timeout from UI instead of always using DEFAULT_TIMEOUT_MS
+- TestFileParser.TestFileResult class extended with timeout field and getters
+
 ## [1.2.8] - 2025-11-30
 
 ### Changed
