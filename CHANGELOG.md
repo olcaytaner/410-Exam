@@ -1,6 +1,16 @@
 # Changelog
 
 ## [Unreleased]
+## [1.2.8] - 2025-11-30
+
+### Changed
+- Updated PDA execution semantics to match lecture model:
+  - Acceptance now requires fully consumed input, a final state, and an empty stack.
+  - Made `stack_start` optional; when omitted or set to `eps`, the stack truly starts empty.
+- Adjusted the default PDA template and UI example to use the “epsilon transition to push Z as bottom-of-stack” pattern.
+
+### Fixed
+- Rewrote all week 8 PDA exercise `.pda` files to match the new execution semantics.
 
 ## [1.2.7] - 2025-11-29
 
