@@ -182,10 +182,9 @@ public class PDA extends Automaton {
 
             Conf cur = queue.poll();
 
-            // Accept when input fully consumed, in a final state, and stack is empty
+            // Accept when input fully consumed and in a final state
             if (cur.pos == n
-                    && this.finalStates.contains(cur.state)
-                    && cur.stack.isEmpty()) {
+                    && this.finalStates.contains(cur.state)) {
                 String trace = reconstructTrace(parent, cur);
                 logs.add(new ValidationMessage(
                         "Accepted at state '" + cur.state.getName() + "' with stack='" + cur.stack + "'.",

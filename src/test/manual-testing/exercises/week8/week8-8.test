@@ -852,7 +852,7 @@ aacde,1
 aacea,0
 aaceb,0
 aacec,0
-aaced,1
+aaced,0
 aacee,1
 aadaa,0
 aadab,0
@@ -977,7 +977,7 @@ abcde,1
 abcea,0
 abceb,0
 abcec,0
-abced,1
+abced,0
 abcee,1
 abdaa,0
 abdab,0
@@ -1472,13 +1472,13 @@ bacce,0
 bacda,0
 bacdb,0
 bacdc,0
-bacdd,1
-bacde,1
+bacdd,0
+bacde,0
 bacea,0
 baceb,0
 bacec,0
-baced,1
-bacee,1
+baced,0
+bacee,0
 badaa,0
 badab,0
 badac,0
@@ -1602,7 +1602,7 @@ bbcde,1
 bbcea,0
 bbceb,0
 bbcec,0
-bbced,1
+bbced,0
 bbcee,1
 bbdaa,0
 bbdab,0
