@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+#### [1.2.10] - 2025-12-01
+
+### Changed
+- Stack does not have to be empty for acceptance anymore.
+- Minor .test file fixes for PDA exercises.
+
 ## [1.2.9] - 2025-11-30
 
 ### Added
