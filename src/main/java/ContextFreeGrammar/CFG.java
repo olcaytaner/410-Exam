@@ -1,14 +1,22 @@
 package ContextFreeGrammar;
 
-import common.Automaton;
-import common.Symbol;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.StringReader;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+
+import common.Automaton;
+import common.Symbol;
 
 /**
  * Represents a Context-Free Grammar (CFG) with variables, terminals, productions, and a start symbol.
@@ -1202,6 +1210,24 @@ public class CFG extends Automaton {
         }
 
         return messages;
+    }
+
+    /**
+     * Validates the number of production rules against a maximum limit.
+     *
+     * @param maxRules the maximum allowed number of production rules
+     * @return ValidationMessage with error if limit exceeded, null otherwise
+     */
+    public ValidationMessage validateRulesCount(int maxRules) {
+        int count = productions.size();
+        if (count > maxRules) {
+            return new ValidationMessage(
+                String.format("CFG has %d production rules, exceeds maximum of %d", count, maxRules),
+                0,
+                ValidationMessage.ValidationMessageType.ERROR
+            );
+        }
+        return null;
     }
 
     @Override

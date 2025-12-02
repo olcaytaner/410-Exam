@@ -16,4 +16,9 @@ public class CFGPanel extends AbstractAutomatonPanel {
     protected String getTabLabelText() {
         return "CFG Tab";
     }
+
+    @Override
+    protected boolean showMaxRulesField() {
+        return true;
+    }
 }

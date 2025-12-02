@@ -94,6 +94,8 @@ public class TestRunner {
         private int maxPoints;
         private int minPoints;
         private Integer maxRegexLength; // null means no limit
+        private Integer maxRules; // null means no limit (for CFG)
+        private Integer maxTransitions; // null means no limit (for PDA)
 
         public TestResult() {
             this.failures = new ArrayList<>();
@@ -106,6 +108,8 @@ public class TestRunner {
             this.maxPoints = 10;
             this.minPoints = 4;
             this.maxRegexLength = null;
+            this.maxRules = null;
+            this.maxTransitions = null;
         }
 
         public int getTotalTests() { return totalTests; }
@@ -129,6 +133,14 @@ public class TestRunner {
         public void setMaxRegexLength(Integer max) { this.maxRegexLength = max; }
         public Integer getMaxRegexLength() { return maxRegexLength; }
         public boolean hasRegexLengthLimit() { return maxRegexLength != null; }
+
+        public void setMaxRules(Integer max) { this.maxRules = max; }
+        public Integer getMaxRules() { return maxRules; }
+        public boolean hasRulesLimit() { return maxRules != null; }
+
+        public void setMaxTransitions(Integer max) { this.maxTransitions = max; }
+        public Integer getMaxTransitions() { return maxTransitions; }
+        public boolean hasTransitionsLimit() { return maxTransitions != null; }
 
         public void setTotalTests(int total) { this.totalTests = total; }
         public void setPassedTests(int passed) { this.passedTests = passed; }
@@ -391,6 +403,8 @@ public class TestRunner {
                 result.setMinPoints(fileResult.getMinPoints());
                 result.setMaxPoints(fileResult.getMaxPoints());
                 result.setMaxRegexLength(fileResult.getMaxRegexLength());
+                result.setMaxRules(fileResult.getMaxRules());
+                result.setMaxTransitions(fileResult.getMaxTransitions());
                 result.incrementTimeoutCount();
                 result.addFailure("TIMEOUT: Entire test suite exceeded " + totalTimeoutMs + "ms");
                 
@@ -440,6 +454,8 @@ public class TestRunner {
             result.setMinPoints(fileResult.getMinPoints());
             result.setMaxPoints(fileResult.getMaxPoints());
             result.setMaxRegexLength(fileResult.getMaxRegexLength());
+            result.setMaxRules(fileResult.getMaxRules());
+            result.setMaxTransitions(fileResult.getMaxTransitions());
 
             if (testCases.isEmpty()) {
                 result.addFailure("No test cases found in file: " + testFilePath);

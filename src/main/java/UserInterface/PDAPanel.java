@@ -16,4 +16,9 @@ public class PDAPanel extends AbstractAutomatonPanel {
     protected String getTabLabelText() {
         return "PDA Tab";
     }
+
+    @Override
+    protected boolean showMaxTransitionsField() {
+        return true;
+    }
 }

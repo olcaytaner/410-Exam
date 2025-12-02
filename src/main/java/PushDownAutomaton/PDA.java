@@ -378,6 +378,33 @@ public class PDA extends Automaton {
         return new ArrayList<>();
     }
 
+    /**
+     * Returns the total number of transitions in this PDA.
+     *
+     * @return the total transition count
+     */
+    public int getTransitionCount() {
+        return transitionMap.values().stream().mapToInt(List::size).sum();
+    }
+
+    /**
+     * Validates the number of transitions against a maximum limit.
+     *
+     * @param maxTransitions the maximum allowed number of transitions
+     * @return ValidationMessage with error if limit exceeded, null otherwise
+     */
+    public ValidationMessage validateTransitionsCount(int maxTransitions) {
+        int count = getTransitionCount();
+        if (count > maxTransitions) {
+            return new ValidationMessage(
+                String.format("PDA has %d transitions, exceeds maximum of %d", count, maxTransitions),
+                0,
+                ValidationMessageType.ERROR
+            );
+        }
+        return null;
+    }
+
     /* ----------------- Parsing helpers ----------------- */
 
     private void processStates(List<String> stateLines, int lineNum, Set<State> states,

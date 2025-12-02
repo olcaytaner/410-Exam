@@ -35,7 +35,9 @@ public abstract class AbstractAutomatonPanel extends JPanel implements Automaton
     protected JTextField minPointsField;
     protected JTextField maxPointsField;
     protected JTextField timeoutField;
-    
+    protected JTextField maxRulesField;       // For CFG - max production rules
+    protected JTextField maxTransitionsField; // For PDA - max transitions
+
     // Inline testing components
     protected JPanel inlineTestPanel;
     protected JTextField inlineTestInput;
@@ -88,6 +90,20 @@ public abstract class AbstractAutomatonPanel extends JPanel implements Automaton
     protected abstract String getTabLabelText();
 
     /**
+     * Override in subclass to show max rules field (CFG only)
+     */
+    protected boolean showMaxRulesField() {
+        return false;
+    }
+
+    /**
+     * Override in subclass to show max transitions field (PDA only)
+     */
+    protected boolean showMaxTransitionsField() {
+        return false;
+    }
+
+    /**
      * Initialize the main panel properties
      */
     private void initializePanel() {
@@ -138,6 +154,32 @@ public abstract class AbstractAutomatonPanel extends JPanel implements Automaton
         timeoutField.setHorizontalAlignment(JTextField.CENTER);
         timeoutField.setToolTipText("Test suite timeout in seconds");
 
+        // Optional max rules field (CFG only)
+        JLabel maxRulesLabel = null;
+        if (showMaxRulesField()) {
+            maxRulesLabel = new JLabel("Max Rules:");
+            maxRulesLabel.setFont(new Font("Arial", Font.PLAIN, 12));
+
+            maxRulesField = new JTextField("");
+            maxRulesField.setPreferredSize(new Dimension(50, 30));
+            maxRulesField.setMaximumSize(new Dimension(50, 30));
+            maxRulesField.setHorizontalAlignment(JTextField.CENTER);
+            maxRulesField.setToolTipText("Maximum production rules allowed (empty = no limit)");
+        }
+
+        // Optional max transitions field (PDA only)
+        JLabel maxTransLabel = null;
+        if (showMaxTransitionsField()) {
+            maxTransLabel = new JLabel("Max Trans:");
+            maxTransLabel.setFont(new Font("Arial", Font.PLAIN, 12));
+
+            maxTransitionsField = new JTextField("");
+            maxTransitionsField.setPreferredSize(new Dimension(50, 30));
+            maxTransitionsField.setMaximumSize(new Dimension(50, 30));
+            maxTransitionsField.setHorizontalAlignment(JTextField.CENTER);
+            maxTransitionsField.setToolTipText("Maximum transitions allowed (empty = no limit)");
+        }
+
         // Run button
         JButton runButton = new JButton("Run");
         runButton.setPreferredSize(new Dimension(80, 30));
@@ -176,6 +218,23 @@ public abstract class AbstractAutomatonPanel extends JPanel implements Automaton
         topPanel.add(timeoutLabel);
         topPanel.add(Box.createHorizontalStrut(5));
         topPanel.add(timeoutField);
+
+        // Add optional max rules field (CFG only)
+        if (showMaxRulesField() && maxRulesLabel != null) {
+            topPanel.add(Box.createHorizontalStrut(10));
+            topPanel.add(maxRulesLabel);
+            topPanel.add(Box.createHorizontalStrut(5));
+            topPanel.add(maxRulesField);
+        }
+
+        // Add optional max transitions field (PDA only)
+        if (showMaxTransitionsField() && maxTransLabel != null) {
+            topPanel.add(Box.createHorizontalStrut(10));
+            topPanel.add(maxTransLabel);
+            topPanel.add(Box.createHorizontalStrut(5));
+            topPanel.add(maxTransitionsField);
+        }
+
         topPanel.add(Box.createHorizontalStrut(10));
         topPanel.add(runButton);
         topPanel.add(Box.createHorizontalStrut(10));
@@ -886,17 +945,69 @@ public abstract class AbstractAutomatonPanel extends JPanel implements Automaton
             return;
         }
 
-        // Check if test file has a timeout override
+        // Parse max rules (for CFG) - empty means no limit
+        Integer maxRulesLimit = null;
+        if (maxRulesField != null && !maxRulesField.getText().trim().isEmpty()) {
+            try {
+                maxRulesLimit = Integer.parseInt(maxRulesField.getText().trim());
+                if (maxRulesLimit < 1) {
+                    JOptionPane.showMessageDialog(this,
+                        "Max rules must be a positive value.",
+                        "Invalid Max Rules Configuration",
+                        JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+            } catch (NumberFormatException e) {
+                JOptionPane.showMessageDialog(this,
+                    "Please enter a valid number for max rules.",
+                    "Invalid Max Rules Configuration",
+                    JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+        }
+
+        // Parse max transitions (for PDA) - empty means no limit
+        Integer maxTransitionsLimit = null;
+        if (maxTransitionsField != null && !maxTransitionsField.getText().trim().isEmpty()) {
+            try {
+                maxTransitionsLimit = Integer.parseInt(maxTransitionsField.getText().trim());
+                if (maxTransitionsLimit < 1) {
+                    JOptionPane.showMessageDialog(this,
+                        "Max transitions must be a positive value.",
+                        "Invalid Max Transitions Configuration",
+                        JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+            } catch (NumberFormatException e) {
+                JOptionPane.showMessageDialog(this,
+                    "Please enter a valid number for max transitions.",
+                    "Invalid Max Transitions Configuration",
+                    JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+        }
+
+        // Check if test file has overrides (timeout, max_rules, max_transitions)
         long effectiveTimeoutMs = timeoutSeconds * 1000L;
+        Integer effectiveMaxRules = maxRulesLimit;
+        Integer effectiveMaxTransitions = maxTransitionsLimit;
         try {
             common.TestFileParser.TestFileResult testFileResult = common.TestFileParser.parseTestFile(testFilePath);
             if (testFileResult.hasTimeout()) {
                 effectiveTimeoutMs = testFileResult.getTimeout() * 1000L;
             }
+            if (testFileResult.hasMaxRules()) {
+                effectiveMaxRules = testFileResult.getMaxRules();
+            }
+            if (testFileResult.hasMaxTransitions()) {
+                effectiveMaxTransitions = testFileResult.getMaxTransitions();
+            }
         } catch (Exception e) {
-            // If we can't parse the test file, continue with UI timeout
+            // If we can't parse the test file, continue with UI values
         }
         final long finalTimeoutMs = effectiveTimeoutMs;
+        final Integer finalMaxRules = effectiveMaxRules;
+        final Integer finalMaxTransitions = effectiveMaxTransitions;
 
         // Create progress dialog
         javax.swing.JDialog progressDialog = new javax.swing.JDialog(
@@ -1007,17 +1118,73 @@ public abstract class AbstractAutomatonPanel extends JPanel implements Automaton
                     TestRunner.TestResult result = get();
                     result.setMinPoints(finalMinPoints);
                     result.setMaxPoints(finalMaxPoints);
+
+                    // Check for limit violations before showing results
+                    // CFG: Check max rules limit
+                    if (finalMaxRules != null && testAutomaton instanceof ContextFreeGrammar.CFG) {
+                        ContextFreeGrammar.CFG cfg = (ContextFreeGrammar.CFG) testAutomaton;
+                        common.Automaton.ValidationMessage rulesValidation = cfg.validateRulesCount(finalMaxRules);
+                        if (rulesValidation != null) {
+                            // Rules limit violation - show special result
+                            int actualRules = cfg.getProductions().size();
+                            String violationMessage = String.format(
+                                "CFG RULES LIMIT VIOLATION\n" +
+                                "══════════════════════════════════════════════════\n\n" +
+                                "Your CFG exceeds the maximum allowed production rules.\n\n" +
+                                "Actual rules:    %d\n" +
+                                "Maximum allowed: %d\n" +
+                                "Exceeded by:     %d\n\n" +
+                                "Grade: 0.0/%d points (automatic zero for rules limit violation)\n",
+                                actualRules, finalMaxRules,
+                                actualRules - finalMaxRules,
+                                finalMaxPoints
+                            );
+                            JOptionPane.showMessageDialog(AbstractAutomatonPanel.this,
+                                violationMessage,
+                                "Rules Limit Violation",
+                                JOptionPane.ERROR_MESSAGE);
+                            return;
+                        }
+                    }
+
+                    // PDA: Check max transitions limit
+                    if (finalMaxTransitions != null && testAutomaton instanceof PushDownAutomaton.PDA) {
+                        PushDownAutomaton.PDA pda = (PushDownAutomaton.PDA) testAutomaton;
+                        common.Automaton.ValidationMessage transitionsValidation = pda.validateTransitionsCount(finalMaxTransitions);
+                        if (transitionsValidation != null) {
+                            // Transitions limit violation - show special result
+                            int actualTransitions = pda.getTransitionCount();
+                            String violationMessage = String.format(
+                                "PDA TRANSITIONS LIMIT VIOLATION\n" +
+                                "══════════════════════════════════════════════════\n\n" +
+                                "Your PDA exceeds the maximum allowed transitions.\n\n" +
+                                "Actual transitions: %d\n" +
+                                "Maximum allowed:    %d\n" +
+                                "Exceeded by:        %d\n\n" +
+                                "Grade: 0.0/%d points (automatic zero for transitions limit violation)\n",
+                                actualTransitions, finalMaxTransitions,
+                                actualTransitions - finalMaxTransitions,
+                                finalMaxPoints
+                            );
+                            JOptionPane.showMessageDialog(AbstractAutomatonPanel.this,
+                                violationMessage,
+                                "Transitions Limit Violation",
+                                JOptionPane.ERROR_MESSAGE);
+                            return;
+                        }
+                    }
+
                     showTestResults(result);
                 } catch (InterruptedException e) {
                     // Test was cancelled
-                    JOptionPane.showMessageDialog(AbstractAutomatonPanel.this, 
-                        "Test execution was cancelled.", 
-                        "Test Cancelled", 
+                    JOptionPane.showMessageDialog(AbstractAutomatonPanel.this,
+                        "Test execution was cancelled.",
+                        "Test Cancelled",
                         JOptionPane.INFORMATION_MESSAGE);
                 } catch (Exception e) {
-                    JOptionPane.showMessageDialog(AbstractAutomatonPanel.this, 
-                        "Error running tests: " + e.getMessage(), 
-                        "Test Execution Error", 
+                    JOptionPane.showMessageDialog(AbstractAutomatonPanel.this,
+                        "Error running tests: " + e.getMessage(),
+                        "Test Execution Error",
                         JOptionPane.ERROR_MESSAGE);
                 }
             }

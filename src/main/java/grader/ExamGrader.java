@@ -49,12 +49,20 @@ public class ExamGrader {
         public Boolean regexLengthViolation;
         public Integer actualRegexLength;
         public Integer maxAllowedRegexLength;
+        public Boolean rulesLimitViolation;
+        public Integer actualRulesCount;
+        public Integer maxAllowedRules;
+        public Boolean transitionsLimitViolation;
+        public Integer actualTransitionsCount;
+        public Integer maxAllowedTransitions;
 
         public GradingResult(String studentFolder, String questionId) {
             this.studentFolder = studentFolder;
             this.questionId = questionId;
             this.success = false;
             this.regexLengthViolation = false;
+            this.rulesLimitViolation = false;
+            this.transitionsLimitViolation = false;
         }
     }
 
@@ -233,7 +241,79 @@ public class ExamGrader {
                 }
             }
 
-            // Populate result with test results (no length violation)
+            // For CFG files, check rules limit BEFORE awarding any points
+            if (".cfg".equals(detected.extension) && automaton instanceof CFG) {
+                CFG cfg = (CFG) automaton;
+                Integer maxRules = testResult.getMaxRules();
+
+                if (maxRules != null) {
+                    Automaton.ValidationMessage rulesValidation = cfg.validateRulesCount(maxRules);
+
+                    if (rulesValidation != null) {
+                        // Rules limit violation - automatic zero points
+                        result.success = true;
+                        result.rulesLimitViolation = true;
+                        result.actualRulesCount = cfg.getProductions().size();
+                        result.maxAllowedRules = maxRules;
+                        result.score = 0.0;
+                        result.minPoints = testResult.getMinPoints();
+                        result.maxPoints = testResult.getMaxPoints();
+                        result.totalTests = testResult.getTotalTests();
+                        result.errorMessage = rulesValidation.getMessage();
+                        result.detailedReport = String.format(
+                            "CFG RULES LIMIT VIOLATION\n" +
+                            "══════════════════════════════════════════════════\n" +
+                            "Your CFG exceeds the maximum allowed production rules.\n\n" +
+                            "Actual rules:   %d\n" +
+                            "Maximum allowed: %d\n" +
+                            "Exceeded by:    %d\n\n" +
+                            "Grade: 0.0/%d points (automatic zero for rules limit violation)\n",
+                            result.actualRulesCount, result.maxAllowedRules,
+                            result.actualRulesCount - result.maxAllowedRules,
+                            result.maxPoints
+                        );
+                        return result;
+                    }
+                }
+            }
+
+            // For PDA files, check transitions limit BEFORE awarding any points
+            if (".pda".equals(detected.extension) && automaton instanceof PDA) {
+                PDA pda = (PDA) automaton;
+                Integer maxTransitions = testResult.getMaxTransitions();
+
+                if (maxTransitions != null) {
+                    Automaton.ValidationMessage transitionsValidation = pda.validateTransitionsCount(maxTransitions);
+
+                    if (transitionsValidation != null) {
+                        // Transitions limit violation - automatic zero points
+                        result.success = true;
+                        result.transitionsLimitViolation = true;
+                        result.actualTransitionsCount = pda.getTransitionCount();
+                        result.maxAllowedTransitions = maxTransitions;
+                        result.score = 0.0;
+                        result.minPoints = testResult.getMinPoints();
+                        result.maxPoints = testResult.getMaxPoints();
+                        result.totalTests = testResult.getTotalTests();
+                        result.errorMessage = transitionsValidation.getMessage();
+                        result.detailedReport = String.format(
+                            "PDA TRANSITIONS LIMIT VIOLATION\n" +
+                            "══════════════════════════════════════════════════\n" +
+                            "Your PDA exceeds the maximum allowed transitions.\n\n" +
+                            "Actual transitions: %d\n" +
+                            "Maximum allowed:    %d\n" +
+                            "Exceeded by:        %d\n\n" +
+                            "Grade: 0.0/%d points (automatic zero for transitions limit violation)\n",
+                            result.actualTransitionsCount, result.maxAllowedTransitions,
+                            result.actualTransitionsCount - result.maxAllowedTransitions,
+                            result.maxPoints
+                        );
+                        return result;
+                    }
+                }
+            }
+
+            // Populate result with test results (no limit violations)
             result.success = true;
             result.score = testResult.getPoints();
             result.minPoints = testResult.getMinPoints();

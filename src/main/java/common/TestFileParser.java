@@ -15,6 +15,9 @@ import java.util.List;
  * #min_points=N
  * #max_points=N
  * #timeout=N (timeout in seconds)
+ * #max_regex_length=N (max regex length for REX)
+ * #max_rules=N (max production rules for CFG)
+ * #max_transitions=N (max transitions for PDA)
  */
 public class TestFileParser {
 
@@ -27,13 +30,19 @@ public class TestFileParser {
         private final int maxPoints;
         private final Integer maxRegexLength; // null means no limit
         private final Integer timeout; // null means use default, value is in seconds
+        private final Integer maxRules; // null means no limit (for CFG)
+        private final Integer maxTransitions; // null means no limit (for PDA)
 
-        public TestFileResult(List<TestCase> testCases, int minPoints, int maxPoints, Integer maxRegexLength, Integer timeout) {
+        public TestFileResult(List<TestCase> testCases, int minPoints, int maxPoints,
+                              Integer maxRegexLength, Integer timeout,
+                              Integer maxRules, Integer maxTransitions) {
             this.testCases = testCases;
             this.minPoints = minPoints;
             this.maxPoints = maxPoints;
             this.maxRegexLength = maxRegexLength;
             this.timeout = timeout;
+            this.maxRules = maxRules;
+            this.maxTransitions = maxTransitions;
         }
 
         public List<TestCase> getTestCases() {
@@ -63,6 +72,22 @@ public class TestFileParser {
         public boolean hasTimeout() {
             return timeout != null;
         }
+
+        public Integer getMaxRules() {
+            return maxRules;
+        }
+
+        public boolean hasMaxRules() {
+            return maxRules != null;
+        }
+
+        public Integer getMaxTransitions() {
+            return maxTransitions;
+        }
+
+        public boolean hasMaxTransitions() {
+            return maxTransitions != null;
+        }
     }
 
     /**
@@ -79,6 +104,8 @@ public class TestFileParser {
         int maxPoints = 10; // Default
         Integer maxRegexLength = null; // null means no limit
         Integer timeout = null; // null means use default (in seconds)
+        Integer maxRules = null; // null means no limit (for CFG)
+        Integer maxTransitions = null; // null means no limit (for PDA)
 
         try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
             String line;
@@ -135,6 +162,30 @@ public class TestFileParser {
                                 String.format("Invalid timeout value at line %d: '%s'", lineNumber, line));
                         }
                         continue;
+                    } else if (line.startsWith("#max_rules=")) {
+                        try {
+                            maxRules = Integer.valueOf(line.substring("#max_rules=".length()).trim());
+                            if (maxRules < 1) {
+                                throw new IllegalArgumentException(
+                                    String.format("Invalid max_rules value at line %d: must be positive", lineNumber));
+                            }
+                        } catch (NumberFormatException e) {
+                            throw new IllegalArgumentException(
+                                String.format("Invalid max_rules value at line %d: '%s'", lineNumber, line));
+                        }
+                        continue;
+                    } else if (line.startsWith("#max_transitions=")) {
+                        try {
+                            maxTransitions = Integer.valueOf(line.substring("#max_transitions=".length()).trim());
+                            if (maxTransitions < 1) {
+                                throw new IllegalArgumentException(
+                                    String.format("Invalid max_transitions value at line %d: must be positive", lineNumber));
+                            }
+                        } catch (NumberFormatException e) {
+                            throw new IllegalArgumentException(
+                                String.format("Invalid max_transitions value at line %d: '%s'", lineNumber, line));
+                        }
+                        continue;
                     } else {
                         // Other comments are ignored
                         continue;
@@ -168,6 +219,6 @@ public class TestFileParser {
             }
         }
 
-        return new TestFileResult(testCases, minPoints, maxPoints, maxRegexLength, timeout);
+        return new TestFileResult(testCases, minPoints, maxPoints, maxRegexLength, timeout, maxRules, maxTransitions);
     }
 }
