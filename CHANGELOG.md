@@ -1,8 +1,22 @@
 # Changelog
 
-## [Unreleased]
+## [1.2.11] - 2025-12-03
 
-#### [1.2.10] - 2025-12-01
+### Added
+- **CFG Rules Limit**: Configurable maximum production rules for CFG
+  - New "Max Rules:" UI field in CFG panel
+  - Test file header `#max_rules=N` support
+  - Automatic zero points if CFG exceeds rule limit
+- **PDA Transitions Limit**: Configurable maximum transitions for PDA
+  - New "Max Trans:" UI field in PDA panel
+  - Test file header `#max_transitions=N` support
+  - Automatic zero points if PDA exceeds transitions limit
+- Validation integrated in both UI test runner and ExamGrader
+
+### Changed
+- Multi-character push to stack is no longer allowed in PDA (single character only)
+
+## [1.2.10] - 2025-12-01
 
 ### Changed
 - Stack does not have to be empty for acceptance anymore.
