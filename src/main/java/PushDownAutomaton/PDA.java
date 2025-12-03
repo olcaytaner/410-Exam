@@ -579,17 +579,23 @@ public class PDA extends Automaton {
 
     private boolean validatePushString(String pushString, Set<Symbol> alphabet, int line, List<ValidationMessage> messages) {
         if (!"eps".equals(pushString)) {
-            for (char c : pushString.toCharArray()) {
-                if (!alphabet.contains(new Symbol(c))) {
-                    messages.add(new ValidationMessage(
-                            "Stack symbol '" + c + "' (in push string '" + pushString + "') is not defined in 'stack_alphabet'.",
-                            line, ValidationMessageType.ERROR));
-                    return false;
-                }
+            if (pushString.length() != 1) {
+                messages.add(new ValidationMessage(
+                        "Stack push '" + pushString + "' must be a single character or 'eps'.",
+                        line, ValidationMessageType.ERROR));
+                return false;
+            }
+            char c = pushString.charAt(0);
+            if (!alphabet.contains(new Symbol(c))) {
+                messages.add(new ValidationMessage(
+                        "Stack symbol '" + c + "' is not defined in 'stack_alphabet'.",
+                        line, ValidationMessageType.ERROR));
+                return false;
             }
         }
         return true;
     }
+
 
     private void checkForUnreachableStates(Set<State> allStates, State startState,
                                            Map<State, List<PDATransition>> transitions,
