@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.3.0] - 2025-12-04
+
+### Performance
+- **CFG Major Performance Optimization**: Complete rewrite of CYK parsing algorithm
+  - Replaced object-based Sets with primitive BitSet arrays for parsing table
+  - Added O(1) lookup maps for variables, terminals, and productions
+  - Implemented integer ID system for NonTerminals enabling array-based indexing
+  - Array-based binary production results replacing object collections
+  - Added CNF caching (`cachedCNF`) to avoid repeated Chomsky Normal Form conversion
+  - Grammar string caching for repeated string operations
+  - Net reduction of ~384 lines while significantly improving performance
+
 ## [1.2.11] - 2025-12-03
 
 ### Added
