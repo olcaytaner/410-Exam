@@ -2,7 +2,7 @@ states: q0 q1 q2 q_accept q_reject
 input_alphabet: 0 1
 start: q0
 accept: q_accept
-REJECT: q_reject
+reject: q_reject
 tape_alphabet: 0 1 _
 
 transitions:
