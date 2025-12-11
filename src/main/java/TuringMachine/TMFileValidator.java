@@ -1,14 +1,20 @@
 package TuringMachine;
 
-import common.Automaton.ValidationMessage;
-import common.Automaton.ValidationMessage.ValidationMessageType;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.AbstractMap;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import common.Automaton.ValidationMessage;
+import common.Automaton.ValidationMessage.ValidationMessageType;
 
 /**
  * Validates a Turing Machine definition file.
@@ -133,6 +139,8 @@ public class TMFileValidator {
                 for (String s : raw.split("\\s+")) {
                     if (!isValidSymbol(s)) {
                         context.addMessage(line, ValidationMessageType.ERROR, "INVALID_INPUT_SYMBOL", "Symbols must be a single character. Invalid input symbol: '" + s );
+                    } else if (s.equals("_")) {
+                        context.addMessage(line, ValidationMessageType.ERROR, "BLANK_IN_INPUT_ALPHABET", "Input alphabet cannot contain the blank symbol '_'");
                     } else if (!seen.add(s)) {
                         context.addMessage(line, ValidationMessageType.ERROR, "DUPLICATE_INPUT_SYMBOL", "Duplicate input symbol: " + s);
                     } else {
@@ -161,13 +169,37 @@ public class TMFileValidator {
                 }
             }
         }
+
+        // Validate that tape_alphabet contains all input_alphabet symbols
+        if (!context.inputAlphabet.isEmpty() && !context.tapeAlphabet.isEmpty()) {
+            for (String inputSymbol : context.inputAlphabet) {
+                if (!context.tapeAlphabet.contains(inputSymbol)) {
+                    int line = context.sectionLines.get("tape_alphabet");
+                    context.addMessage(line, ValidationMessageType.ERROR, "INPUT_NOT_IN_TAPE_ALPHABET",
+                        "Input symbol '" + inputSymbol + "' must be included in tape_alphabet");
+                }
+            }
+        }
     }
 
     private static void validateSpecialStates(ValidationContext context) {
         context.start = validateSpecialState(context, "start", "MISSING_START_STATE", "UNDEFINED_START");
         context.accept = validateSpecialState(context, "accept", "MISSING_ACCEPT_STATE", "UNDEFINED_ACCEPT");
+
+        if (context.accept != null && !context.accept.equals("q_accept")) {
+            int line = context.sectionLines.get("accept");
+            context.addMessage(line, ValidationMessageType.ERROR, "INVALID_ACCEPT_NAME",
+                "Accept state must be named 'q_accept', but found: " + context.accept);
+        }
+
         if (context.sectionContent.containsKey("reject")) {
             context.reject = validateSpecialState(context, "reject", "MISSING_REJECT_STATE", "UNDEFINED_REJECT");
+            
+            if (context.reject != null && !context.reject.equals("q_reject")) {
+                int line = context.sectionLines.get("reject");
+                context.addMessage(line, ValidationMessageType.ERROR, "INVALID_REJECT_NAME",
+                    "Reject state must be named 'q_reject', but found: " + context.reject);
+            }
         } else {
             context.reject = null;
         }

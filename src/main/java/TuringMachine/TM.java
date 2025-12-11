@@ -1,10 +1,15 @@
 package TuringMachine;
 
-import common.Automaton;
-import common.Symbol;
-import common.Automaton.ValidationMessage.ValidationMessageType;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
-import java.util.*;
+import common.Automaton;
+import common.Automaton.ValidationMessage.ValidationMessageType;
+import common.Symbol;
 
 /**
  * Represents a Turing Machine.
@@ -221,9 +226,8 @@ public class TM extends Automaton {
         return "start: q0\n" +
                "accept: q_accept\n" +
                "reject: q_reject\n" +
-               "alphabet: a b\n" +
                "tape_alphabet: a b _\n" +
-                "input_alphabet: a b _\n" +
+                "input_alphabet: a b \n" +
                "states: q0 q_accept q_reject\n" +
                "\n" +
                "transitions:\n" +
