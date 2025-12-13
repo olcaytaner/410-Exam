@@ -15,6 +15,7 @@ import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.BitSet;
+import java.util.stream.Collectors;
 
 import common.Automaton;
 import common.Symbol;
@@ -56,6 +57,7 @@ public class CFG extends Automaton {
     private int numNonTerminals;
     private int[][] binaryProductionResults;
     private int startSymbolId;
+    private Map<String, int[]> terminalProductionResults;  // "a" -> array of result NT ids
 
     public CFG() {
         super(MachineType.CFG);
@@ -120,12 +122,20 @@ public class CFG extends Automaton {
         int size = numNonTerminals * numNonTerminals;
         binaryProductionResults = new int[size][];
 
+        // Build terminal production results
+        Map<String, List<Integer>> termResultsBuilder = new HashMap<>();
+
         for (Production prod : productions) {
             productionsByLeft.computeIfAbsent(prod.getLeft(), k -> new ArrayList<>()).add(prod);
 
             if (prod.getRight().size() == 1 && prod.getRight().get(0) instanceof Terminal) {
                 String termName = prod.getRight().get(0).getName();
                 productionsByTerminal.computeIfAbsent(termName, k -> new ArrayList<>()).add(prod);
+
+                Integer resultId = nonTerminalToId.get(prod.getLeft());
+                if (resultId != null) {
+                    termResultsBuilder.computeIfAbsent(termName, k -> new ArrayList<>()).add(resultId);
+                }
             } else if (prod.getRight().size() == 2) {
                 Symbol first = prod.getRight().get(0);
                 Symbol second = prod.getRight().get(1);
@@ -138,20 +148,28 @@ public class CFG extends Automaton {
                     Integer rightId = nonTerminalToId.get(second);
                     if (leftId != null && rightId != null) {
                         int key = leftId * numNonTerminals + rightId;
-                        int resultId = nonTerminalToId.get(prod.getLeft());
+                        Integer resultId = nonTerminalToId.get(prod.getLeft());
 
-                        if (binaryProductionResults[key] == null) {
-                            binaryProductionResults[key] = new int[]{resultId};
-                        } else {
-                            int[] old = binaryProductionResults[key];
-                            int[] newArr = new int[old.length + 1];
-                            System.arraycopy(old, 0, newArr, 0, old.length);
-                            newArr[old.length] = resultId;
-                            binaryProductionResults[key] = newArr;
+                        if (resultId != null) {
+                            if (binaryProductionResults[key] == null) {
+                                binaryProductionResults[key] = new int[]{resultId};
+                            } else {
+                                int[] old = binaryProductionResults[key];
+                                int[] newArr = new int[old.length + 1];
+                                System.arraycopy(old, 0, newArr, 0, old.length);
+                                newArr[old.length] = resultId;
+                                binaryProductionResults[key] = newArr;
+                            }
                         }
                     }
                 }
             }
+        }
+
+        // Convert terminal results to arrays
+        terminalProductionResults = new HashMap<>();
+        for (Map.Entry<String, List<Integer>> entry : termResultsBuilder.entrySet()) {
+            terminalProductionResults.put(entry.getKey(), entry.getValue().stream().mapToInt(i -> i).toArray());
         }
     }
 
@@ -643,28 +661,43 @@ public class CFG extends Automaton {
             return result;
         }
 
-        NonTerminal currentLeft = left;
+        // Build from right to left to maintain correct associativity
+        // For A -> B C D E, we want: A -> B X1, X1 -> C X2, X2 -> D E
 
-        for (int i = 0; i < rightSide.size() - 2; i++) {
-            final int currentIndex = i;  // Create final copy
-            String key = generateIntermediateKey(rightSide, currentIndex);
-            NonTerminal newVar = intermediateVariables.computeIfAbsent(key, k -> {
-                String varName = "X_" + currentIndex + "_" + intermediateVariables.size();
+        List<NonTerminal> intermediates = new ArrayList<>();
+
+        // Create intermediate variables for positions 1 to n-2
+        for (int i = 1; i < rightSide.size() - 1; i++) {
+            // Create unique key based on the remaining suffix
+            String key = rightSide.subList(i, rightSide.size()).stream()
+                    .map(Symbol::getName)
+                    .collect(Collectors.joining("_"));
+
+            NonTerminal newVar = intermediateVariables.get(key);
+            if (newVar == null) {
+                String varName = "X_" + intermediateVariables.size();
                 while (variableExists(variables, varName)) {
-                    varName = "X_" + currentIndex + "_" + (intermediateVariables.size() + 1);
+                    varName = "X_" + (intermediateVariables.size() + variables.size());
                 }
-                NonTerminal var = new NonTerminal(varName);
-                variables.add(var);
-                return var;
-            });
-
-            result.add(new Production(currentLeft, Arrays.asList(rightSide.get(currentIndex), newVar)));
-            currentLeft = newVar;
+                newVar = new NonTerminal(varName);
+                variables.add(newVar);
+                intermediateVariables.put(key, newVar);
+            }
+            intermediates.add(newVar);
         }
 
-        result.add(new Production(currentLeft, Arrays.asList(
-                rightSide.get(rightSide.size() - 2),
-                rightSide.get(rightSide.size() - 1))));
+        // First production: left -> first symbol, first intermediate
+        result.add(new Production(left, Arrays.asList(rightSide.get(0), intermediates.get(0))));
+
+        // Middle productions: intermediate[i] -> symbol[i+1], intermediate[i+1]
+        for (int i = 0; i < intermediates.size() - 1; i++) {
+            result.add(new Production(intermediates.get(i),
+                    Arrays.asList(rightSide.get(i + 1), intermediates.get(i + 1))));
+        }
+
+        // Last production: last intermediate -> last two symbols
+        result.add(new Production(intermediates.get(intermediates.size() - 1),
+                Arrays.asList(rightSide.get(rightSide.size() - 2), rightSide.get(rightSide.size() - 1))));
 
         return result;
     }
@@ -800,7 +833,12 @@ public class CFG extends Automaton {
 
     private boolean cykParse(String input) {
         int n = input.length();
+        if (n == 0) {
+            return false;
+        }
+
         int numNT = numNonTerminals;
+        int arraySize = numNT * numNT;
 
         BitSet[][] table = new BitSet[n][n];
         for (int i = 0; i < n; i++) {
@@ -811,29 +849,24 @@ public class CFG extends Automaton {
 
         // Phase 1: Single characters
         for (int i = 0; i < n; i++) {
-            char c = input.charAt(i);
-            String charStr = String.valueOf(c);
-            List<Production> matchingProds = productionsByTerminal.get(charStr);
-            if (matchingProds != null) {
+            String charStr = String.valueOf(input.charAt(i));
+            int[] results = terminalProductionResults.get(charStr);
+            if (results != null) {
                 BitSet cell = table[i][0];
-                for (int p = 0; p < matchingProds.size(); p++) {
-                    Integer ntId = nonTerminalToId.get(matchingProds.get(p).getLeft());
-                    if (ntId != null) {
-                        cell.set(ntId);
-                    }
+                for (int resultId : results) {
+                    cell.set(resultId);
                 }
             }
         }
 
-        // Phase 2: Longer substrings with array-based lookup
-        for (int length = 2; length <= n; length++) {
-            for (int i = 0; i <= n - length; i++) {
-                int j = length - 1;
-                BitSet targetCell = table[i][j];
+        // Phase 2: Longer substrings
+        for (int len = 2; len <= n; len++) {
+            for (int i = 0; i <= n - len; i++) {
+                BitSet targetCell = table[i][len - 1];
 
-                for (int k = 0; k < length - 1; k++) {
-                    BitSet leftCell = table[i][k];
-                    BitSet rightCell = table[i + k + 1][j - k - 1];
+                for (int k = 1; k < len; k++) {
+                    BitSet leftCell = table[i][k - 1];
+                    BitSet rightCell = table[i + k][len - k - 1];
 
                     if (leftCell.isEmpty() || rightCell.isEmpty()) {
                         continue;
@@ -842,8 +875,8 @@ public class CFG extends Automaton {
                     for (int leftId = leftCell.nextSetBit(0); leftId >= 0; leftId = leftCell.nextSetBit(leftId + 1)) {
                         for (int rightId = rightCell.nextSetBit(0); rightId >= 0; rightId = rightCell.nextSetBit(rightId + 1)) {
                             int key = leftId * numNT + rightId;
-                            int[] results = binaryProductionResults[key];
-                            if (results != null) {
+                            if (key < arraySize && binaryProductionResults[key] != null) {
+                                int[] results = binaryProductionResults[key];
                                 for (int resultId : results) {
                                     targetCell.set(resultId);
                                 }
