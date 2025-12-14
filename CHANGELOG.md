@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.3.1] - 2025-12-14
+
+### Fixed
+- **TM Validation**: Enhanced Turing Machine file validation
+  - Input alphabet cannot contain blank symbol '_'
+  - Input symbols must be included in tape_alphabet
+  - Accept state must be named 'q_accept'
+  - Reject state must be named 'q_reject'
+- **CFG**: Minor fix for production results handling (null safety improvements)
+
+### Added
+- **TM Test Files**: Past exam questions for Turing Machine exercises
+  - Final exams: 2021-q3, 2023-q5, 2024-q3, 2025-q1
+  - MT3 exams: 2024-q1, 2024-q2, partb_2022-q2, partb_2024-q2
+
 ## [1.3.0] - 2025-12-04
 
 ### Performance
