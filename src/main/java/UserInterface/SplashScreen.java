@@ -51,26 +51,7 @@ public class SplashScreen extends JWindow {
     }
     
     private String getVersionFromManifest() {
-        // Try to get version from package (works when running from JAR)
-        String version = getClass().getPackage().getImplementationVersion();
-
-        // If not available, try to read from Maven properties
-        if (version == null) {
-            try {
-                java.io.InputStream is = getClass().getResourceAsStream(
-                    "/META-INF/maven/org.example/CS410-Exam/pom.properties");
-                if (is != null) {
-                    java.util.Properties props = new java.util.Properties();
-                    props.load(is);
-                    version = props.getProperty("version");
-                    is.close();
-                }
-            } catch (Exception e) {
-                // Ignore and use fallback
-            }
-        }
-
-        return version != null ? version : "1.0.1"; // Fallback version matching pom.xml
+        return AppVersion.getVersion();
     }
     
     private void initComponents() {
@@ -225,7 +206,19 @@ public class SplashScreen extends JWindow {
     private void closeSplash() {
         setVisible(false);
         dispose();
+        
         // Launch main application
-        SwingUtilities.invokeLater(() -> new MainFrame());
+        SwingUtilities.invokeLater(() -> {
+            MainFrame mainFrame = new MainFrame();
+            
+            // Check for updates in background (non-blocking)
+            String currentVersion = getVersionFromManifest();
+            VersionChecker.checkForUpdatesAsync(currentVersion, versionInfo -> {
+                // Show update dialog on EDT
+                SwingUtilities.invokeLater(() -> {
+                    new UpdateDialog(mainFrame, versionInfo).setVisible(true);
+                });
+            });
+        });
     }
 }
