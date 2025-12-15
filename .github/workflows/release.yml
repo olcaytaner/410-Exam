@@ -135,6 +135,26 @@ jobs:
           name: jar-file
           path: release-jar
 
+      - name: Extract Changelog for Version
+        id: changelog
+        run: |
+          VERSION="${{ needs.update-version.outputs.version }}"
+
+          # Extract content between this version header and the next version header
+          # Skips the version header line itself, captures everything until next ## [
+          CHANGELOG=$(awk -v ver="$VERSION" '
+            /^## \[/ {
+              if (found) exit
+              if (index($0, "## [" ver "]")) { found=1; next }
+            }
+            found { print }
+          ' CHANGELOG.md)
+
+          # Handle multiline output for GitHub Actions
+          echo "content<<EOF" >> $GITHUB_OUTPUT
+          echo "$CHANGELOG" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
       - name: Create Release
         id: create_release
         uses: softprops/action-gh-release@v1
@@ -146,8 +166,7 @@ jobs:
             ### Download
             **CS410-Exam-${{ needs.update-version.outputs.version }}.jar** - Compatible with Java 8+
 
-            ### Changes
-            See [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md) for details.
+            ${{ steps.changelog.outputs.content }}
           files: |
             release-jar/CS410-Exam-*.jar
           draft: false
