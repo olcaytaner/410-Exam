@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.3.2] - 2025-12-15
+
+### Added
+- **Version Management System**: Centralized version management with automatic update notifications
+  - New `AppVersion` class for programmatic version access and comparison
+  - `VersionChecker` service that checks GitHub releases for newer versions
+  - `UpdateDialog` showing update availability with changelog and download link
+  - `version.properties` resource file for build-time version injection
+  - Automatic update check on application startup (non-blocking)
+- **GitHub Release Workflow**: Enhanced release automation
+  - Changelog extraction step automatically includes relevant version notes in GitHub releases
+
+### Changed
+- `MainFrame` and `SplashScreen` now use centralized `AppVersion` for version display
+- Version information consolidated in single source of truth (`version.properties`)
+
 ## [1.3.1] - 2025-12-14
 
 ### Fixed
