@@ -1,118 +1,198 @@
-# CS.410 Graph System
+# Automata Practice and Test
 
-**An interactive desktop application for learning and working with computational automata and formal languages.**
+<div align="center">
+
+**Master computational theory through hands-on practice with automata, grammars, and formal languages.**
+
+[![Java](https://img.shields.io/badge/Java-8%2B-orange?style=flat-square&logo=openjdk)](https://openjdk.org/)
+[![Release](https://img.shields.io/github/v/release/olcaytaner/Automata_Practice_and_Test?style=flat-square)](https://github.com/olcaytaner/Automata_Practice_and_Test/releases)
+[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-support-yellow?style=flat-square&logo=buy-me-a-coffee)](https://buymeacoffee.com/automatapracticetest)
+
+[Download](#-quick-start) | [Features](#-features) | [Documentation](#-supported-automata) | [Contributing](#-development-team)
+
+</div>
 
 ---
 
-## What is This?
+## Why This Tool?
 
-CS.410 Graph System is an educational tool that helps students and educators visualize, test, and understand fundamental concepts in computer science theory. It provides a graphical interface for creating and simulating six types of computational models:
+Learning automata theory from textbooks can be challenging. **Automata Practice and Test** bridges the gap between theory and understanding by letting you:
 
-- **DFA** (Deterministic Finite Automaton)
-- **NFA** (Nondeterministic Finite Automaton)
-- **PDA** (Push-down Automaton)
-- **TM** (Turing Machine)
-- **CFG** (Context-Free Grammar)
-- **REX** (Regular Expression)
+- **See** your automata come to life as interactive state diagrams
+- **Test** your solutions instantly with custom input strings
+- **Debug** step-by-step to understand exactly how your machine processes input
+- **Practice** with ready-to-use exercises and exam questions
 
-Each model can be defined in simple text files, visualized as state diagrams, and tested with input strings to see if they're accepted or rejected.
+Whether you're a student preparing for exams or an educator teaching computational theory, this tool makes abstract concepts tangible.
+
+---
+
+## What Can You Build?
+
+<table>
+<tr>
+<td width="33%" align="center">
+
+**DFA & NFA**
+
+Finite Automata
+
+*Pattern matching, lexical analysis*
+
+</td>
+<td width="33%" align="center">
+
+**PDA**
+
+Push-down Automata
+
+*Balanced brackets, nested structures*
+
+</td>
+<td width="33%" align="center">
+
+**TM**
+
+Turing Machines
+
+*Any computable function*
+
+</td>
+</tr>
+<tr>
+<td width="33%" align="center">
+
+**CFG**
+
+Context-Free Grammars
+
+*Programming language syntax*
+
+</td>
+<td width="33%" align="center">
+
+**REX**
+
+Regular Expressions
+
+*Text pattern matching*
+
+</td>
+<td width="33%" align="center">
+
+**Grading**
+
+Batch Testing
+
+*Automated exam grading*
+
+</td>
+</tr>
+</table>
 
 ---
 
 ## Features
 
-- **Visual Editor**: Write automaton definitions with syntax highlighting and line numbers
-- **Live Visualization**: See your automaton rendered as an interactive graph using Graphviz
-- **Interactive Testing**: Test input strings and see step-by-step execution traces
-- **File Management**: Save/load automaton definitions with automatic recent files tracking
-- **Batch Testing**: Run multiple test cases from files to validate your automaton
-- **Multiple Tabs**: Work on multiple automata simultaneously
-- **Keyboard Shortcuts**: Fast workflow with keyboard commands (see below)
-- **Undo/Redo**: Full undo/redo support for editing
-- **Cross-platform**: Works on Windows, macOS, and Linux
+### For Students
+- **Visual Learning**: See automata rendered as beautiful state diagrams
+- **Instant Feedback**: Test inputs and see Accept/Reject immediately
+- **Step-by-Step Traces**: Understand exactly how your machine processes each symbol
+- **Practice Files**: Includes exercises from real CS theory courses
+
+### For Educators
+- **Batch Grading**: Grade entire classes with automated test suites
+- **PDF Reports**: Generate detailed grading reports per student
+- **Configurable Limits**: Set max rules, transitions, regex length, and timeouts
+- **Fair Scoring**: Sophisticated scoring algorithm handles edge cases
+
+### For Everyone
+- **Cross-Platform**: Works on Windows, macOS, and Linux
+- **No Installation**: Just download the JAR and run
+- **Auto-Updates**: Get notified when new versions are available
+- **Syntax Help**: Built-in documentation for all file formats
 
 ---
 
 ## Quick Start
 
 ### Requirements
+- **Java 8** or higher (that's it!)
 
-- **Java 8** or higher
-- **Maven** (only for building from source)
+### Option 1: Download & Run (Recommended)
 
-### Running the Application
-
-#### Option 1: Download Pre-built JAR (Recommended)
-
-1. Download the latest `CS410-Exam-1.0.2.jar` from the releases page
-2. Run the application:
+1. **Download** the latest JAR from [Releases](https://github.com/olcaytaner/Automata_Practice_and_Test/releases)
+2. **Run** with double-click or:
    ```bash
-   java -jar CS410-Exam-1.0.2.jar
+   java -jar Automata_Practice_and_Test-1.3.2.jar
    ```
 
-**No Maven or compilation needed!** Just download and run.
+**That's it!** No Maven, no compilation, no setup.
 
-#### Option 2: Run with Maven
-```bash
-mvn compile exec:java
-```
+### Option 2: Build from Source
 
-#### Option 3: Build JAR from Source
 ```bash
+git clone https://github.com/olcaytaner/Automata_Practice_and_Test.git
+cd Automata_Practice_and_Test
 mvn clean package
-java -jar target/CS410-Exam-1.0.2.jar
+java -jar target/Automata_Practice_and_Test-1.3.2.jar
 ```
 
 ---
 
-## How to Use
+## Your First Automaton
 
-### Creating a New Automaton
+Let's build a DFA that accepts strings ending with "ab":
 
-1. **File → New** → Select automaton type (DFA, NFA, PDA, TM, CFG, or REX)
-2. Write your automaton definition in the text editor (see formats below)
-3. Click **Compile with Figure** (or press `Cmd/Ctrl+B`) to visualize
-4. The graph will appear on the right side
+### 1. Create New File
+**File → New → DFA**
 
-### Testing Input Strings
+### 2. Enter Definition
+```text
+states: q0 q1 q2
+alphabet: a b
+start: q0
+finals: q2
+transitions:
+q0 -> q0 (b)
+q0 -> q1 (a)
+q1 -> q1 (a)
+q1 -> q2 (b)
+q2 -> q0 (b)
+q2 -> q1 (a)
+```
 
-1. After compiling, click **Run** (or press `Cmd/Ctrl+R`)
-2. Enter an input string when prompted
-3. The system will show if the input is **Accepted** or **Rejected**
-4. View detailed execution traces in the output panel
+### 3. Compile & Visualize
+Press `Ctrl+B` (or `Cmd+B` on Mac) to see your automaton:
 
-### Testing with Files
+### 4. Test It!
+Press `Ctrl+R` and try these inputs:
+- `ab` → **Accepted** ✓
+- `aab` → **Accepted** ✓
+- `ba` → **Rejected** ✗
+- `abb` → **Rejected** ✗
 
-1. Create a test file with one input per line
-2. Click **Run with File** (or press `Cmd/Ctrl+Shift+R`)
-3. Select your test file
-4. See results for all test cases at once
+---
 
-### Keyboard Shortcuts
+## Keyboard Shortcuts
 
 | Action | Windows/Linux | macOS |
-|--------|--------------|--------|
-| Compile with Figure | `Ctrl+B` | `Cmd+B` |
-| Run | `Ctrl+R` | `Cmd+R` |
+|--------|:-------------:|:-----:|
+| Compile & Visualize | `Ctrl+B` | `Cmd+B` |
+| Run Test | `Ctrl+R` | `Cmd+R` |
 | Run with File | `Ctrl+Shift+R` | `Cmd+Shift+R` |
+| Clear Graph | `Ctrl+G` | `Cmd+G` |
 | Save | `Ctrl+S` | `Cmd+S` |
-| Open File | `Ctrl+O` | `Cmd+O` |
-| Recent File 1-9 | `Ctrl+1-9` | `Cmd+1-9` |
+| Open | `Ctrl+O` | `Cmd+O` |
+| Recent Files | `Ctrl+1-9` | `Cmd+1-9` |
 
 ---
 
 ## Supported Automata
 
-### 1. DFA (Deterministic Finite Automaton)
+### DFA (Deterministic Finite Automaton)
 
-**What it does:** Accepts or rejects strings based on a fixed set of rules. For each state and input symbol, there's exactly one next state.
-
-**Example use cases:**
-- Strings with an even number of 'a's
-- Strings ending with "01"
-- Binary numbers divisible by 3
-
-**File format:** `.dfa`
+**Use case**: Pattern matching with deterministic rules
 
 ```text
 states: q0 q1 q2
@@ -126,18 +206,13 @@ q1 -> q2 (b)
 q2 -> q1 (a)
 ```
 
+**File extension**: `.dfa`
+
 ---
 
-### 2. NFA (Nondeterministic Finite Automaton)
+### NFA (Nondeterministic Finite Automaton)
 
-**What it does:** Like DFA, but can have multiple possible transitions for the same input. Can also have epsilon (ε) transitions that don't consume input.
-
-**Example use cases:**
-- Pattern matching (strings containing "ab")
-- Union of multiple patterns
-- Strings with specific substrings
-
-**File format:** `.nfa`
+**Use case**: Pattern matching with multiple possibilities and ε-transitions
 
 ```text
 states: q0 q1 q2
@@ -151,20 +226,15 @@ q1 -> q2 (b)
 q2 -> q1 (a)
 ```
 
-**Note:** Use `eps` for epsilon transitions. Multiple symbols can be listed for each transition.
+**Note**: Use `eps` for epsilon (ε) transitions
+
+**File extension**: `.nfa`
 
 ---
 
-### 3. PDA (Push-down Automaton)
+### PDA (Push-down Automaton)
 
-**What it does:** Extends finite automata with a stack memory. Can recognize context-free languages like balanced parentheses and matched pairs.
-
-**Example use cases:**
-- Balanced parentheses: `((()))`
-- Strings of form `a^n b^n` (same number of a's and b's)
-- Nested structures (HTML tags, JSON)
-
-**File format:** `.pda`
+**Use case**: Context-free languages like balanced parentheses, `a^n b^n`
 
 ```text
 states: q0 q1 q2
@@ -181,22 +251,17 @@ q1 b a -> q1 eps
 q1 eps Z -> q2 eps
 ```
 
-**Transition format:** `<state> <input> <stack_pop> -> <next_state> <stack_push>`
-- Use `eps` for no input or no stack operation
-- Stack push can be multiple characters
+**Format**: `<state> <input> <stack_pop> -> <next_state> <stack_push>`
+
+**Acceptance**: Input consumed + final state + empty stack
+
+**File extension**: `.pda`
 
 ---
 
-### 4. TM (Turing Machine)
+### TM (Turing Machine)
 
-**What it does:** The most powerful computational model. Has an infinite tape that can be read and written, with a head that moves left or right.
-
-**Example use cases:**
-- Recognize any decidable language
-- Perform computations (addition, multiplication)
-- Copy strings, reverse strings
-
-**File format:** `.tm`
+**Use case**: Any computable function
 
 ```text
 states: q0 q1 q_accept q_reject
@@ -214,22 +279,20 @@ q1 1 -> q1 1 R
 q1 _ -> q_reject _ R
 ```
 
-**Transition format:** `<state> <read_symbol> -> <next_state> <write_symbol> <direction>`
-- Direction is `L` (left) or `R` (right)
-- Use `_` for blank symbol
+**Format**: `<state> <read> -> <next_state> <write> <direction>`
+
+**Requirements**:
+- Accept state must be `q_accept`
+- Reject state must be `q_reject`
+- Use `_` for blank, `L`/`R` for direction
+
+**File extension**: `.tm`
 
 ---
 
-### 5. CFG (Context-Free Grammar)
+### CFG (Context-Free Grammar)
 
-**What it does:** Defines a language using production rules that transform variables into strings of variables and terminals.
-
-**Example use cases:**
-- Arithmetic expressions: `1 + 2 * 3`
-- Programming language syntax
-- Natural language patterns
-
-**File format:** `.cfg`
+**Use case**: Programming language syntax, nested structures
 
 ```text
 Variables = S A B
@@ -241,48 +304,33 @@ A -> a | a A
 B -> b | b B
 ```
 
-**Production rules:**
-- Left side: a variable (uppercase)
-- Right side: sequence of variables and terminals
-- Use `|` for alternatives
-- Use `eps` for epsilon (empty string)
+**Note**: Use `eps` for epsilon productions. Parsed with CYK algorithm.
 
-The system uses the **CYK algorithm** for parsing.
+**File extension**: `.cfg`
 
 ---
 
-### 6. REX (Regular Expression)
+### REX (Regular Expression)
 
-**What it does:** Pattern matching using regular expression syntax. Can generate test cases and validate regex correctness.
-
-**Example use cases:**
-- Text pattern matching
-- Input validation
-- String search and replace
-
-**File format:** `.rex`
+**Use case**: Pattern matching, input validation
 
 ```text
 (ab*c) u d u eps
 a b c d
 ```
 
-**Format:**
-- Line 1: The regular expression
-- Line 2: Alphabet (space-separated symbols)
+**Format**: Line 1 = regex, Line 2 = alphabet
 
-**Operators:**
-- `*` - Zero or more (Kleene star)
-- `u` - OR (alternation)
-- `()` - Grouping
-- Concatenation (implicit)
+**Operators**: `*` (Kleene star), `u` (union), `()` (grouping)
+
+**File extension**: `.rex`
 
 ---
 
-## File Formats Quick Reference
+## File Format Quick Reference
 
 | Type | Extension | Key Sections |
-|------|-----------|--------------|
+|:----:|:---------:|--------------|
 | DFA | `.dfa` | states, alphabet, start, finals, transitions |
 | NFA | `.nfa` | states, alphabet, start, finals, transitions |
 | PDA | `.pda` | states, alphabet, stack_alphabet, start, stack_start, finals, transitions |
@@ -290,113 +338,134 @@ a b c d
 | CFG | `.cfg` | Variables, Terminals, Start, Productions |
 | REX | `.rex` | regex pattern, alphabet |
 
-**Comments:** All formats support comments with `#` (except REX)
+**Tip**: Use `#` for comments in all formats (except REX)
 
 ---
 
-## Building from Source
+## For Educators: Batch Grading
 
-### Prerequisites
-- Java 8 or higher
-- Apache Maven 3.x
-
-### Build Commands
+Grade entire classes with a single command:
 
 ```bash
-# Clean and compile
-mvn clean compile
-
-# Run tests
-mvn test
-
-# Run specific test
-mvn test -Dtest=DFATest
-
-# Package as JAR
-mvn package
-
-# Clean build artifacts
-mvn clean
+mvn exec:java@grade -Dexam.folder=submissions/ -Dtest.cases=tests/ -Doutput=results/
 ```
 
-### Project Structure
+### Test File Format
+```text
+#timeout=5
+#max_rules=10
+accept: aab
+accept: ab
+reject: ba
+reject: a
+```
+
+### Output
+- **CSV**: Summary with scores for all students
+- **HTML**: Detailed report with pass/fail per test
+- **PDF**: Individual student reports
+
+---
+
+## Project Structure
 
 ```
-CS410-Exam/
-├── src/
-│   ├── main/java/
-│   │   ├── common/              # Base classes and utilities
-│   │   ├── DeterministicFiniteAutomaton/
-│   │   ├── NondeterministicFiniteAutomaton/
-│   │   ├── PushDownAutomaton/
-│   │   ├── TuringMachine/
-│   │   ├── ContextFreeGrammar/
-│   │   ├── RegularExpression/
-│   │   └── UserInterface/       # GUI components
-│   └── test/java/              # Unit tests
-├── pom.xml                     # Maven configuration
-└── README.md                   # This file
+Automata_Practice_and_Test/
+├── src/main/java/
+│   ├── common/                    # Base classes
+│   ├── DeterministicFiniteAutomaton/
+│   ├── NondeterministicFiniteAutomaton/
+│   ├── PushDownAutomaton/
+│   ├── TuringMachine/
+│   ├── ContextFreeGrammar/
+│   ├── RegularExpression/
+│   ├── UserInterface/             # GUI
+│   └── grader/                    # Batch grading
+├── src/test/java/                 # Unit tests
+└── pom.xml
 ```
 
 ---
 
 ## Dependencies
 
-- **JUnit 5.8.2** - Testing framework
-- **GraphViz Java 0.18.1** - Graph visualization
-- **GraalVM JS 21.3.3** - JavaScript engine for GraphViz rendering
+| Library | Version | Purpose |
+|---------|---------|---------|
+| JUnit | 5.8.2 | Testing |
+| GraphViz Java | 0.18.1 | Visualization |
+| GraalVM JS | 20.0.0 | Graph rendering |
+| Apache Batik | 1.19 | SVG rendering |
+| Apache PDFBox | 2.0.27 | PDF generation |
 
-All dependencies are managed by Maven and will be downloaded automatically.
-
----
-
-## Development Team
-
-**CS.410 Graph System** was developed by:
-
-- Ege Yenen
-- Bora Baran
-- Berre Delikara
-- Eren Yemşen
-- Berra Eğcin
-- Hakan Akbıyık
-- Hakan Çildaş
-- Selim Özyılmaz
-- Olcay Taner Yıldız
-
----
-
-## Technical Documentation
-
-For detailed technical documentation and architecture information, see [CLAUDE.md](CLAUDE.md).
-
-For version history and changes, see [CHANGELOG.md](CHANGELOG.md).
+All managed by Maven — no manual installation needed.
 
 ---
 
 ## Troubleshooting
 
-### Graph visualization not working
-- Make sure GraalVM JS dependencies are installed (Maven handles this automatically)
-- Try rebuilding: `mvn clean compile`
+**Graph not showing?**
+```bash
+mvn clean compile
+```
 
-### Application won't start
-- Verify Java version: `java -version` (must be Java 8+)
-- Check Maven installation: `mvn -version`
+**JAR won't start?**
+```bash
+java -version  # Must be 8+
+```
 
-### Tests failing
-- Run with verbose output: `mvn test -X`
-- Check specific test: `mvn test -Dtest=<TestName>`
+**Tests failing?**
+```bash
+mvn test -X  # Verbose output
+```
+
+---
+
+## Development Team
+
+**Automata Practice and Test** was developed at Özyeğin University:
+
+- [Ege Yenen](https://github.com/yenennn)
+- [Bora Baran](https://github.com/Bor4brn)
+- [Berre Delikara](https://github.com/BerreDelikara)
+- [Eren Yemşen](https://github.com/ErenYemsen)
+- [Berra Eğcin](https://github.com/berraegcin)
+- [Hakan Akbıyık](https://github.com/xHkn10)
+- [Hakan Çildaş](https://github.com/atahakancildas)
+- [Selim Özyılmaz](https://github.com/NurettinSelim)
+- [Olcay Taner Yıldız](https://github.com/olcaytaner)
+
+---
+
+## Documentation
+
+- [CHANGELOG.md](CHANGELOG.md) — Version history
+
+---
+
+## Support the Project
+
+If this tool helped you learn or teach automata theory, consider supporting its development:
+
+<div align="center">
+
+[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-support-yellow?style=for-the-badge&logo=buy-me-a-coffee)](https://buymeacoffee.com/automatapracticetest)
+
+</div>
 
 ---
 
 ## Getting Help
 
-- Check the **Help → About** menu for version information
-- Review example files in each automaton's package
-- See technical documentation in individual README files within each package
-- Report issues via the project repository
+- **In-app**: Help → Syntax Help for file format documentation
+- **Issues**: [GitHub Issues](https://github.com/olcaytaner/Automata_Practice_and_Test/issues)
+- **Updates**: The app checks for updates automatically on startup
 
 ---
 
+<div align="center">
+
 **Happy automaton building!** 🤖
+
+*Made with ❤️ for computer science students everywhere*
+
+</div>
