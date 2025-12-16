@@ -48,7 +48,12 @@ public class MainPanel extends JPanel {
     private JSplitPane mainSplitPane; 
     
     // Preferences manager for persistent storage
-    private static PreferencesManager preferencesManager = new PreferencesManager(); 
+    private static PreferencesManager preferencesManager = new PreferencesManager();
+
+    // Initialize TestSettings with the preferences manager on class load
+    static {
+        TestSettings.setPreferencesManager(preferencesManager);
+    }
 
     public class FileManager {        
         public String getExtensionForAutomaton(Automaton automaton) {
@@ -496,7 +501,31 @@ public class MainPanel extends JPanel {
         revalidate();
         repaint();
     }
-    
+
+    /**
+     * Gets the currently active automaton panel, or null if none.
+     */
+    private AbstractAutomatonPanel getActiveAutomatonPanel() {
+        if (activeTabIndex >= 0 && activeTabIndex < openTabs.size()) {
+            AutomatonTab activeTab = openTabs.get(activeTabIndex);
+            if (activeTab.getPanel() instanceof AbstractAutomatonPanel) {
+                return (AbstractAutomatonPanel) activeTab.getPanel();
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Shows the test settings popup anchored to the current active panel's settings button.
+     * Called from the Settings menu in MainFrame.
+     */
+    public void showTestSettingsPopup() {
+        AbstractAutomatonPanel activePanel = getActiveAutomatonPanel();
+        if (activePanel != null) {
+            activePanel.showSettingsPopup();
+        }
+    }
+
     /**
      * Creates the tab panel with buttons for navigation
      */

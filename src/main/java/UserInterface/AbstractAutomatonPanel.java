@@ -32,11 +32,8 @@ public abstract class AbstractAutomatonPanel extends JPanel implements Automaton
     protected MainPanel mainPanel;
     protected Automaton automaton;
     protected UndoManager undoManager;
-    protected JTextField minPointsField;
-    protected JTextField maxPointsField;
-    protected JTextField timeoutField;
-    protected JTextField maxRulesField;       // For CFG - max production rules
-    protected JTextField maxTransitionsField; // For PDA - max transitions
+    protected JButton settingsButton;
+    protected TestSettingsPopup settingsPopup;
 
     // Inline testing components
     protected JPanel inlineTestPanel;
@@ -89,19 +86,6 @@ public abstract class AbstractAutomatonPanel extends JPanel implements Automaton
      */
     protected abstract String getTabLabelText();
 
-    /**
-     * Override in subclass to show max rules field (CFG only)
-     */
-    protected boolean showMaxRulesField() {
-        return false;
-    }
-
-    /**
-     * Override in subclass to show max transitions field (PDA only)
-     */
-    protected boolean showMaxTransitionsField() {
-        return false;
-    }
 
     /**
      * Initialize the main panel properties
@@ -112,7 +96,7 @@ public abstract class AbstractAutomatonPanel extends JPanel implements Automaton
     }
 
     /**
-     * Creates the top panel with tab label, grading configuration, and test button.
+     * Creates the top panel with tab label, settings button, and action buttons.
      */
     private void createTopPanel() {
         topPanel = new JPanel();
@@ -125,120 +109,47 @@ public abstract class AbstractAutomatonPanel extends JPanel implements Automaton
         tabLabel.setFont(new Font("Arial", Font.BOLD, 14));
         tabLabel.setForeground(new Color(102, 133, 102));
 
-        // Grading configuration components
-        JLabel minLabel = new JLabel("Min:");
-        minLabel.setFont(new Font("Arial", Font.PLAIN, 12));
-
-        minPointsField = new JTextField("4");
-        minPointsField.setPreferredSize(new Dimension(40, 30));
-        minPointsField.setMaximumSize(new Dimension(40, 30));
-        minPointsField.setHorizontalAlignment(JTextField.CENTER);
-        minPointsField.setToolTipText("Minimum points for grading");
-
-        JLabel maxLabel = new JLabel("Max:");
-        maxLabel.setFont(new Font("Arial", Font.PLAIN, 12));
-
-        maxPointsField = new JTextField("10");
-        maxPointsField.setPreferredSize(new Dimension(40, 30));
-        maxPointsField.setMaximumSize(new Dimension(40, 30));
-        maxPointsField.setHorizontalAlignment(JTextField.CENTER);
-        maxPointsField.setToolTipText("Maximum points for grading");
-
-        // Timeout configuration
-        JLabel timeoutLabel = new JLabel("Timeout(s):");
-        timeoutLabel.setFont(new Font("Arial", Font.PLAIN, 12));
-
-        timeoutField = new JTextField("5");
-        timeoutField.setPreferredSize(new Dimension(50, 30));
-        timeoutField.setMaximumSize(new Dimension(50, 30));
-        timeoutField.setHorizontalAlignment(JTextField.CENTER);
-        timeoutField.setToolTipText("Test suite timeout in seconds");
-
-        // Optional max rules field (CFG only)
-        JLabel maxRulesLabel = null;
-        if (showMaxRulesField()) {
-            maxRulesLabel = new JLabel("Max Rules:");
-            maxRulesLabel.setFont(new Font("Arial", Font.PLAIN, 12));
-
-            maxRulesField = new JTextField("");
-            maxRulesField.setPreferredSize(new Dimension(50, 30));
-            maxRulesField.setMaximumSize(new Dimension(50, 30));
-            maxRulesField.setHorizontalAlignment(JTextField.CENTER);
-            maxRulesField.setToolTipText("Maximum production rules allowed (empty = no limit)");
-        }
-
-        // Optional max transitions field (PDA only)
-        JLabel maxTransLabel = null;
-        if (showMaxTransitionsField()) {
-            maxTransLabel = new JLabel("Max Trans:");
-            maxTransLabel.setFont(new Font("Arial", Font.PLAIN, 12));
-
-            maxTransitionsField = new JTextField("");
-            maxTransitionsField.setPreferredSize(new Dimension(50, 30));
-            maxTransitionsField.setMaximumSize(new Dimension(50, 30));
-            maxTransitionsField.setHorizontalAlignment(JTextField.CENTER);
-            maxTransitionsField.setToolTipText("Maximum transitions allowed (empty = no limit)");
-        }
+        // Settings button (gear icon)
+        settingsButton = new JButton("\u2699");
+        settingsButton.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 16));
+        settingsButton.setPreferredSize(new Dimension(40, 30));
+        settingsButton.setMaximumSize(new Dimension(40, 30));
+        settingsButton.setToolTipText("Test Settings");
+        settingsButton.setFocusPainted(false);
+        settingsButton.addActionListener(e -> showSettingsPopup());
 
         // Run button
-        JButton runButton = new JButton("Run");
+        JButton runButton = new JButton("\u25B6 Run");
         runButton.setPreferredSize(new Dimension(80, 30));
         runButton.setMaximumSize(new Dimension(80, 30));
-        runButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                runTestFile();
-            }
-        });
-
+        runButton.setToolTipText("Run test file");
+        runButton.addActionListener(e -> runTestFile());
 
         // Clear Graph button
         clearGraphButton = new JButton("Clear");
-        clearGraphButton.setPreferredSize(new Dimension(100, 30));
-        clearGraphButton.setMaximumSize(new Dimension(100, 30));
+        clearGraphButton.setPreferredSize(new Dimension(80, 30));
+        clearGraphButton.setMaximumSize(new Dimension(80, 30));
         clearGraphButton.setToolTipText("Clear the current graph visualization (Ctrl+G)");
-        clearGraphButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                clearGraph();
-            }
-        });
+        clearGraphButton.addActionListener(e -> clearGraph());
 
-        // Assemble the panel
+        // Assemble the panel: [Label] ─────── [⚙] [▶ Run] [Clear]
         topPanel.add(tabLabel);
         topPanel.add(Box.createHorizontalGlue());
-        topPanel.add(minLabel);
-        topPanel.add(Box.createHorizontalStrut(5));
-        topPanel.add(minPointsField);
-        topPanel.add(Box.createHorizontalStrut(10));
-        topPanel.add(maxLabel);
-        topPanel.add(Box.createHorizontalStrut(5));
-        topPanel.add(maxPointsField);
-        topPanel.add(Box.createHorizontalStrut(10));
-        topPanel.add(timeoutLabel);
-        topPanel.add(Box.createHorizontalStrut(5));
-        topPanel.add(timeoutField);
-
-        // Add optional max rules field (CFG only)
-        if (showMaxRulesField() && maxRulesLabel != null) {
-            topPanel.add(Box.createHorizontalStrut(10));
-            topPanel.add(maxRulesLabel);
-            topPanel.add(Box.createHorizontalStrut(5));
-            topPanel.add(maxRulesField);
-        }
-
-        // Add optional max transitions field (PDA only)
-        if (showMaxTransitionsField() && maxTransLabel != null) {
-            topPanel.add(Box.createHorizontalStrut(10));
-            topPanel.add(maxTransLabel);
-            topPanel.add(Box.createHorizontalStrut(5));
-            topPanel.add(maxTransitionsField);
-        }
-
+        topPanel.add(settingsButton);
         topPanel.add(Box.createHorizontalStrut(10));
         topPanel.add(runButton);
-        topPanel.add(Box.createHorizontalStrut(10));
+        topPanel.add(Box.createHorizontalStrut(5));
         topPanel.add(clearGraphButton);
+    }
+
+    /**
+     * Shows the settings popup anchored to the settings button.
+     */
+    public void showSettingsPopup() {
+        if (settingsPopup == null) {
+            settingsPopup = new TestSettingsPopup();
+        }
+        settingsPopup.showRelativeTo(settingsButton);
     }
 
     /**
@@ -897,94 +808,21 @@ public abstract class AbstractAutomatonPanel extends JPanel implements Automaton
      * Run tests in background with progress dialog
      */
     private void runTestsInBackground(Automaton testAutomaton, String testFilePath) {
-        // Parse and validate min/max points
-        int minPoints, maxPoints;
-        try {
-            minPoints = Integer.parseInt(minPointsField.getText().trim());
-            maxPoints = Integer.parseInt(maxPointsField.getText().trim());
+        // Get settings from global TestSettings
+        TestSettings settings = TestSettings.getInstance();
+        int minPoints = settings.getMinPoints();
+        int maxPoints = settings.getMaxPoints();
+        int timeoutSeconds = settings.getTimeoutSeconds();
+        Integer maxRulesLimit = settings.getMaxRules();
+        Integer maxTransitionsLimit = settings.getMaxTransitions();
 
-            if (minPoints < 0 || maxPoints < 0) {
-                JOptionPane.showMessageDialog(this,
-                    "Points must be non-negative values.",
-                    "Invalid Point Configuration",
-                    JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-
-            if (minPoints >= maxPoints) {
-                JOptionPane.showMessageDialog(this,
-                    "Minimum points must be less than maximum points.",
-                    "Invalid Point Configuration",
-                    JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-        } catch (NumberFormatException e) {
+        // Validate settings
+        if (minPoints >= maxPoints) {
             JOptionPane.showMessageDialog(this,
-                "Please enter valid numbers for min and max points.",
+                "Minimum points must be less than maximum points.\nPlease check Test Settings.",
                 "Invalid Point Configuration",
                 JOptionPane.ERROR_MESSAGE);
             return;
-        }
-
-        // Parse and validate timeout
-        int timeoutSeconds;
-        try {
-            timeoutSeconds = Integer.parseInt(timeoutField.getText().trim());
-            if (timeoutSeconds <= 0) {
-                JOptionPane.showMessageDialog(this,
-                    "Timeout must be a positive value.",
-                    "Invalid Timeout Configuration",
-                    JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-        } catch (NumberFormatException e) {
-            JOptionPane.showMessageDialog(this,
-                "Please enter a valid number for timeout.",
-                "Invalid Timeout Configuration",
-                JOptionPane.ERROR_MESSAGE);
-            return;
-        }
-
-        // Parse max rules (for CFG) - empty means no limit
-        Integer maxRulesLimit = null;
-        if (maxRulesField != null && !maxRulesField.getText().trim().isEmpty()) {
-            try {
-                maxRulesLimit = Integer.parseInt(maxRulesField.getText().trim());
-                if (maxRulesLimit < 1) {
-                    JOptionPane.showMessageDialog(this,
-                        "Max rules must be a positive value.",
-                        "Invalid Max Rules Configuration",
-                        JOptionPane.ERROR_MESSAGE);
-                    return;
-                }
-            } catch (NumberFormatException e) {
-                JOptionPane.showMessageDialog(this,
-                    "Please enter a valid number for max rules.",
-                    "Invalid Max Rules Configuration",
-                    JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-        }
-
-        // Parse max transitions (for PDA) - empty means no limit
-        Integer maxTransitionsLimit = null;
-        if (maxTransitionsField != null && !maxTransitionsField.getText().trim().isEmpty()) {
-            try {
-                maxTransitionsLimit = Integer.parseInt(maxTransitionsField.getText().trim());
-                if (maxTransitionsLimit < 1) {
-                    JOptionPane.showMessageDialog(this,
-                        "Max transitions must be a positive value.",
-                        "Invalid Max Transitions Configuration",
-                        JOptionPane.ERROR_MESSAGE);
-                    return;
-                }
-            } catch (NumberFormatException e) {
-                JOptionPane.showMessageDialog(this,
-                    "Please enter a valid number for max transitions.",
-                    "Invalid Max Transitions Configuration",
-                    JOptionPane.ERROR_MESSAGE);
-                return;
-            }
         }
 
         // Check if test file has overrides (timeout, max_rules, max_transitions)
@@ -1236,13 +1074,7 @@ public abstract class AbstractAutomatonPanel extends JPanel implements Automaton
         
         // Add timeout warning if any tests timed out
         if (result.getTimeoutCount() > 0) {
-            // Get timeout value from UI field for display
-            int displayTimeout;
-            try {
-                displayTimeout = Integer.parseInt(timeoutField.getText().trim());
-            } catch (NumberFormatException e) {
-                displayTimeout = 5; // Default fallback
-            }
+            int displayTimeout = TestSettings.getInstance().getTimeoutSeconds();
             message.append("⚠️ WARNING: Test suite timed out after ")
                    .append(displayTimeout)
                    .append(" seconds total.\n")

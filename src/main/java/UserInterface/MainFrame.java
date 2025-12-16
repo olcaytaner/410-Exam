@@ -147,10 +147,13 @@ public class MainFrame extends JFrame {
         
         // Add View menu
         createViewMenu(menuBar, menuShortcutKeyMask);
-        
+
+        // Add Settings menu
+        createSettingsMenu(menuBar, menuShortcutKeyMask);
+
         // Add Help menu
         createHelpMenu(menuBar);
-        
+
         setJMenuBar(menuBar);
     }
     
@@ -270,7 +273,23 @@ public class MainFrame extends JFrame {
             mainPanel.toggleSidebar();
         }
     }
-    
+
+    private void createSettingsMenu(JMenuBar menuBar, int menuShortcutKeyMask) {
+        JMenu settingsMenu = new JMenu("Settings");
+
+        JMenuItem testSettingsItem = new JMenuItem("Test Settings...");
+        testSettingsItem.setAccelerator(KeyStroke.getKeyStroke(
+            KeyEvent.VK_COMMA, menuShortcutKeyMask));  // ⌘, on Mac
+        testSettingsItem.addActionListener(e -> {
+            if (mainPanel != null) {
+                mainPanel.showTestSettingsPopup();
+            }
+        });
+
+        settingsMenu.add(testSettingsItem);
+        menuBar.add(settingsMenu);
+    }
+
     private void createHelpMenu(JMenuBar menuBar) {
         JMenu helpMenu = new JMenu("Help");
 

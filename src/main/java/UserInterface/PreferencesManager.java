@@ -16,6 +16,14 @@ public class PreferencesManager {
     private static final String LAST_OPENED_FILES_KEY = "lastOpenedFiles";
     private static final String FILE_SEPARATOR = "|";
     private static final int MAX_RECENT_FILES = 10;
+
+    // Test settings keys
+    private static final String TEST_MIN_POINTS = "test.minPoints";
+    private static final String TEST_MAX_POINTS = "test.maxPoints";
+    private static final String TEST_TIMEOUT = "test.timeoutSeconds";
+    private static final String TEST_MAX_RULES = "test.maxRules";
+    private static final String TEST_MAX_TRANSITIONS = "test.maxTransitions";
+    private static final String TEST_MAX_REGEX_LENGTH = "test.maxRegexLength";
     
     private Properties properties;
     private File preferencesFile;
@@ -174,5 +182,99 @@ public class PreferencesManager {
             properties.setProperty(RECENT_FILES_KEY, recentFilesStr);
             savePreferences();
         }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // TEST SETTINGS
+    // ═══════════════════════════════════════════════════════════════════
+
+    public int getTestMinPoints() {
+        return getIntProperty(TEST_MIN_POINTS, TestSettings.DEFAULT_MIN_POINTS);
+    }
+
+    public void setTestMinPoints(int value) {
+        setIntProperty(TEST_MIN_POINTS, value);
+    }
+
+    public int getTestMaxPoints() {
+        return getIntProperty(TEST_MAX_POINTS, TestSettings.DEFAULT_MAX_POINTS);
+    }
+
+    public void setTestMaxPoints(int value) {
+        setIntProperty(TEST_MAX_POINTS, value);
+    }
+
+    public int getTestTimeout() {
+        return getIntProperty(TEST_TIMEOUT, TestSettings.DEFAULT_TIMEOUT_SECONDS);
+    }
+
+    public void setTestTimeout(int value) {
+        setIntProperty(TEST_TIMEOUT, value);
+    }
+
+    public Integer getTestMaxRules() {
+        return getOptionalIntProperty(TEST_MAX_RULES);
+    }
+
+    public void setTestMaxRules(Integer value) {
+        setOptionalIntProperty(TEST_MAX_RULES, value);
+    }
+
+    public Integer getTestMaxTransitions() {
+        return getOptionalIntProperty(TEST_MAX_TRANSITIONS);
+    }
+
+    public void setTestMaxTransitions(Integer value) {
+        setOptionalIntProperty(TEST_MAX_TRANSITIONS, value);
+    }
+
+    public Integer getTestMaxRegexLength() {
+        return getOptionalIntProperty(TEST_MAX_REGEX_LENGTH);
+    }
+
+    public void setTestMaxRegexLength(Integer value) {
+        setOptionalIntProperty(TEST_MAX_REGEX_LENGTH, value);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // HELPER METHODS
+    // ═══════════════════════════════════════════════════════════════════
+
+    private int getIntProperty(String key, int defaultValue) {
+        String value = properties.getProperty(key);
+        if (value != null) {
+            try {
+                return Integer.parseInt(value);
+            } catch (NumberFormatException e) {
+                // Fall through to default
+            }
+        }
+        return defaultValue;
+    }
+
+    private void setIntProperty(String key, int value) {
+        properties.setProperty(key, String.valueOf(value));
+        savePreferences();
+    }
+
+    private Integer getOptionalIntProperty(String key) {
+        String value = properties.getProperty(key);
+        if (value != null && !value.isEmpty()) {
+            try {
+                return Integer.parseInt(value);
+            } catch (NumberFormatException e) {
+                // Fall through to null
+            }
+        }
+        return null;
+    }
+
+    private void setOptionalIntProperty(String key, Integer value) {
+        if (value == null) {
+            properties.remove(key);
+        } else {
+            properties.setProperty(key, String.valueOf(value));
+        }
+        savePreferences();
     }
 }
