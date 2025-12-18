@@ -56,7 +56,9 @@ public class Tape {
     public void move(Direction direction) {
         switch (direction) {
             case LEFT:
-                headPosition--;
+                if (headPosition > 0) {
+                    headPosition--;
+                }
                 break;
             case RIGHT:
                 headPosition++;
@@ -67,10 +69,7 @@ public class Tape {
     }
 
     private void ensureWithinBounds() {
-        if (headPosition < 0) {
-            tape.add(0, BLANK);
-            headPosition = 0;
-        } else if (headPosition >= tape.size()) {
+        if (headPosition >= tape.size()) {
             tape.add(BLANK);
         }
     }
