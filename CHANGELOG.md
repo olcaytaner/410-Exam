@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.3.3] - 2025-12-23
+
+### Fixed
+- **TM Tape**: Fixed Turing Machine tape to be left-bounded (tape head cannot move left of initial position)
+
 ## [1.3.2] - 2025-12-15
 
 ### Added
